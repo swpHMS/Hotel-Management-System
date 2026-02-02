@@ -1,0 +1,280 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: url('../../images/auth/background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    width: 850px;
+    height: 500px;
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+}
+
+/* Cột trái */
+.login-left {
+    flex: 1;
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 1px solid #eee;
+}
+
+.diamond-icons {
+    color: #d4bc8e;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+.diamond-icons .black { color: #1a1a1a; }
+
+.logo-section h1 {
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: #1a1a1a;
+}
+
+.subtitle {
+    font-size: 10px;
+    color: #d4bc8e;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+.quote-box {
+    background: #fcfaf5;
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-style: italic;
+    color: #666;
+    border: 1px solid #f0e6d2;
+}
+
+/* Cột phải */
+.login-right {
+    flex: 1.2;
+    padding: 50px 60px;
+}
+
+.login-right h2 {
+    font-size: 20px;
+    color: #1a1a1a;
+    margin-bottom: 5px;
+}
+
+.hint {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 10px;
+    font-weight: bold;
+    color: #999;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-wrapper i {
+    position: absolute;
+    left: 15px;
+    color: #ccc;
+    font-size: 14px;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 12px 15px 12px 40px;
+    border: 1px solid #f0f0f0;
+    border-radius: 8px;
+    background: #f9f9f9;
+    outline: none;
+    font-size: 13px;
+}
+
+.eye-icon {
+    left: auto !important;
+    right: 15px;
+    cursor: pointer;
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    margin-bottom: 25px;
+    font-weight: bold;
+}
+
+.remember-me { color: #666; text-transform: uppercase; cursor: pointer; }
+.forgot-pwd { color: #d4bc8e; text-decoration: none; }
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.btn-login {
+    flex: 1;
+    background: #d4bc8e;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-login:hover { background: #c4ab7d; }
+
+.btn-google {
+    flex: 1;
+    background: white;
+    border: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-google img { width: 18px; }
+
+.footer-text {
+    font-size: 10px;
+    text-align: center;
+    color: #999;
+    font-weight: bold;
+}
+
+.footer-text a { color: #d4bc8e; text-decoration: none; }
+
+.page-footer {
+    margin-top: 20px;
+    display: flex;
+    gap: 20px;
+}
+
+.page-footer a {
+    color: white;
+    font-size: 10px;
+    text-decoration: none;
+    opacity: 0.8;
+    letter-spacing: 1px;
+}
+/*/////////////////////////////////////////////////REGISTER////////////////////////////////////////////////////////////*/
+
+/* --- Bổ sung cho trang đăng ký giao diện tối --- */
+.register-card-dark {
+    background: #0a111f !important; /* Màu nền tối sâu */
+    display: flex;
+    width: 1000px; /* Tăng chiều rộng để chia 2 cột đẹp hơn */
+    min-height: 600px;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+/* Chia cột cho form đăng ký */
+.field-row {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.field-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.field-group label {
+    font-size: 10px;
+    color: #555;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+/* Sửa lỗi ô nhập liệu bị trắng */
+.field-group input {
+    width: 100%;
+    background: #161f2e !important; /* Nền tối cho input */
+    border: 1px solid #1f2a3d !important;
+    padding: 12px;
+    border-radius: 4px;
+    color: #ffffff !important; /* Chữ trắng */
+    outline: none;
+}
+
+.field-group input::placeholder {
+    color: #4a5568;
+}
+
+/* Nút Sign Up vàng đồng */
+.btn-signup-gold {
+    width: 100%;
+    background: #d4bc8e !important;
+    color: #000 !important;
+    border: none;
+    padding: 14px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* Nút Google to và cân đối */
+.btn-google-large {
+    width: 100%;
+    background: #161f2e !important;
+    border: 1px solid #1f2a3d !important;
+    color: white !important;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 8px;
+    margin-top: 20px;
+}

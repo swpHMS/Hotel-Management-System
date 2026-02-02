@@ -1,0 +1,123 @@
+/*
+Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css to edit this template
+*/
+/* 
+    Created on : Feb 2, 2026, 12:43:01 AM
+    Author     : ASUS
+*/
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+body { display: flex; min-height: 100vh; background-color: #fff; }
+
+.banner-side {
+    flex: 1.2;
+    position: relative;
+    background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+                url('../../images/auth/background.jpg'); /* Đường dẫn tương đối */
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 60px;
+    color: white;
+}
+
+.logo-area h1 { font-size: 3rem; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 5px; }
+.logo-area p { letter-spacing: 3px; font-size: 0.9rem; opacity: 0.8; }
+.quote { max-width: 400px; font-style: italic; font-size: 1.1rem; line-height: 1.6; }
+
+.form-side {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.container { width: 100%; max-width: 450px; }
+h2 { font-size: 2rem; color: #1a1a1a; margin-bottom: 10px; }
+.sub-text { font-size: 0.75rem; color: #888; letter-spacing: 1px; margin-bottom: 30px; text-transform: uppercase; }
+
+.form-group { margin-bottom: 15px; }
+label { font-size: 0.7rem; color: #aaa; text-transform: uppercase; display: block; margin-bottom: 5px; }
+
+input[type="text"], input[type="email"], input[type="password"], input[type="tel"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #eee;
+    background-color: #fcfcfc;
+    border-radius: 4px;
+    outline: none;
+}
+
+.row { display: flex; gap: 15px; }
+.row .form-group { flex: 1; }
+
+.checkbox-group { display: flex; align-items: center; gap: 10px; margin: 20px 0; font-size: 0.75rem; color: #555; text-transform: uppercase; }
+
+.btn-signup {
+    width: 100%;
+    padding: 15px;
+    background-color: #d4bc93;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-signup:hover { background-color: #c0a77a; }
+
+.social-login { text-align: center; margin-top: 25px; position: relative; }
+.social-login::before {
+    content: "OR CONNECT VIA";
+    font-size: 0.65rem; color: #ccc; background: #fff; padding: 0 10px; position: relative; z-index: 1;
+}
+.social-login::after {
+    content: ""; height: 1px; width: 100%; background: #eee; position: absolute; top: 50%; left: 0;
+}
+
+.btn-google {
+    width: 100%; margin-top: 20px; padding: 12px; border: 1px solid #eee;
+    background: white; display: flex; align-items: center; justify-content: center; gap: 10px;
+    cursor: pointer; font-size: 0.85rem;
+}
+
+.footer-links { text-align: center; margin-top: 30px; font-size: 0.8rem; color: #888; }
+.footer-links a { color: #000; text-decoration: none; font-weight: bold; }
+
+
+
+
+
+/* Container bao quanh 3 hình thoi */
+.diamond-separator {
+    display: flex;
+    gap: 5px;           /* Khoảng cách rất nhỏ để các hình thoi gần nhau */
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 10px;
+}
+
+/* Tạo hình thoi bằng cách xoay khối vuông */
+.diamond {
+    width: 8px;         /* Kích thước cạnh */
+    height: 8px;
+    transform: rotate(45deg); /* Xoay 45 độ để tạo hình thoi */
+    display: inline-block;    /* Quan trọng: Để trình duyệt hiển thị được khối */
+    border: none;             /* Đảm bảo không có viền thừa */
+}
+
+/* Màu vàng đồng */
+.diamond.gold {
+    background-color: #d4bc93;
+}
+
+/* Màu đen */
+.diamond.black {
+    background-color: #000000;
+}
