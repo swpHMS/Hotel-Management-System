@@ -8,17 +8,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/**
- *
- * @author ASUS
- */
 public class DBContext {
-     protected Connection connection;
+     public Connection connection;
 
     public DBContext() {
         try {
             // Edit URL , username, password to authenticate with your MS SQL Server
-            String url = "jdbc:sqlserver://localhost:1433;databaseName=Name";
+            String url = "jdbc:sqlserver://localhost:1433;" +
+                "databaseName=Hotel_Management_System;" +
+                "encrypt=true;" +
+                "trustServerCertificate=true";
             String username = "sa";
             String password = "123";
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
@@ -28,3 +27,4 @@ public class DBContext {
         }
     }
 }
+
