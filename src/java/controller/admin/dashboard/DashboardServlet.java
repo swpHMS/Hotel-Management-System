@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
+
 
 @WebServlet(name = "DashboardServlet", urlPatterns = {"/admin/dashboard"})
 public class DashboardServlet extends HttpServlet {
@@ -27,13 +29,15 @@ protected void doGet(HttpServletRequest request, HttpServletResponse response)
         int totalAccounts = totalUsers + totalCustomers;
         int activeAccounts = activeUsers; // customers không có status
         int engagement = totalAccounts == 0 ? 0 : (int)Math.round(activeAccounts * 100.0 / totalAccounts);
-
+        //nếu chưa có user+customer nào-> engagement=0%
         request.setAttribute("active", "dashboard"); // highlight menu
         request.setAttribute("totalUsers", totalUsers);
         request.setAttribute("activeUsers", activeUsers);
         request.setAttribute("inactiveUsers", inactiveUsers);
         request.setAttribute("totalCustomers", totalCustomers);
         request.setAttribute("engagement", engagement);
+        
+         
 
         request.getRequestDispatcher("/view/admin/dashboard.jsp").forward(request, response);
 
