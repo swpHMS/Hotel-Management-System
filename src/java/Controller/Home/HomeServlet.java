@@ -8,6 +8,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import model.HotelInformation;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -23,29 +24,39 @@ public class HomeServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        req.setAttribute("hotel", hotelRepo.getSingleHotel());
+        // ===== 1) HOTEL =====
+        HotelInformation hotel = hotelRepo.getSingleHotel();
 
+        if (hotel == null) {
+            System.out.println("[HOME] hotel = null (DAO không lấy được record hoặc connect sai DB)");
+        } else {
+            System.out.println("[HOME] hotelId=" + hotel.getHotelId());
+            System.out.println("[HOME] name=" + hotel.getName());
+            System.out.println("[HOME] address=" + hotel.getAddress());
+            System.out.println("[HOME] phone=" + hotel.getPhone());
+            System.out.println("[HOME] email=" + hotel.getEmail());
+            System.out.println("[HOME] content=" + hotel.getContent());
+            System.out.println("[HOME] checkIn=" + hotel.getCheckIn());
+            System.out.println("[HOME] checkOut=" + hotel.getCheckOut());
+        }
+
+        req.setAttribute("hotel", hotel);
+
+        // ===== 2) ROOM TYPES =====
         var roomTypes = roomTypeRepo.getActiveRoomTypesForHome(8);
-        System.out.println("HOME roomTypes size = " +
-                (roomTypes == null ? "null" : roomTypes.size()));
+        System.out.println("[HOME] roomTypes size = " + (roomTypes == null ? "null" : roomTypes.size()));
         req.setAttribute("roomTypes", roomTypes);
 
-        req.setAttribute("amenities", amenityRepo.getActiveAmenitiesForHome(6));
+        // ===== 3) AMENITIES =====
+        var amenities = amenityRepo.getActiveAmenitiesForHome(6);
+        System.out.println("[HOME] amenities size = " + (amenities == null ? "null" : amenities.size()));
+        req.setAttribute("amenities", amenities);
+
+        // ===== 4) DEFAULT DATE =====
         req.setAttribute("defaultCheckIn", LocalDate.now().toString());
         req.setAttribute("defaultCheckOut", LocalDate.now().plusDays(1).toString());
 
-        // ===== DEBUG JSP PATH (BẮT BUỘC THÊM) =====
-        System.out.println("CTX = " + req.getContextPath());
-        System.out.println("RealPath(/) = " + getServletContext().getRealPath("/"));
-
-        System.out.println("Exists /home.jsp ? "
-                + (getServletContext().getResource("/home.jsp") != null));
-        System.out.println("Exists /view/home/home.jsp ? "
-                + (getServletContext().getResource("/view/home/home.jsp") != null));
-        System.out.println("Exists /WEB-INF/view/home/home.jsp ? "
-                + (getServletContext().getResource("/WEB-INF/view/home/home.jsp") != null));
-        // =========================================
-
+        // ===== 5) FORWARD =====
         req.getRequestDispatcher("/home.jsp").forward(req, resp);
     }
 }

@@ -1,6 +1,6 @@
 package dal;
 
-import model.RoomTypeCard;
+import model.RoomType;
 import context.DBContext;
 
 import java.sql.Connection;
@@ -34,8 +34,8 @@ public class RoomTypeDAO {
             + "WHERE status = 1 "
             + "ORDER BY room_type_id DESC";
 
-    public List<RoomTypeCard> getActiveRoomTypesForHome(int limit) {
-        List<RoomTypeCard> withRate = new ArrayList<>();
+    public List<RoomType> getActiveRoomTypesForHome(int limit) {
+        List<RoomType> withRate = new ArrayList<>();
 
         // 1) Thử WITH_RATE
         try {
@@ -60,8 +60,8 @@ public class RoomTypeDAO {
         }
     }
 
-    private List<RoomTypeCard> fetch(int limit, boolean withRate) throws Exception {
-        List<RoomTypeCard> list = new ArrayList<>();
+    private List<RoomType> fetch(int limit, boolean withRate) throws Exception {
+        List<RoomType> list = new ArrayList<>();
         DBContext db = new DBContext();
 
         if (db.connection == null) {
@@ -83,7 +83,7 @@ public class RoomTypeDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    RoomTypeCard rt = new RoomTypeCard();
+                    RoomType rt = new RoomType();
                     rt.setRoomTypeId(rs.getInt("room_type_id"));
                     rt.setName(rs.getString("name"));
                     rt.setDescription(rs.getString("description"));

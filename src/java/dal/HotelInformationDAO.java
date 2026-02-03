@@ -1,22 +1,25 @@
 package dal;
 
-import model.HotelInformation;
 import context.DBContext;
+import model.HotelInformation;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Time;
 
 public class HotelInformationDAO {
 
-    private static final String SQL
-            = "SELECT TOP 1 hotel_id, name, content, address, phone, email, check_in, check_out "
-            + "FROM dbo.hotel_information";
+    private static final String SQL =
+            "SELECT TOP 1 hotel_id, name, content, address, phone, email, check_in_time, check_out_time " +
+            "FROM dbo.hotel_information";
 
     public HotelInformation getSingleHotel() {
         DBContext db = new DBContext();
 
-        try (Connection con = db.connection; PreparedStatement ps = con.prepareStatement(SQL); ResultSet rs = ps.executeQuery()) {
+        try (Connection con = db.connection;
+             PreparedStatement ps = con.prepareStatement(SQL);
+             ResultSet rs = ps.executeQuery()) {
 
             if (rs.next()) {
                 HotelInformation h = new HotelInformation();
@@ -26,8 +29,12 @@ public class HotelInformationDAO {
                 h.setAddress(rs.getString("address"));
                 h.setPhone(rs.getString("phone"));
                 h.setEmail(rs.getString("email"));
-                h.setCheckIn(rs.getTime("check_in").toLocalTime());
-                h.setCheckOut(rs.getTime("check_out").toLocalTime());
+
+                Time cin = rs.getTime("check_in_time");
+                Time cout = rs.getTime("check_out_time");
+                if (cin != null) h.setCheckIn(cin.toLocalTime());
+                if (cout != null) h.setCheckOut(cout.toLocalTime());
+
                 return h;
             }
 

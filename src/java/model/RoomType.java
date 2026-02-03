@@ -2,7 +2,7 @@ package model;
 
 import java.math.BigDecimal;
 
-public class RoomTypeCard {
+public class RoomType {
 
     private int roomTypeId;
     private String name;
@@ -11,11 +11,9 @@ public class RoomTypeCard {
     private int maxChildren;
     private String imageUrl;
     private int status; // 1: ACTIVE, 0: INACTIVE
-
-    // Giá hiện tại (từ rate_versions) - có thể NULL nếu không có rate/không có data
     private BigDecimal priceToday;
 
-    public RoomTypeCard() {
+    public RoomType() {
     }
 
     public int getRoomTypeId() {
