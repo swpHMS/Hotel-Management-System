@@ -40,7 +40,7 @@ a{ text-decoration:none; color:inherit; }
 }
 
 /* để nội dung không bị header che */
-body{ padding-top:72px; } /* chỉnh theo đúng chiều cao header */
+body{ padding-top:0px; } /* chỉnh theo đúng chiều cao header */
 
 .header-inner{
   display:flex;
