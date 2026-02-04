@@ -34,10 +34,10 @@ public class StaffCreateServlet extends HttpServlet {
             Map<String, String> oldValues)
             throws Exception {
 
-        List<Role> roles = dao.getAllRoles();
+        List<Role> roles = dao.getAllNonCustomerRoles();
 
         request.setAttribute("active", "staff_create");
-        request.setAttribute("roles", dao.getAllRoles());
+        request.setAttribute("roles", roles);
 
         request.setAttribute("errors", errors);
         for (Map.Entry<String, String> e : oldValues.entrySet()) {
@@ -54,7 +54,7 @@ public class StaffCreateServlet extends HttpServlet {
         AdminUserDAO dao = new AdminUserDAO();
         try {
             request.setAttribute("active", "staff_create");
-            request.setAttribute("roles", dao.getAllRoles());
+            request.setAttribute("roles", dao.getAllNonCustomerRoles());
             request.getRequestDispatcher("/view/admin/staff_create.jsp").forward(request, response);
         } catch (Exception ex) {
             throw new ServletException(ex);

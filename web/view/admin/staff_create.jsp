@@ -8,28 +8,22 @@
         <title>HMS Admin - Create Staff Account</title>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/enhanced-form.css"/>
 
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
-        
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
+
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     </head>
 
     <body>
         <div class="app-shell">
-            <%@ include file="/view/layout/sidebar.jsp" %>
+            <%@ include file="/view/admin_layout/sidebar.jsp" %>
 
             <div class="hms-main">
-                
+
 
                 <main class="hms-page">
                     <div class="hms-page__top">
                         <div class="page-header-content">
-                            <div class="hms-breadcrumb">
-                                <span><i class="fas fa-home"></i> Admin</span>
-                                <span class="sep">›</span>
-                                <span><i class="fas fa-users"></i> User Management</span>
-                                <span class="sep">›</span>
-                                <span class="current"><i class="fas fa-user-plus"></i> Create Staff Account</span>
-                            </div>
+
                             <h1 class="hms-title">
                                 <i class="fas fa-user-plus title-icon"></i>
                                 Create Staff Account
@@ -66,7 +60,7 @@
                     </c:if>
 
                     <form method="post" action="${pageContext.request.contextPath}/admin/staff/create" class="hms-panel enhanced-form">
-                        
+
                         <!-- Account Information Section -->
                         <div class="form-section">
                             <div class="section-header">
@@ -183,7 +177,92 @@
                         <hr class="hms-hr"/>
 
                         <!-- Staff Profile Section -->
-                        
+                        <!-- Staff Profile Section (FIX layout đồng bộ) -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <div class="section-icon">
+                                    <i class="fas fa-id-card"></i>
+                                </div>
+                                <div>
+                                    <h2 class="hms-h2">Staff Profile</h2>
+                                    <p class="section-description">Personal details and identity information</p>
+                                </div>
+                            </div>
+
+                            <div class="hms-form-grid">
+                                <div class="field">
+                                    <label>Full Name *</label>
+                                    <input type="text" name="fullName" required
+                                           value="${fullName}"
+                                           class="${not empty errors.fullName ? 'is-invalid' : ''}">
+                                    <c:if test="${not empty errors.fullName}">
+                                        <div class="field-error">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            ${errors.fullName}
+                                        </div>
+                                    </c:if>
+                                </div>
+
+                                <div class="field">
+                                    <label>Phone *</label>
+                                    <input type="text" name="phone" required
+                                           value="${phone}"
+                                           class="${not empty errors.phone ? 'is-invalid' : ''}">
+                                    <c:if test="${not empty errors.phone}">
+                                        <div class="field-error">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            ${errors.phone}
+                                        </div>
+                                    </c:if>
+                                </div>
+
+                                <div class="field">
+                                    <label>Gender *</label>
+                                    <select name="gender" required class="${not empty errors.gender ? 'is-invalid' : ''}">
+                                        <option value="1" ${empty param.gender || param.gender == '1' ? 'selected' : ''}>Male</option>
+                                        <option value="2" ${param.gender == '2' ? 'selected' : ''}>Female</option>
+                                        <option value="3" ${param.gender == '3' ? 'selected' : ''}>Other</option>
+                                    </select>
+                                    <c:if test="${not empty errors.gender}">
+                                        <div class="field-error">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            ${errors.gender}
+                                        </div>
+                                    </c:if>
+                                </div>
+
+                                <div class="field">
+                                    <label>Date of Birth *</label>
+                                    <input type="date" name="dob" required
+                                           value="${dob}"
+                                           class="${not empty errors.dob ? 'is-invalid' : ''}">
+                                    <c:if test="${not empty errors.dob}">
+                                        <div class="field-error">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            ${errors.dob}
+                                        </div>
+                                    </c:if>
+                                </div>
+
+                                <div class="field">
+                                    <label>Identity Number *</label>
+                                    <input type="text" name="identityNumber" required
+                                           value="${identityNumber}"
+                                           class="${not empty errors.identityNumber ? 'is-invalid' : ''}">
+                                    <c:if test="${not empty errors.identityNumber}">
+                                        <div class="field-error">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            ${errors.identityNumber}
+                                        </div>
+                                    </c:if>
+                                </div>
+
+                                <div class="field">
+                                    <label>Residence Address</label>
+                                    <input type="text" name="address" value="${address}">
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="hms-actions">
                             <a class="btn btn-light btn-with-icon" href="${pageContext.request.contextPath}/admin/staff">
@@ -207,7 +286,7 @@
                 const input = document.getElementById(inputId);
                 const button = input.nextElementSibling;
                 const icon = button.querySelector('i');
-                
+
                 if (input.type === 'password') {
                     input.type = 'text';
                     icon.classList.remove('fa-eye');

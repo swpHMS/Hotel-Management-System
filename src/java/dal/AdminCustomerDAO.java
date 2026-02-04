@@ -48,14 +48,12 @@ public class AdminCustomerDAO {
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append("""
                 AND (
-                    c.full_name LIKE ?
+                    c.full_name COLLATE SQL_Latin1_General_CP1_CI_AS LIKE ?
                     OR c.phone LIKE ?
                     OR c.identity_number LIKE ?
-                    OR u.email LIKE ?
                 )
             """);
             String like = "%" + keyword.trim() + "%";
-            params.add(like);
             params.add(like);
             params.add(like);
             params.add(like);
@@ -128,14 +126,12 @@ public class AdminCustomerDAO {
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append("""
                 AND (
-                    c.full_name LIKE ?
+                    c.full_name COLLATE SQL_Latin1_General_CP1_CI_AS LIKE ?
                     OR c.phone LIKE ?
                     OR c.identity_number LIKE ?
-                    OR u.email LIKE ?
                 )
             """);
             String like = "%" + keyword.trim() + "%";
-            params.add(like);
             params.add(like);
             params.add(like);
             params.add(like);

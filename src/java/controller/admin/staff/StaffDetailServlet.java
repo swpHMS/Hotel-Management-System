@@ -27,14 +27,14 @@ public class StaffDetailServlet extends HttpServlet {
         AdminUserDAO dao = new AdminUserDAO();
 
         try {
-            UserProfile user = dao.getStaffByUserId(userId);
-            if (user == null) {
+            UserProfile staff = dao.getStaffByUserId(userId);
+            if (staff == null) {
                 response.sendRedirect(request.getContextPath() + "/admin/staff");
                 return;
             }
 
             request.setAttribute("active", "staff_list");
-            request.setAttribute("user", user);
+            request.setAttribute("staff", staff);
             request.getRequestDispatcher("/view/admin/staff_detail.jsp").forward(request, response);
 
         } catch (Exception ex) {

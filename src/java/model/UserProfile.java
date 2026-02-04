@@ -1,5 +1,7 @@
 package model;
 
+import java.sql.Date;
+
 public class UserProfile {
 
     private int userId;
@@ -14,6 +16,45 @@ public class UserProfile {
     private String fullName;
     private String phone;
     
+    
+    
+    private int gender;
+private java.sql.Date dateOfBirth;
+private String identityNumber;
+private String residenceAddress;
+
+    public int getGender() {
+        return gender;
+    }
+
+    public void setGender(int gender) {
+        this.gender = gender;
+    }
+
+    public Date getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(Date dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getIdentityNumber() {
+        return identityNumber;
+    }
+
+    public void setIdentityNumber(String identityNumber) {
+        this.identityNumber = identityNumber;
+    }
+
+    public String getResidenceAddress() {
+        return residenceAddress;
+    }
+
+    public void setResidenceAddress(String residenceAddress) {
+        this.residenceAddress = residenceAddress;
+    }
+
     public UserProfile() {
     }
 

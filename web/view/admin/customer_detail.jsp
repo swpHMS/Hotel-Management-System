@@ -241,15 +241,14 @@
 
     <body class="admin-shell">
         <div class="app-shell">
-            <%@ include file="/view/layout/sidebar.jsp" %>
+            <%@ include file="/view/admin_layout/sidebar.jsp" %>
 
 
             <main class="hms-main">
 
                 <div class="admin-content">
 
-                    <div class="breadcrumb">Admin &gt; Customer Management &gt; <b>Customer Detail</b></div>
-
+                    
                     <div class="page-head">
                         <h1 class="page-title" style="margin:0;">Customer Detail</h1>
 

@@ -99,7 +99,7 @@ public class AdminUserDAO {
     if (roleId != null) sql.append("\n AND u.role_id = ? ");
     if (status != null) sql.append("\n AND u.status = ? ");
 
-    // search theo NAME בלבד
+    // search theo NAME 
     if (hasKeyword) {
         sql.append("\n AND s.full_name COLLATE Vietnamese_100_CI_AI LIKE ? ");
     }
@@ -165,40 +165,47 @@ public class AdminUserDAO {
 
     //detail staff
     public UserProfile getStaffByUserId(int userId) throws Exception {
-        String sql = """
-        SELECT u.user_id, u.email, u.status, u.auth_provider, u.role_id,
-               r.role_name,
-               s.full_name, s.phone
+    String sql = """
+        SELECT
+            u.user_id, u.email, u.status, u.auth_provider, u.role_id,
+            r.role_name,
+            s.full_name, s.gender, s.date_of_birth, s.identity_number,
+            s.phone, s.residence_address
         FROM users u
         JOIN roles r ON r.role_id = u.role_id
         LEFT JOIN staff s ON s.user_id = u.user_id
         WHERE u.user_id = ?
-          AND r.role_name <> 'CUSTOMER'
+          AND u.role_id <> 5  -- CUSTOMER (theo bảng roles của bạn)
     """;
 
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+    try (Connection con = new DBContext().getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(1, userId);
+        ps.setInt(1, userId);
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    return null;
-                }
+        try (ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) return null;
 
-                UserProfile u = new UserProfile();
-                u.setUserId(rs.getInt("user_id"));
-                u.setEmail(rs.getString("email"));
-                u.setStatus(rs.getInt("status"));
-                u.setAuthProvider(rs.getInt("auth_provider"));
-                u.setRoleId(rs.getInt("role_id"));
-                u.setRoleName(rs.getString("role_name"));
+            UserProfile u = new UserProfile();
+            u.setUserId(rs.getInt("user_id"));
+            u.setEmail(rs.getString("email"));
+            u.setStatus(rs.getInt("status"));
+            u.setAuthProvider(rs.getInt("auth_provider"));
+            u.setRoleId(rs.getInt("role_id"));
+            u.setRoleName(rs.getString("role_name"));
 
-                u.setFullName(rs.getString("full_name")); // có thể null nếu thiếu staff row
-                u.setPhone(rs.getString("phone"));
-                return u;
-            }
+            // staff profile fields
+            u.setFullName(rs.getString("full_name"));
+            u.setGender(rs.getInt("gender"));                 // bạn cần field gender trong UserProfile
+            u.setDateOfBirth(rs.getDate("date_of_birth"));    // cần java.sql.Date trong UserProfile
+            u.setIdentityNumber(rs.getString("identity_number"));
+            u.setPhone(rs.getString("phone"));
+            u.setResidenceAddress(rs.getString("residence_address"));
+
+            return u;
         }
     }
+}
 
     
     //dùng cho crateStaff+ Staff Edit
@@ -276,7 +283,7 @@ public List<Role> getAllNonCustomerRoles() throws Exception {
     String sql = """
         SELECT role_id, role_name
         FROM roles
-        WHERE role_name IN ('MANAGER', 'RECEPTIONIST', 'STAFF')
+        WHERE role_name IN ('MANAGER', 'RECEPTIONIST', 'STAFF','ADMIN')
         ORDER BY role_name
     """;
 
@@ -363,5 +370,8 @@ public List<Role> getAllNonCustomerRoles() throws Exception {
             }
         }
     }
+    
+   
+
 
 }

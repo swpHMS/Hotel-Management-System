@@ -369,7 +369,7 @@
 </head>
 <body>
 <div class="app-shell">
-  <%@ include file="/view/layout/sidebar.jsp" %>
+  <%@ include file="/view/admin_layout/sidebar.jsp" %>
   <div class="hms-main">
    
     <main class="hms-page">

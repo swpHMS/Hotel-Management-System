@@ -226,7 +226,7 @@
 <body class="admin-shell">
   <!-- Trang admin phía sau (để blur giống ảnh 2) -->
   <div class="app-shell">
-    <%@ include file="/view/layout/sidebar.jsp" %>
+    <%@ include file="/view/admin_layout/sidebar.jsp" %>
 
     <main class="hms-main">
       <!-- Có thể để trống cũng được, hoặc để breadcrumb cho giống thật -->

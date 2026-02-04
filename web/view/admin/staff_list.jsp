@@ -337,18 +337,14 @@
     </head>
     <body>
         <div class="app-shell">
-            <%@ include file="/view/layout/sidebar.jsp" %>
+            <%@ include file="/view/admin_layout/sidebar.jsp" %>
 
             <div class="hms-main">
                
                 <main class="hms-page">
                     <div class="hms-page__top">
                         <div>
-                            <div class="hms-breadcrumb">
-                                <span>Admin</span><span class="sep">›</span>
-                                <span>User Management</span><span class="sep">›</span>
-                                <span class="current">Staff List</span>
-                            </div>
+                            
                             <h1 class="hms-title">Staff List</h1>
                             <p class="hms-subtitle">View and filter staff accounts by role and status.</p>
                         </div>
@@ -371,7 +367,12 @@
                     </c:if>
 
                     <!-- Filters -->
+                    
                     <form class="hms-filter" method="get" action="${pageContext.request.contextPath}/admin/staff">
+                        <div class="field" style="flex:1; min-width:240px;">
+                            <label>Search</label>
+                            <input type="text" name="keyword" placeholder="Search by name " value="${keyword}" />
+                        </div>
                         <div class="field">
                             <label>Role</label>
                             <select name="roleId">
@@ -391,11 +392,6 @@
                                 <option value="1" ${selectedStatus=='1'?'selected':''}>Active</option>
                                 <option value="0" ${selectedStatus=='0'?'selected':''}>Inactive</option>
                             </select>
-                        </div>
-
-                        <div class="field" style="flex:1; min-width:240px;">
-                            <label>Search</label>
-                            <input type="text" name="keyword" placeholder="Search by name " value="${keyword}" />
                         </div>
 
                         <button class="btn btn-light" type="submit">Apply Filters</button>

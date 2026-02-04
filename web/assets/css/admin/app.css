@@ -112,16 +112,16 @@ a{
 }
 .hms-nav__item:hover{
     background: rgba(99,102,241,.12);
-  color: #ffffff;
+    color: #ffffff;
 }
 .hms-nav__item.is-active{
-   background: #2563eb;
-  color: #ffffff;
+    background: #2563eb;
+    color: #ffffff;
     box-shadow: 0 8px 20px rgba(37,99,235,.25);
 }
 
 .hms-nav__icon{
-     opacity: .9;
+    opacity: .9;
 }
 
 .hms-sidebar__footer{
@@ -202,55 +202,65 @@ a{
 .hms-user__name{
     font-size: 14px;
     font-weight: 600;
-     color: #ffffff;
+    color: #ffffff;
 }
 
 .hms-user__role{
     font-size: 12px;
-     color: #94a3b8;
+    color: #94a3b8;
     margin-top: 2px;
 }
 
 
 /* Dropdown */
 .hms-user__dropdown{
-  position: absolute;
-  left: 0;
-  bottom: calc(100% + 10px);
-  min-width: 180px;
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 10px);
+    min-width: 180px;
 
-  background: linear-gradient(180deg, #111827, #020617);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 14px;
-  box-shadow: 0 20px 50px rgba(0,0,0,.55);
-  padding: 8px;
+    background: linear-gradient(180deg, #111827, #020617);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.55);
+    padding: 8px;
 
-  display: none;     /* quan trọng */
-  z-index: 50;
+    display: none;     /* quan trọng */
+    z-index: 50;
 }
 
 .hms-user:hover .hms-user__dropdown{
     display: block;
 }
 .hms-user.is-open .hms-user__dropdown{
-  display: block;
+    display: block;
 }
 .hms-dd__item{
-  display:block;
-  padding:10px 12px;
-  color:#e5e7eb;
-  text-decoration:none;
-  border-radius:10px;
-  font-weight:500;
+    display:block;
+    padding:10px 12px;
+    color:#e5e7eb;
+    text-decoration:none;
+    border-radius:10px;
+    font-weight:500;
 }
 
-.hms-dd__item:hover{ background: rgba(255,255,255,.08); }
+.hms-dd__item:hover{
+    background: rgba(255,255,255,.08);
+}
 
 
-.hms-dd__divider{ height:1px; margin:6px 0; background: rgba(255,255,255,.08); }
+.hms-dd__divider{
+    height:1px;
+    margin:6px 0;
+    background: rgba(255,255,255,.08);
+}
 
-.hms-dd__item.is-danger{ color:#f87171; }
-.hms-dd__item.is-danger:hover{ background: rgba(248,113,113,.12); }
+.hms-dd__item.is-danger{
+    color:#f87171;
+}
+.hms-dd__item.is-danger:hover{
+    background: rgba(248,113,113,.12);
+}
 
 
 /* ====== Dashboard Page ====== */
@@ -867,51 +877,6 @@ hr{
     text-transform:uppercase;
 }
 
-.status-body{
-    display:grid;
-    grid-template-columns: 260px 1fr;
-    gap:18px;
-    align-items:center;
-}
-
-.donut-wrap{
-    position:relative;
-    width:240px;
-    height:240px;
-    margin:0 auto;
-}
-
-.donut-wrap canvas{
-    width:100% !important;
-    height:100% !important;
-}
-
-.donut-center{
-    position:absolute;
-    inset:0;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    pointer-events:none;
-    text-align:center;
-}
-
-.donut-big{
-    font-size:28px;
-    font-weight:900;
-    color:#0f172a;
-    line-height:1;
-}
-.donut-small{
-    margin-top:4px;
-    font-size:12px;
-    font-weight:800;
-    color:#64748b;
-    text-transform:uppercase;
-    letter-spacing:.04em;
-}
-
 .status-metrics{
     display:flex;
     flex-direction:column;
@@ -949,27 +914,18 @@ hr{
     margin-top:2px;
 }
 
-.status-note{
-    margin-top:6px;
-    padding:10px 12px;
-    border-radius:12px;
-    background:#eff6ff;
-    border:1px solid #dbeafe;
-    color:#1d4ed8;
-    font-weight:700;
-    font-size:13px;
-}
-
-@media (max-width: 900px){
-    .status-body{
-        grid-template-columns: 1fr;
+    .status-left{
+        display: flex;
+        justify-content: center;
     }
-    .donut-wrap{
-        width:220px;
-        height:220px;
-    }
-}
 
+@media (max-width: 1000px){
+  .status-body{
+    grid-template-columns: 1fr;
+    row-gap: 24px;
+  }
+  
+}
 .hms-user{
     display: flex;
     align-items: center;
@@ -1094,4 +1050,83 @@ hr{
 
 .hms-dd__item.is-danger{
     color:#fb7185;
+}
+/* ===== Dashboard Donut Layout (FINAL) ===== */
+.status-body{
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  column-gap: 90px;            /* ✅ tách xa thật */
+  align-items: center;
+}
+
+/* cột trái: tạo khoảng trống bên phải thật sự */
+.status-left{
+  display: flex;
+  justify-content: center;
+  padding-right: 40px;         /* ✅ key: đẩy donut cách text */
+  border-right: 1px solid #eef2f7; /* (tuỳ chọn) nhìn như chia cột */
+}
+
+/* donut size */
+.donut-wrap{
+  position: relative;
+  width: 320px;
+  height: 320px;
+}
+
+#userStatusDonut{
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* text giữa donut */
+.donut-center{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  text-align:center;
+}
+
+.donut-big{
+  font-weight:900;
+  line-height:1;
+  font-size: 36px;
+  color:#0f172a;
+}
+
+.donut-small{
+  margin-top:6px;
+  font-weight:800;
+  letter-spacing:.12em;
+  font-size:12px;
+  color:#64748b;
+}
+
+/* cột phải */
+.status-right{
+  padding-left: 10px;
+}
+
+.status-note{
+  margin-top: 18px;
+  max-width: 620px;
+}
+
+/* Responsive */
+@media (max-width: 1000px){
+  .status-body{
+    grid-template-columns: 1fr;
+    row-gap: 22px;
+  }
+  .status-left{
+    padding-right: 0;
+    border-right: none;
+  }
+  .status-note{
+    max-width: 100%;
+  }
 }
