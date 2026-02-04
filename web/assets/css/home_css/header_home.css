@@ -1,11 +1,3 @@
-/*
-Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
-Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css to edit this template
-*/
-/* 
-    Created on : Feb 3, 2026, 12:05:37 PM
-    Author     : trang
-*/
 
 :root{
   --navy:#071a33;
@@ -139,17 +131,44 @@ body{ padding-top:72px; } /* chỉnh theo đúng chiều cao header */
 .btn-navy:active{
   transform:translateY(1px);
 }
-.logo{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width: 180px;     /* chỉnh theo logo */
-  height: 52px;     /* chỉnh theo header */
+
+.header{
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+
+  /* 🔝 hòa vào ảnh */
+  background: transparent;
+  box-shadow: none;
+
+  transition: background .25s ease,
+              box-shadow .25s ease,
+              backdrop-filter .25s ease,
+              color .25s ease;
 }
 
-.logo img{
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display:block;
+/* chữ & icon sáng lên khi ở đầu trang */
+.header,
+.header a,
+.header .brand-name,
+.header .brand-sub,
+.header .nav a{
+  color: #ffffff;           /* chữ trắng */
+}
+.header.is-scrolled{
+  background: rgba(11, 18, 32, .92);   /* GIỮ NGUYÊN màu hiện tại */
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+
+/* chữ quay về màu cũ */
+.header.is-scrolled,
+.header.is-scrolled a,
+.header.is-scrolled .brand-name,
+.header.is-scrolled .brand-sub,
+.header.is-scrolled .nav a{
+  color: #e5e7eb;   /* hoặc màu bạn đang dùng trước đó */
+}
+.header a:hover{
+  color: #facc15;   /* vàng nhạt – rất hợp UI khách sạn */
 }

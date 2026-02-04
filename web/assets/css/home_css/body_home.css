@@ -43,7 +43,7 @@ a{ text-decoration:none; color:inherit; }
   content:"";
   position:absolute;
   inset:0;
-  background:url("../images/home/nen1.jpg") center / cover no-repeat;
+  background: url("../../images/home/background.jpg") center / cover no-repeat;
   filter:contrast(1.08) saturate(1.12) brightness(1.06);
   transform:scale(1.02);
   z-index:0;
@@ -260,6 +260,7 @@ a{ text-decoration:none; color:inherit; }
   grid-template-columns:1fr 1fr;
   gap:10px;
   margin-bottom:10px;
+  flex-direction: column; 
 }
 
 .mini-label{
@@ -819,3 +820,106 @@ a{ text-decoration:none; color:inherit; }
   .room-modal__content{ padding:28px 22px; }
   .room-modal__title{ font-size:34px; }
 }
+.step-input[type=number]{
+  -moz-appearance: textfield;
+}
+/* ===== FIX INPUT TRONG STEPPER ===== */
+.stepper{
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.step-input{
+  width: 32px;              /* 👈 quan trọng: KHỐNG CHẾ width */
+  height: 32px;
+  text-align: center;
+
+  border: none;
+  outline: none;
+  background: transparent;
+
+  font-size: 15px;
+  font-weight: 700;
+  color: inherit;
+
+  padding: 0;               /* 👈 bỏ padding mặc định */
+  margin: 0;
+}
+
+/* ❌ bỏ spinner của input number */
+.step-input::-webkit-outer-spin-button,
+.step-input::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+.step-input[type=number]{
+  -moz-appearance: textfield;
+}
+
+/* nếu vẫn lệch, ép input không vượt khung */
+.stepper > *{
+  flex-shrink:-1;
+  
+}
+
+.field input[type="number"]{
+  width:100%;
+  height:44px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;
+  padding:0 10px;
+  background:rgba(255,255,255,.06);
+  color:#000;
+  outline:none;
+}
+
+
+
+
+/* cho input number ăn style giống input khác */
+.field .control{
+  width:100%;
+  height:44px;
+  border:1px solid rgba(15,23,42,.12);
+  border-radius:14px;
+  padding:0 14px;
+  background:#fff;
+  outline:none;
+  font: inherit;
+}
+
+
+
+/* ẩn 2 nút lên/xuống (spinner) */
+.field input[type="number"]::-webkit-outer-spin-button,
+.field input[type="number"]::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+.field input[type="number"]{
+  -moz-appearance: textfield;
+}
+.field{ min-width: 0; }
+#roomQty{
+  width: 270px;        /* phần input */
+}
+
+#roomQty{
+  text-align: center;
+}
+
+/* ÉP HIỆN LẠI NÚT ↑ ↓ CHO ROOMS */
+#roomQty{
+  appearance: auto !important;
+  -webkit-appearance: auto !important;
+  -moz-appearance: number-input !important;
+}
+
+/* Chrome / Edge */
+#roomQty::-webkit-outer-spin-button,
+#roomQty::-webkit-inner-spin-button{
+  -webkit-appearance: auto !important;
+  margin: initial !important;
+}
+

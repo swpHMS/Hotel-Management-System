@@ -20,43 +20,73 @@ public class HomeServlet extends HttpServlet {
     private final RoomTypeDAO roomTypeRepo = new RoomTypeDAO();
     private final AmenityDAO amenityRepo = new AmenityDAO();
 
+    private static final int MAX_ROOMS = 5;
+    private static final int DEFAULT_LIMIT = 8;
+
+    private int parseIntOrDefault(String s, int def){
+        try { return Integer.parseInt(s); } catch(Exception e){ return def; }
+    }
+
+    private LocalDate parseDateOrDefault(String s, LocalDate def){
+        try { return LocalDate.parse(s); } catch(Exception e){ return def; }
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
-        // ===== 1) HOTEL =====
+        
         HotelInformation hotel = hotelRepo.getSingleHotel();
-
-        if (hotel == null) {
-            System.out.println("[HOME] hotel = null (DAO không lấy được record hoặc connect sai DB)");
-        } else {
-            System.out.println("[HOME] hotelId=" + hotel.getHotelId());
-            System.out.println("[HOME] name=" + hotel.getName());
-            System.out.println("[HOME] address=" + hotel.getAddress());
-            System.out.println("[HOME] phone=" + hotel.getPhone());
-            System.out.println("[HOME] email=" + hotel.getEmail());
-            System.out.println("[HOME] content=" + hotel.getContent());
-            System.out.println("[HOME] checkIn=" + hotel.getCheckIn());
-            System.out.println("[HOME] checkOut=" + hotel.getCheckOut());
-        }
-
         req.setAttribute("hotel", hotel);
 
-        // ===== 2) ROOM TYPES =====
-        var roomTypes = roomTypeRepo.getActiveRoomTypesForHome(8);
-        System.out.println("[HOME] roomTypes size = " + (roomTypes == null ? "null" : roomTypes.size()));
-        req.setAttribute("roomTypes", roomTypes);
-
-        // ===== 3) AMENITIES =====
         var amenities = amenityRepo.getActiveAmenitiesForHome(6);
-        System.out.println("[HOME] amenities size = " + (amenities == null ? "null" : amenities.size()));
         req.setAttribute("amenities", amenities);
 
-        // ===== 4) DEFAULT DATE =====
-        req.setAttribute("defaultCheckIn", LocalDate.now().toString());
-        req.setAttribute("defaultCheckOut", LocalDate.now().plusDays(1).toString());
+        LocalDate defaultIn  = LocalDate.now();
+        LocalDate defaultOut = LocalDate.now().plusDays(1);
 
-        // ===== 5) FORWARD =====
-        req.getRequestDispatcher("/home.jsp").forward(req, resp);
+        String checkInStr  = req.getParameter("checkIn");
+        String checkOutStr = req.getParameter("checkOut");
+
+        int rawRoomQty = parseIntOrDefault(req.getParameter("roomQty"), 1);
+        int roomQty = rawRoomQty;
+
+        if (roomQty < 1) roomQty = 1;
+        if (roomQty > MAX_ROOMS) {
+            roomQty = MAX_ROOMS;
+            req.setAttribute("roomQtyError", "Maximum " + MAX_ROOMS + " rooms per search.");
+        }
+
+        LocalDate checkIn  = parseDateOrDefault(checkInStr, defaultIn);
+        LocalDate checkOut = parseDateOrDefault(checkOutStr, defaultOut);
+
+        if (!checkOut.isAfter(checkIn)) {
+            checkOut = checkIn.plusDays(1);
+        }
+
+        req.setAttribute("defaultCheckIn", checkIn.toString());
+        req.setAttribute("defaultCheckOut", checkOut.toString());
+        req.setAttribute("roomQty", roomQty);
+        req.setAttribute("maxRooms", MAX_ROOMS);
+
+        var roomTypes = roomTypeRepo.getActiveRoomTypesForHome(DEFAULT_LIMIT);
+
+        if (roomTypes != null) {
+            for (var rt : roomTypes) {
+                rt.setAmenityNames(
+                        amenityRepo.getAmenityNamesByRoomType(rt.getRoomTypeId())
+                );
+            }
+        }
+
+        req.setAttribute("roomTypes", roomTypes);
+
+        // (Optional) Nếu bạn vẫn muốn dùng search kết quả ở chỗ khác:
+        // boolean isSearching = (checkInStr != null || checkOutStr != null || req.getParameter("roomQty") != null);
+        // if (isSearching) {
+        //     var searchResults = roomTypeRepo.searchByRoomQty(checkIn, checkOut, roomQty, DEFAULT_LIMIT);
+        //     req.setAttribute("searchResults", searchResults);
+        // }
+
+        req.getRequestDispatcher("/view/home/home.jsp").forward(req, resp);
     }
 }

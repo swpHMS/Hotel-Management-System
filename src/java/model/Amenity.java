@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package model;
 
 
@@ -10,8 +7,8 @@ public class Amenity {
     private String code;
     private String name;
     private String description;
-    private int category;     // 1,2,3
-    private boolean isActive; // BIT
+    private int category;     
+    private boolean isActive; 
 
     public int getAmenityId() { return amenityId; }
     public void setAmenityId(int amenityId) { this.amenityId = amenityId; }
