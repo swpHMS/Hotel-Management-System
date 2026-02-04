@@ -2,7 +2,7 @@ package model;
 
 import java.sql.Date;
 
-public class Customer {
+public class CustomerProfile {
     private int customerId;
     private Integer userId;
 
@@ -20,10 +20,10 @@ public class Customer {
     // computed for UI
     private String accountStatus; // ACTIVE | INACTIVE | NO_ACCOUNT
 
-    public Customer() {
+    public CustomerProfile() {
     }
 
-    public Customer(int customerId, Integer userId, String fullName, Integer gender, Date dateOfBirth, String identityNumber, String phone, String residenceAddress, String email, String accountStatus) {
+    public CustomerProfile(int customerId, Integer userId, String fullName, Integer gender, Date dateOfBirth, String identityNumber, String phone, String residenceAddress, String email, String accountStatus) {
         this.customerId = customerId;
         this.userId = userId;
         this.fullName = fullName;

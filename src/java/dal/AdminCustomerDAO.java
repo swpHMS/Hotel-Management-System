@@ -1,7 +1,7 @@
 package dal;
 
 import context.DBContext;
-import model.Customer;
+import model.CustomerProfile;
 
 import java.sql.*;
 import java.util.*;
@@ -17,7 +17,7 @@ public class AdminCustomerDAO {
         END
     """;
 
-    public List<Customer> searchCustomers(String keyword, Integer gender, String accountStatus,
+    public List<CustomerProfile> searchCustomers(String keyword, Integer gender, String accountStatus,
                                           int page, int pageSize) throws Exception {
         int offset = (page - 1) * pageSize;
 
@@ -48,14 +48,12 @@ public class AdminCustomerDAO {
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append("""
                 AND (
-                    c.full_name LIKE ?
+                    c.full_name COLLATE SQL_Latin1_General_CP1_CI_AS LIKE ?
                     OR c.phone LIKE ?
                     OR c.identity_number LIKE ?
-                    OR u.email LIKE ?
                 )
             """);
             String like = "%" + keyword.trim() + "%";
-            params.add(like);
             params.add(like);
             params.add(like);
             params.add(like);
@@ -79,7 +77,7 @@ public class AdminCustomerDAO {
         params.add(offset);
         params.add(pageSize);
 
-        List<Customer> list = new ArrayList<>();
+        List<CustomerProfile> list = new ArrayList<>();
 
         try (Connection con = new DBContext().getConnection();
              PreparedStatement ps = con.prepareStatement(sql.toString())) {
@@ -88,7 +86,7 @@ public class AdminCustomerDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Customer c = new Customer();
+                    CustomerProfile c = new CustomerProfile();
                     c.setCustomerId(rs.getInt("customer_id"));
 
                     int uid = rs.getInt("user_id");
@@ -128,14 +126,12 @@ public class AdminCustomerDAO {
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append("""
                 AND (
-                    c.full_name LIKE ?
+                    c.full_name COLLATE SQL_Latin1_General_CP1_CI_AS LIKE ?
                     OR c.phone LIKE ?
                     OR c.identity_number LIKE ?
-                    OR u.email LIKE ?
                 )
             """);
             String like = "%" + keyword.trim() + "%";
-            params.add(like);
             params.add(like);
             params.add(like);
             params.add(like);
@@ -163,7 +159,7 @@ public class AdminCustomerDAO {
         return 0;
     }
 
-    public Customer getCustomerById(int customerId) throws Exception {
+    public CustomerProfile getCustomerById(int customerId) throws Exception {
         String sql = """
             SELECT
                 c.customer_id,
@@ -189,7 +185,7 @@ public class AdminCustomerDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Customer c = new Customer();
+                    CustomerProfile c = new CustomerProfile();
                     c.setCustomerId(rs.getInt("customer_id"));
 
                     int uid = rs.getInt("user_id");

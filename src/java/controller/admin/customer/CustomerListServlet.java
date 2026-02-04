@@ -1,7 +1,7 @@
 package controller.admin.customer;
 
 import dal.AdminCustomerDAO;
-import model.Customer;
+import model.CustomerProfile;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -18,6 +18,8 @@ public class CustomerListServlet extends HttpServlet {
 
         try {
             String q = req.getParameter("q");
+            q = (q == null) ? null : q.trim();
+
             String genderStr = req.getParameter("gender");  // all|1|2|3
             String status = req.getParameter("status");     // all|ACTIVE|INACTIVE|NO_ACCOUNT
 
@@ -30,7 +32,7 @@ public class CustomerListServlet extends HttpServlet {
             }
 
             AdminCustomerDAO dao = new AdminCustomerDAO();
-            List<Customer> customers = dao.searchCustomers(q, gender, status, page, size);
+            List<CustomerProfile> customers = dao.searchCustomers(q, gender, status, page, size);
             int total = dao.countCustomers(q, gender, status);
             int totalPages = (int) Math.ceil((double) total / size);
 
@@ -52,6 +54,10 @@ public class CustomerListServlet extends HttpServlet {
     }
 
     private int parseInt(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return def; }
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return def;
+        }
     }
 }

@@ -1,7 +1,7 @@
 package controller.admin.customer;
 
 import dal.AdminCustomerDAO;
-import model.Customer;
+import model.CustomerProfile;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -19,7 +19,7 @@ public class CustomerStatusServlet extends HttpServlet {
             int id = Integer.parseInt(req.getParameter("id"));
 
             AdminCustomerDAO dao = new AdminCustomerDAO();
-            Customer c = dao.getCustomerById(id);
+            CustomerProfile c = dao.getCustomerById(id);
 
             if (c == null) {
                 resp.sendRedirect(req.getContextPath() + "/admin/customers");
@@ -45,7 +45,7 @@ public class CustomerStatusServlet extends HttpServlet {
             int newStatusInt = "ACTIVE".equalsIgnoreCase(status) ? 1 : 0;
 
             AdminCustomerDAO dao = new AdminCustomerDAO();
-            Customer c = dao.getCustomerById(id);
+            CustomerProfile c = dao.getCustomerById(id);
 
             if (c == null) {
                 resp.sendRedirect(req.getContextPath() + "/admin/customers");

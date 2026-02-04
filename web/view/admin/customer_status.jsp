@@ -9,20 +9,28 @@
   <title>HMS Admin | Change Account Status</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
+  <!-- app.css trước (layout + sidebar) -->
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/app.css"/>
+  <!-- customer.css nếu bạn muốn reuse các biến/button chung -->
   <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/customer.css"/>
 
   <style>
-    /* ===== Overlay Modal ===== */
-    body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:#0b1220;}
+    /* IMPORTANT: bỏ nền đen của body để giống ảnh 2 */
+    body{ margin:0; font-family: Inter,system-ui,Arial,sans-serif; background: var(--bg, #f5f7fb); }
+
+    /* ===== Overlay phải FIXED để phủ lên trang phía sau ===== */
     .overlay{
-      min-height:100vh;
+      position: fixed;
+      inset: 0;
       display:flex;
       align-items:center;
       justify-content:center;
       padding:24px;
       background: rgba(15,23,42,.55);
       backdrop-filter: blur(6px);
+      z-index: 999; /* đè lên sidebar + main */
     }
+
     .modal{
       width: 560px;
       max-width: 100%;
@@ -31,6 +39,7 @@
       box-shadow: 0 20px 60px rgba(0,0,0,.25);
       overflow:hidden;
     }
+
     .modal-head{
       display:flex;
       align-items:center;
@@ -43,17 +52,23 @@
       margin:0;
       color:#0f172a;
     }
+
+    /* close icon giống ảnh 2 (nhẹ, không quá “button”) */
     .xbtn{
       width:40px;height:40px;
       border-radius:12px;
-      border:1px solid #e6eaf2;
-      background:#fff;
+      border:none;
+      background:transparent;
+      color:#98a2b3;
       cursor:pointer;
       display:flex;align-items:center;justify-content:center;
+      font-size:26px;
+      line-height:1;
     }
-    .xbtn:hover{background:#f8fafc}
+    .xbtn:hover{ background:#f8fafc; color:#64748b; }
 
-    .modal-body{padding: 0 22px 22px;}
+    .modal-body{ padding: 0 22px 22px; }
+
     .card{
       background:#f8fafc;
       border:1px solid #eef2f7;
@@ -73,9 +88,9 @@
       color:#98a2b3;
       margin-bottom:6px;
     }
-    .name{font-size:18px;font-weight:900;color:#0f172a; margin:0 0 6px;}
-    .email a{color:#2563eb; font-weight:800; text-decoration:none;}
-    .email a:hover{text-decoration:underline}
+    .name{ font-size:18px; font-weight:900; color:#0f172a; margin:0 0 6px; }
+    .email a{ color:#2563eb; font-weight:800; text-decoration:none; }
+    .email a:hover{ text-decoration:underline; }
 
     .pill{
       font-size: 12px;
@@ -86,12 +101,10 @@
       color:#137a3a;
       white-space: nowrap;
     }
-    .pill.inactive{background:#ffe9e9;color:#a11a1a;}
-    .pill.noacc{background:#f2f4f7;color:#344054;}
+    .pill.inactive{ background:#ffe9e9; color:#a11a1a; }
+    .pill.noacc{ background:#f2f4f7; color:#344054; }
 
-    .section{
-      margin-top: 8px;
-    }
+    .section{ margin-top: 8px; }
     .section h4{
       margin: 0 0 12px;
       color:#334155;
@@ -105,6 +118,7 @@
       gap: 14px;
     }
 
+    /* OPTION giống ảnh 2: selected xanh, unselected trắng */
     .opt{
       border:1px solid #e6eaf2;
       border-radius: 16px;
@@ -119,21 +133,32 @@
       transition: .15s ease;
       user-select:none;
     }
-    .opt:hover{background:#f8fafc}
+    .opt:hover{ background:#f8fafc; }
+
     .opt.selected{
       border: 2px solid #16a34a;
       background:#ecfdf3;
     }
+
+    /* icon: mặc định xám, selected xanh */
     .opt .icon{
       width: 40px;height:40px;border-radius:999px;
       display:flex;align-items:center;justify-content:center;
-      background:#e5e7eb;color:#6b7280;font-weight:900;
+      background:#e5e7eb;
+      color:#6b7280;
+      font-weight:900;
+      font-size:18px;
     }
     .opt.selected .icon{
-      background:#16a34a;color:#fff;
+      background:#16a34a;
+      color:#fff;
     }
+
     .opt .txt{
-      display:flex;flex-direction:column;gap:4px;align-items:center;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:center;
     }
     .opt .txt b{
       font-size: 14px;
@@ -166,20 +191,22 @@
       justify-content:center;
       font-size: 14px;
       width: 100%;
+      text-decoration:none;
     }
     .btn.cancel{
       background:#fff;
       border-color:#e6eaf2;
       color:#334155;
     }
-    .btn.cancel:hover{background:#f8fafc}
+    .btn.cancel:hover{ background:#f8fafc; }
+
     .btn.confirm{
       background:#16a34a;
       color:#fff;
       box-shadow: 0 16px 30px rgba(22,163,74,.18);
     }
-    .btn.confirm:hover{background:#15803d}
-    .btn:disabled{opacity:.5; cursor:not-allowed}
+    .btn.confirm:hover{ background:#15803d; }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
 
     .error{
       margin: 10px 0 0;
@@ -187,127 +214,135 @@
       font-weight:800;
       font-size: 13px;
     }
+
+    @media (max-width: 620px){
+      .modal{ width: 100%; }
+      .chooser{ grid-template-columns: 1fr; }
+      .modal-foot{ flex-direction:column; }
+    }
   </style>
 </head>
 
-<body>
-<div class="overlay">
+<body class="admin-shell">
+  <!-- Trang admin phía sau (để blur giống ảnh 2) -->
+  <div class="app-shell">
+    <%@ include file="/view/layout/sidebar.jsp" %>
 
-  <div class="modal">
-    <div class="modal-head">
-      <h3 class="modal-title">Change Account Status</h3>
+    <main class="hms-main">
+      <!-- Có thể để trống cũng được, hoặc để breadcrumb cho giống thật -->
+      <div style="padding:24px;">
+        <!-- optional -->
+      </div>
+    </main>
+  </div>
 
-      <a class="xbtn" title="Close"
-         href="${pageContext.request.contextPath}/admin/customer-detail?id=${c.customerId}">
-        ✕
-      </a>
-    </div>
+  <!-- MODAL overlay -->
+  <div class="overlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title">Change Account Status</h3>
 
-    <div class="modal-body">
-      <!-- CUSTOMER CARD -->
-      <div class="card">
-        <div>
-          <div class="label">Customer</div>
-          <p class="name">${c.fullName}</p>
-          <div class="email">
+        <a class="xbtn" title="Close"
+           href="${pageContext.request.contextPath}/admin/customer-detail?id=${c.customerId}">
+          ×
+        </a>
+      </div>
+
+      <div class="modal-body">
+        <div class="card">
+          <div>
+            <div class="label">Customer</div>
+            <p class="name">${c.fullName}</p>
+            <div class="email">
+              <c:choose>
+                <c:when test="${not empty c.email}">
+                  <a href="mailto:${c.email}">${c.email}</a>
+                </c:when>
+                <c:otherwise>—</c:otherwise>
+              </c:choose>
+            </div>
+          </div>
+
+          <div>
             <c:choose>
-              <c:when test="${not empty c.email}">
-                <a href="mailto:${c.email}">${c.email}</a>
+              <c:when test="${c.accountStatus == 'ACTIVE'}">
+                <span class="pill">CURRENT: ACTIVE</span>
               </c:when>
-              <c:otherwise>—</c:otherwise>
+              <c:when test="${c.accountStatus == 'INACTIVE'}">
+                <span class="pill inactive">CURRENT: INACTIVE</span>
+              </c:when>
+              <c:otherwise>
+                <span class="pill noacc">CURRENT: NO ACCOUNT</span>
+              </c:otherwise>
             </c:choose>
           </div>
         </div>
 
-        <div>
-          <c:choose>
-            <c:when test="${c.accountStatus == 'ACTIVE'}">
-              <span class="pill">CURRENT: ACTIVE</span>
-            </c:when>
-            <c:when test="${c.accountStatus == 'INACTIVE'}">
-              <span class="pill inactive">CURRENT: INACTIVE</span>
-            </c:when>
-            <c:otherwise>
-              <span class="pill noacc">CURRENT: NO ACCOUNT</span>
-            </c:otherwise>
-          </c:choose>
+        <div class="section">
+          <h4>Set New Status</h4>
+
+          <form id="statusForm" method="post" action="${pageContext.request.contextPath}/admin/customer-status">
+            <input type="hidden" name="id" value="${c.customerId}"/>
+            <input type="hidden" id="statusInput" name="status"
+                   value="${c.accountStatus == 'INACTIVE' ? 'INACTIVE' : 'ACTIVE'}"/>
+
+            <div class="chooser">
+              <div class="opt" id="optActive" onclick="chooseStatus('ACTIVE')">
+                <div class="txt">
+                  <div class="icon">✓</div>
+                  <b>ACTIVE</b>
+                </div>
+              </div>
+
+              <div class="opt" id="optInactive" onclick="chooseStatus('INACTIVE')">
+                <div class="txt">
+                  <div class="icon">×</div>
+                  <b>INACTIVE</b>
+                </div>
+              </div>
+            </div>
+
+            <c:if test="${not empty error}">
+              <div class="error">${error}</div>
+            </c:if>
+
+            <script>
+              (function init(){
+                var current = document.getElementById("statusInput").value;
+                chooseStatus(current);
+
+                var hasAccount = ${c.userId != null ? "true" : "false"};
+                if(!hasAccount){
+                  document.getElementById("optActive").classList.add("muted");
+                  document.getElementById("optInactive").classList.add("muted");
+                  document.getElementById("optActive").onclick = null;
+                  document.getElementById("optInactive").onclick = null;
+                }
+              })();
+
+              function chooseStatus(val){
+                document.getElementById("statusInput").value = val;
+                document.getElementById("optActive").classList.toggle("selected", val === "ACTIVE");
+                document.getElementById("optInactive").classList.toggle("selected", val === "INACTIVE");
+              }
+            </script>
+          </form>
         </div>
       </div>
 
-      <div class="section">
-        <h4>Set New Status</h4>
+      <div class="modal-foot">
+        <a class="btn cancel"
+           href="${pageContext.request.contextPath}/admin/customer-detail?id=${c.customerId}">
+          Cancel
+        </a>
 
-        <form id="statusForm" method="post" action="${pageContext.request.contextPath}/admin/customer-status">
-          <input type="hidden" name="id" value="${c.customerId}"/>
-          <input type="hidden" id="statusInput" name="status" value="${c.accountStatus == 'INACTIVE' ? 'INACTIVE' : 'ACTIVE'}"/>
-
-          <div class="chooser">
-            <!-- ACTIVE -->
-            <div class="opt" id="optActive"
-                 data-value="ACTIVE"
-                 onclick="chooseStatus('ACTIVE')">
-              <div class="txt">
-                <div class="icon">✓</div>
-                <b>ACTIVE</b>
-              </div>
-            </div>
-
-            <!-- INACTIVE -->
-            <div class="opt" id="optInactive"
-                 data-value="INACTIVE"
-                 onclick="chooseStatus('INACTIVE')">
-              <div class="txt">
-                <div class="icon">✕</div>
-                <b>INACTIVE</b>
-              </div>
-            </div>
-          </div>
-
-          <c:if test="${not empty error}">
-            <div class="error">${error}</div>
-          </c:if>
-
-          <script>
-            // init selected based on current or default
-            (function init(){
-              var current = document.getElementById("statusInput").value;
-              chooseStatus(current);
-              // disable if no account (userId null)
-              var hasAccount = ${c.userId != null ? "true" : "false"};
-              if(!hasAccount){
-                document.getElementById("optActive").classList.add("muted");
-                document.getElementById("optInactive").classList.add("muted");
-                document.getElementById("optActive").onclick = null;
-                document.getElementById("optInactive").onclick = null;
-              }
-            })();
-
-            function chooseStatus(val){
-              document.getElementById("statusInput").value = val;
-              document.getElementById("optActive").classList.toggle("selected", val === "ACTIVE");
-              document.getElementById("optInactive").classList.toggle("selected", val === "INACTIVE");
-            }
-          </script>
-        </form>
+        <button class="btn confirm" type="submit" form="statusForm"
+                ${c.userId == null ? "disabled" : ""}>
+          Confirm Changes
+        </button>
       </div>
+
     </div>
-
-    <div class="modal-foot">
-      <a class="btn cancel"
-         href="${pageContext.request.contextPath}/admin/customer-detail?id=${c.customerId}">
-        Cancel
-      </a>
-
-      <button class="btn confirm"
-              type="submit"
-              form="statusForm"
-              ${c.userId == null ? "disabled" : ""}>
-        Confirm Changes
-      </button>
-    </div>
-
   </div>
-
-</div>
 </body>
 </html>
