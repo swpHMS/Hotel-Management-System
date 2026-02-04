@@ -267,7 +267,6 @@ body{
   color: var(--muted);
   text-align:center;
 }
-
 /* responsive */
 @media (max-width: 980px){
   .admin-main{padding: 24px 16px}

@@ -7,7 +7,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.List;
 import model.Role;
-import model.User;
+import model.UserProfile;
 
 @WebServlet(name = "StaffEditServlet", urlPatterns = {"/admin/staff/edit"})
 public class StaffEditServlet extends HttpServlet {
@@ -29,7 +29,7 @@ public class StaffEditServlet extends HttpServlet {
         AdminUserDAO dao = new AdminUserDAO();
 
         try {
-            User user = dao.getStaffByUserId(userId);
+            UserProfile user = dao.getStaffByUserId(userId);
             if (user == null) {
                 response.sendRedirect(request.getContextPath() + "/admin/staff");
                 return;
@@ -65,7 +65,7 @@ public class StaffEditServlet extends HttpServlet {
 
         try {
             // đảm bảo userId là staff (không phải CUSTOMER)
-            User user = dao.getStaffByUserId(userId);
+            UserProfile user = dao.getStaffByUserId(userId);
             if (user == null) {
                 response.sendRedirect(request.getContextPath() + "/admin/staff");
                 return;

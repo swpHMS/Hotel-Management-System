@@ -4,10 +4,11 @@ import context.DBContext;
 import java.sql.*;
 import java.util.*;
 import model.Role;
-import model.User;
+import model.UserProfile;
 
 public class AdminUserDAO {
 
+    
     public int countAllUsers() throws Exception {
         String sql = "SELECT COUNT(*) FROM dbo.users";
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
@@ -15,7 +16,7 @@ public class AdminUserDAO {
         }
     }
 
-    public List<User> getUsersPaged(int page, int pageSize) throws Exception {
+    public List<UserProfile> getUsersPaged(int page, int pageSize) throws Exception {
         int offset = (page - 1) * pageSize;
 
         String sql = """
@@ -24,11 +25,11 @@ public class AdminUserDAO {
                u.role_id, r.role_name
         FROM dbo.users u
         LEFT JOIN dbo.roles r ON r.role_id = u.role_id
-        ORDER BY u.user_id
+        ORDER BY u.user_id DESC
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """;
 
-        List<User> list = new ArrayList<>();
+        List<UserProfile> list = new ArrayList<>();
 
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -37,7 +38,7 @@ public class AdminUserDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    User u = new User();
+                    UserProfile u = new UserProfile();
                     u.setUserId(rs.getInt("user_id"));
                     u.setEmail(rs.getString("email"));
                     u.setStatus(rs.getInt("status"));
@@ -52,32 +53,37 @@ public class AdminUserDAO {
         return list;
     }
 
-    public List<Role> getAllStaffRoles() throws Exception {
-        List<Role> list = new ArrayList<>();
-        String sql = """
+    //lấy role để đổ vào dropdown "Role"
+    public List<Role> getAllRoles() throws Exception {
+    List<Role> list = new ArrayList<>();
+    String sql = """
         SELECT role_id, role_name
         FROM roles
-        WHERE role_name <> 'CUSTOMER'
         ORDER BY role_name
     """;
 
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+    try (Connection con = new DBContext().getConnection();
+         PreparedStatement ps = con.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
 
-            while (rs.next()) {
-                Role r = new Role();
-                r.setRoleId(rs.getInt("role_id"));
-                r.setRoleName(rs.getString("role_name"));
-                list.add(r);
-            }
+        while (rs.next()) {
+            Role r = new Role();
+            r.setRoleId(rs.getInt("role_id"));
+            r.setRoleName(rs.getString("role_name"));
+            list.add(r);
         }
-        return list;
     }
+    return list;
+}
 
-    public List<User> getStaffList(Integer roleId, Integer status, int page, int pageSize) throws Exception {
-        List<User> list = new ArrayList<>();
-        int offset = (page - 1) * pageSize;
+    public List<UserProfile> getStaffList(Integer roleId, Integer status, String keyword, int page, int pageSize) throws Exception {
+    List<UserProfile> list = new ArrayList<>();
+    int offset = (page - 1) * pageSize;
 
-        String sql = """
+    boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+
+    StringBuilder sql = new StringBuilder();
+    sql.append("""
         SELECT 
             u.user_id,
             s.full_name,
@@ -87,78 +93,78 @@ public class AdminUserDAO {
         FROM users u
         JOIN roles r ON r.role_id = u.role_id
         LEFT JOIN staff s ON s.user_id = u.user_id
-        WHERE r.role_name <> 'CUSTOMER'
-    """;
+        WHERE r.role_name IN ('MANAGER','RECEPTIONIST','STAFF')
+    """);
 
-        if (roleId != null) {
-            sql += " AND u.role_id = ?";
-        }
-        if (status != null) {
-            sql += " AND u.status = ?";
-        }
+    if (roleId != null) sql.append("\n AND u.role_id = ? ");
+    if (status != null) sql.append("\n AND u.status = ? ");
 
-        sql += " ORDER BY u.user_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
-
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-
-            int idx = 1;
-            if (roleId != null) {
-                ps.setInt(idx++, roleId);
-            }
-            if (status != null) {
-                ps.setInt(idx++, status);
-            }
-
-            ps.setInt(idx++, offset);
-            ps.setInt(idx, pageSize);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    User u = new User();
-                    u.setUserId(rs.getInt("user_id"));
-                    u.setFullName(rs.getString("full_name")); // ✅ QUAN TRỌNG
-                    u.setEmail(rs.getString("email"));
-                    u.setStatus(rs.getInt("status"));
-                    u.setRoleName(rs.getString("role_name"));
-                    list.add(u);
-                }
-            }
-        }
-        return list;
+    // search theo NAME בלבד
+    if (hasKeyword) {
+        sql.append("\n AND s.full_name COLLATE Vietnamese_100_CI_AI LIKE ? ");
     }
 
-    public int countStaff(Integer roleId, Integer status) throws Exception {
-        String sql = """
+    sql.append("\n ORDER BY u.user_id DESC ");
+    sql.append("\n OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+
+    try (Connection con = new DBContext().getConnection();
+         PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+        int idx = 1;
+        if (roleId != null) ps.setInt(idx++, roleId);
+        if (status != null) ps.setInt(idx++, status);
+        if (hasKeyword) ps.setString(idx++, "%" + keyword.trim() + "%");
+
+        ps.setInt(idx++, offset);
+        ps.setInt(idx, pageSize);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                UserProfile u = new UserProfile();
+                u.setUserId(rs.getInt("user_id"));
+                u.setFullName(rs.getString("full_name"));
+                u.setEmail(rs.getString("email"));
+                u.setStatus(rs.getInt("status"));
+                u.setRoleName(rs.getString("role_name"));
+                list.add(u);
+            }
+        }
+    }
+    return list;
+}
+
+    public int countStaff(Integer roleId, Integer status, String keyword) throws Exception {
+    boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+
+    StringBuilder sql = new StringBuilder();
+    sql.append("""
         SELECT COUNT(*)
         FROM users u
         JOIN roles r ON u.role_id = r.role_id
-        WHERE r.role_name <> 'CUSTOMER'
-    """;
+        LEFT JOIN staff s ON s.user_id = u.user_id
+        WHERE r.role_name IN ('MANAGER','RECEPTIONIST','STAFF')
+    """);
 
-        if (roleId != null) {
-            sql += " AND u.role_id = ?";
-        }
-        if (status != null) {
-            sql += " AND u.status = ?";
-        }
+    if (roleId != null) sql.append("\n AND u.role_id = ? ");
+    if (status != null) sql.append("\n AND u.status = ? ");
+    if (hasKeyword) sql.append("\n AND s.full_name COLLATE Vietnamese_100_CI_AI LIKE ? ");
 
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+    try (Connection con = new DBContext().getConnection();
+         PreparedStatement ps = con.prepareStatement(sql.toString())) {
 
-            int idx = 1;
-            if (roleId != null) {
-                ps.setInt(idx++, roleId);
-            }
-            if (status != null) {
-                ps.setInt(idx++, status);
-            }
+        int idx = 1;
+        if (roleId != null) ps.setInt(idx++, roleId);
+        if (status != null) ps.setInt(idx++, status);
+        if (hasKeyword) ps.setString(idx++, "%" + keyword.trim() + "%");
 
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
-            }
+        try (ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
         }
     }
+}
 
-    public User getStaffByUserId(int userId) throws Exception {
+    //detail staff
+    public UserProfile getStaffByUserId(int userId) throws Exception {
         String sql = """
         SELECT u.user_id, u.email, u.status, u.auth_provider, u.role_id,
                r.role_name,
@@ -179,7 +185,7 @@ public class AdminUserDAO {
                     return null;
                 }
 
-                User u = new User();
+                UserProfile u = new UserProfile();
                 u.setUserId(rs.getInt("user_id"));
                 u.setEmail(rs.getString("email"));
                 u.setStatus(rs.getInt("status"));
@@ -194,27 +200,10 @@ public class AdminUserDAO {
         }
     }
 
-    public List<Role> getAllNonCustomerRoles() throws Exception {
-        List<Role> list = new ArrayList<>();
-        String sql = """
-        SELECT role_id, role_name
-        FROM roles
-        WHERE role_name <> 'CUSTOMER'
-        ORDER BY role_name
-    """;
-
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                Role r = new Role();
-                r.setRoleId(rs.getInt("role_id"));
-                r.setRoleName(rs.getString("role_name"));
-                list.add(r);
-            }
-        }
-        return list;
-    }
-
+    
+    //dùng cho crateStaff+ Staff Edit
+    //lấy role ko phải Customer
+   
     public boolean updateUserRoleStatus(int userId, int roleId, int status) throws Exception {
         String sql = """
         UPDATE users
@@ -231,6 +220,79 @@ public class AdminUserDAO {
             return ps.executeUpdate() > 0;
         }
     }
+
+    // ======================
+// CHECK DUPLICATE STAFF
+// ======================
+public boolean emailExists(String email) throws Exception {
+    String sql = "SELECT 1 FROM dbo.users WHERE email = ?";
+    try (Connection con = new DBContext().getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+        ps.setString(1, email);
+        try (ResultSet rs = ps.executeQuery()) {
+            return rs.next();
+        }
+    }
+}
+
+public boolean identityExists(String identityNumber) throws Exception {
+    String sql = "SELECT 1 FROM dbo.staff WHERE identity_number = ?";
+    try (Connection con = new DBContext().getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+        ps.setString(1, identityNumber);
+        try (ResultSet rs = ps.executeQuery()) {
+            return rs.next();
+        }
+    }
+}
+
+public boolean phoneExistsInStaff(String phone) throws Exception {
+    String sql = "SELECT 1 FROM staff WHERE phone = ?";
+    try (Connection con = new DBContext().getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setString(1, phone);
+        try (ResultSet rs = ps.executeQuery()) {
+            return rs.next();
+        }
+    }
+}
+
+public boolean cccdExistsInStaff(String identityNumber) throws Exception {
+    String sql = "SELECT 1 FROM staff WHERE identity_number = ?";
+    try (Connection con = new DBContext().getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        ps.setString(1, identityNumber);
+        try (ResultSet rs = ps.executeQuery()) {
+            return rs.next();
+        }
+    }
+}
+
+
+public List<Role> getAllNonCustomerRoles() throws Exception {
+    List<Role> list = new ArrayList<>();
+    String sql = """
+        SELECT role_id, role_name
+        FROM roles
+        WHERE role_name IN ('MANAGER', 'RECEPTIONIST', 'STAFF')
+        ORDER BY role_name
+    """;
+
+    try (Connection con = new DBContext().getConnection();
+         PreparedStatement ps = con.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+
+        while (rs.next()) {
+            Role r = new Role();
+            r.setRoleId(rs.getInt("role_id"));
+            r.setRoleName(rs.getString("role_name"));
+            list.add(r);
+        }
+    }
+    return list;
+}
 
     public int createStaffAccount(
             String email,

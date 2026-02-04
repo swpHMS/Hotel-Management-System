@@ -1,7 +1,7 @@
 package controller.admin.customer;
 
 import dal.AdminCustomerDAO;
-import model.Customer;
+import model.CustomerProfile;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -30,7 +30,7 @@ public class CustomerListServlet extends HttpServlet {
             }
 
             AdminCustomerDAO dao = new AdminCustomerDAO();
-            List<Customer> customers = dao.searchCustomers(q, gender, status, page, size);
+            List<CustomerProfile> customers = dao.searchCustomers(q, gender, status, page, size);
             int total = dao.countCustomers(q, gender, status);
             int totalPages = (int) Math.ceil((double) total / size);
 

@@ -1,6 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
 <%
+  String userName = (String) session.getAttribute("adminName");
+  if (userName == null) userName = "Administrator";
+
   String active = (String) request.getAttribute("active");
   if (active == null) active = "";
 %>
@@ -24,7 +27,7 @@
     </a>
     <a class="hms-nav__item <%= "staff_create".equals(active) ? "is-active" : "" %>"
        href="${pageContext.request.contextPath}/admin/staff/create">
-      <span class="hms-nav__icon">➕</span><span>Create Staff</span>
+      <span class="hms-nav__icon">➕</span><span>Create Staff Account</span>
     </a>
 
     <div class="hms-nav__section">Customer Management</div>
@@ -40,8 +43,45 @@
     </a>
   </nav>
 
-  <div class="hms-sidebar__footer">
-    <div class="hms-small">Database: <b>Hotel_Management_System</b></div>
-    <div class="hms-small">Tomcat 10 • Servlet + JSP</div>
+  <div class="hms-sidebar-user">
+    <div class="hms-user">
+      <div class="hms-user__avatar">AD</div>
+      <div class="hms-user__meta">
+        <div class="hms-user__name"><%= userName %></div>
+        <div class="hms-user__role">ADMIN</div>
+      </div>
+
+      <div class="hms-user__dropdown">
+        <a class="hms-dd__item" href="${pageContext.request.contextPath}/admin/profile">Profile</a>
+        <div class="hms-dd__divider"></div>
+        <a class="hms-dd__item is-danger" href="${pageContext.request.contextPath}/logout">Logout</a>
+      </div>
+    </div>
   </div>
+      
+      <script>
+  (function () {
+    const user = document.querySelector('.hms-sidebar .hms-user');
+    if (!user) return;
+
+    // click vào user card để toggle
+    user.addEventListener('click', function (e) {
+      // nếu click vào link trong dropdown thì cho đi luôn
+      if (e.target.closest('a')) return;
+      e.stopPropagation();
+      user.classList.toggle('is-open');
+    });
+
+    // click ra ngoài đóng dropdown
+    document.addEventListener('click', function () {
+      user.classList.remove('is-open');
+    });
+
+    // bấm ESC để đóng
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') user.classList.remove('is-open');
+    });
+  })();
+</script>
+
 </aside>

@@ -5,7 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
-import model.User;
+import model.UserProfile;
 
 @WebServlet(name = "StaffDetailServlet", urlPatterns = {"/admin/staff/detail"})
 public class StaffDetailServlet extends HttpServlet {
@@ -27,7 +27,7 @@ public class StaffDetailServlet extends HttpServlet {
         AdminUserDAO dao = new AdminUserDAO();
 
         try {
-            User user = dao.getStaffByUserId(userId);
+            UserProfile user = dao.getStaffByUserId(userId);
             if (user == null) {
                 response.sendRedirect(request.getContextPath() + "/admin/staff");
                 return;

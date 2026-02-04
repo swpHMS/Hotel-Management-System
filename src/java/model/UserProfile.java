@@ -1,11 +1,11 @@
 package model;
 
-public class User {
+public class UserProfile {
 
     private int userId;
     private String email;
     private int status;        // 1 = ACTIVE, 0 = INACTIVE
-    private int authProvider;  // 1 = LOCAL, 2 = GOOGLE (theo dữ liệu bạn seed)
+    private int authProvider;  // 1 = LOCAL, 2 = GOOGLE 
     private String googleSub;  // nullable
     private int roleId;
     private String roleName;   // lấy từ bảng roles nếu JOIN
@@ -14,7 +14,7 @@ public class User {
     private String fullName;
     private String phone;
     
-    public User() {
+    public UserProfile() {
     }
 
     // getters/setters
@@ -90,7 +90,7 @@ public class User {
         this.phone = phone;
     }
 
-    // helper text
+   
     public String getStatusText() {
         return status == 1 ? "ACTIVE" : "INACTIVE";
     }

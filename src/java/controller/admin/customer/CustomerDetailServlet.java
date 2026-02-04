@@ -1,7 +1,7 @@
 package controller.admin.customer;
 
 import dal.AdminCustomerDAO;
-import model.Customer;
+import model.CustomerProfile;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -25,7 +25,7 @@ public class CustomerDetailServlet extends HttpServlet {
             int id = Integer.parseInt(idStr);
 
             AdminCustomerDAO dao = new AdminCustomerDAO();
-            Customer customer = dao.getCustomerById(id);
+            CustomerProfile customer = dao.getCustomerById(id);
 
             if (customer == null) {
                 req.setAttribute("error", "Customer not found");
