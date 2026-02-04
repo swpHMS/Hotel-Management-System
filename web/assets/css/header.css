@@ -1,0 +1,250 @@
+:root{
+  --hms-h: 72px;
+  --bg1:#071a2b;
+  --bg2:#0a2440;
+  --line:rgba(255,255,255,.08);
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.65);
+  --gold:#d8b15b;
+}
+
+.hms-header{
+  position:fixed;
+  top:0; left:0; right:0;
+  height:var(--hms-h);
+  z-index:1000;
+
+  /* ✅ transition mượt */
+  transition:
+    background 260ms ease,
+    box-shadow 260ms ease,
+    border-color 260ms ease,
+    backdrop-filter 260ms ease;
+}
+
+.hms-headerSpacer{ height:var(--hms-h); }
+
+.hms-inner{
+  max-width:1200px;
+  height:100%;
+  margin:0 auto;
+  padding:0 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+
+.hms-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  text-decoration:none;
+  color:var(--text);
+  min-width:260px;
+}
+.hms-logo{
+  width:42px; height:42px;
+  display:grid; place-items:center;
+  border-radius:999px;
+  border:2px solid rgba(216,177,91,.35);
+  color:var(--gold);
+  font-weight:800;
+  letter-spacing:.5px;
+  font-size:13px;
+}
+.hms-brand-text{
+  font-weight:600;
+  letter-spacing:.5px;
+  opacity:.95;
+  white-space:nowrap;
+}
+
+.hms-nav{
+  display:flex;
+  align-items:center;
+  gap:22px;
+}
+.hms-link{
+  color:var(--muted);
+  text-decoration:none;
+  font-weight:600;
+  letter-spacing:.3px;
+  padding:10px 6px;
+  border-radius:10px;
+}
+.hms-link:hover{
+  color:var(--text);
+  background:rgba(255,255,255,.06);
+}
+
+/* active nav (JS sẽ add class) */
+.hms-link.is-active{
+  color:var(--text);
+  background:rgba(255,255,255,.10);
+}
+
+.hms-user{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  position:relative;
+  min-width:260px;
+  justify-content:flex-end;
+}
+.hms-username{
+  color:var(--text);
+  font-weight:700;
+  letter-spacing:.2px;
+}
+.hms-role{
+  color:var(--gold);
+  font-weight:800;
+  letter-spacing:.8px;
+  font-size:12px;
+  text-transform:uppercase;
+  opacity:.95;
+  margin-right:6px;
+}
+
+.hms-avatarBtn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:transparent;
+  border:0;
+  cursor:pointer;
+  padding:6px 8px;
+  border-radius:12px;
+}
+.hms-avatarBtn:hover{ background:rgba(255,255,255,.06); }
+
+.hms-avatar{
+  width:38px; height:38px;
+  border-radius:999px;
+  display:grid; place-items:center;
+  font-weight:900;
+  color:#1b1406;
+  background:var(--gold);
+}
+.hms-caret{ color:var(--muted); font-size:14px; }
+
+.hms-menu{
+  position:absolute;
+  right:0;
+  top:calc(100% + 10px);
+  width:240px;
+  background:#0b1e32;
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:0 16px 40px rgba(0,0,0,.35);
+  padding:8px;
+  display:none;
+}
+.hms-menu.open{ display:block; }
+
+.hms-item{
+  display:block;
+  width:100%;
+  text-align:left;
+  padding:10px 10px;
+  border-radius:10px;
+  color:var(--text);
+  text-decoration:none;
+  font-weight:600;
+  background:transparent;
+  border:0;
+  cursor:pointer;
+}
+.hms-item:hover{ background:rgba(255,255,255,.06); }
+
+.hms-divider{
+  height:1px;
+  background:var(--line);
+  margin:6px 4px;
+}
+
+
+.hms-danger{ color:#ffb4b4; }
+.hms-danger:hover{ background:rgba(220,38,38,.16); }
+
+.hms-logoutForm{ margin:0; }
+
+/* ===== HEADER STATE ===== */
+
+/* Trạng thái mặc định (ở trên cùng) */
+.hms-header.is-top{
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* chữ & icon khi nền trắng */
+.hms-header.is-top .hms-brand-text,
+.hms-header.is-top .hms-link,
+.hms-header.is-top .hms-username,
+.hms-header.is-top .hms-caret{
+  color: #9a6a10; /* gold đậm */
+}
+
+.hms-header.is-top .hms-link:hover{
+  background: rgba(154,106,16,.08);
+}
+
+/* avatar giữ nguyên gold */
+.hms-header.is-top .hms-avatar{
+  background: var(--gold);
+  color:#1b1406;
+}
+
+/* ===== Khi header che nội dung (sticky) ===== */
+.hms-header.is-sticky{
+  background: linear-gradient(90deg, var(--bg1), var(--bg2));
+  border-bottom: 1px solid var(--line);
+}
+
+.hms-header.is-sticky .hms-brand-text,
+.hms-header.is-sticky .hms-link,
+.hms-header.is-sticky .hms-username,
+.hms-header.is-sticky .hms-caret{
+  color: var(--text);
+}
+/* ===== STATE: TOP (nền trắng) ===== */
+.hms-header.is-top{
+  background:#ffffff;
+  border-bottom:1px solid #e5e7eb;
+  box-shadow:none;
+  backdrop-filter: none;
+}
+
+/* chữ trên nền trắng */
+.hms-header.is-top .hms-brand-text,
+.hms-header.is-top .hms-link,
+.hms-header.is-top .hms-username,
+.hms-header.is-top .hms-caret{
+  color:#9a6a10;
+  transition: color 220ms ease; /* ✅ chữ đổi mượt */
+}
+.hms-header.is-top .hms-link:hover{
+  background: rgba(154,106,16,.08);
+}
+
+/* ===== STATE: STICKY (gradient + blur + shadow) ===== */
+.hms-header.is-sticky{
+  background: linear-gradient(90deg, var(--bg1), var(--bg2));
+  border-bottom:1px solid var(--line);
+
+  /* ✅ tạo cảm giác “nổi” khi đè lên content */
+  box-shadow: 0 14px 40px rgba(0,0,0,.22);
+
+  /* ✅ blur nhẹ (nếu browser hỗ trợ) */
+  backdrop-filter: blur(8px);
+}
+
+/* chữ trên nền đậm */
+.hms-header.is-sticky .hms-brand-text,
+.hms-header.is-sticky .hms-link,
+.hms-header.is-sticky .hms-username,
+.hms-header.is-sticky .hms-caret{
+  color: var(--text);
+  transition: color 220ms ease; /* ✅ chữ đổi mượt */
+}
