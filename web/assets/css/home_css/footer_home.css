@@ -1,0 +1,151 @@
+/* =========================
+   FOOTER – Regal Quintet
+   ========================= */
+
+/* fallback nếu :root ở file khác chưa load */
+:root{
+  --gold:#c8a24a;
+}
+
+/* đảm bảo footer không bị file khác phá */
+.footer-rq, .footer-rq *{
+  box-sizing:border-box;
+}
+
+.footer-rq{
+  padding:64px 0;
+  background:
+    radial-gradient(900px 520px at 18% 35%, rgba(200,162,74,.08), transparent 60%),
+    radial-gradient(800px 420px at 85% 0%, rgba(255,255,255,.05), transparent 55%),
+    linear-gradient(180deg, #061a33 0%, #041327 100%);
+  border-top:1px solid rgba(255,255,255,.06);
+  color:rgba(233,238,246,.88);
+}
+
+/* nếu container ở file body chưa có thì footer vẫn đẹp */
+.footer-rq .container{
+  width:min(1200px, calc(100% - 48px));
+  margin:0 auto;
+}
+
+.footer-rq .rq-wrap{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:72px;
+  align-items:start;
+}
+
+/* ===== BRAND ===== */
+.rq-brand{
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+}
+
+.rq-mark{
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.02);
+}
+
+.rq-mark svg{
+  width:26px;
+  height:26px;
+  stroke:var(--gold);
+  stroke-width:1.6;
+  fill:none;
+}
+
+.rq-brandname{
+  margin:0;
+  font-size:13px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:#fff;
+  font-weight:800;
+  line-height:1.1;
+}
+
+.rq-brandsub{
+  margin-top:4px;
+  font-size:10px;
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color:rgba(233,238,246,.55);
+  font-weight:700;
+}
+
+.rq-desc{
+  margin:14px 0 0 60px;
+  max-width:520px;
+  color:rgba(233,238,246,.55);
+  font-size:12.5px;
+  line-height:1.85;
+}
+
+/* ===== RIGHT INFO ===== */
+.rq-right-title{
+  margin:2px 0 18px 0;
+  font-size:10px;
+  letter-spacing:.35em;
+  text-transform:uppercase;
+  color:rgba(200,162,74,.90);
+  font-weight:800;
+}
+
+.rq-info{
+  list-style:none;
+  padding:0;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+.rq-item{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  color:rgba(233,238,246,.78);
+  font-size:12.5px;
+  line-height:1.7;
+}
+
+.rq-ico{
+  width:18px;
+  height:18px;
+  margin-top:2px;
+  flex:0 0 18px;
+}
+
+.rq-ico svg{
+  width:18px;
+  height:18px;
+  stroke:var(--gold);
+  stroke-width:1.8;
+  fill:none;
+}
+
+.rq-link{
+  color:rgba(233,238,246,.82);
+  text-decoration:none;
+}
+
+.rq-link:hover{
+  color:#fff;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1000px){
+  .footer-rq .rq-wrap{
+    grid-template-columns:1fr;
+    gap:34px;
+  }
+  .rq-desc{
+    margin-left:0;
+  }
+}
