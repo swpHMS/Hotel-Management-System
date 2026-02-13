@@ -4,7 +4,16 @@ import java.sql.Date;
 
 public class UserProfile {
 
+    private int staffId;
     private int userId;
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
     private String email;
     private int status;        // 1 = ACTIVE, 0 = INACTIVE
     private int authProvider;  // 1 = LOCAL, 2 = GOOGLE 
@@ -15,13 +24,11 @@ public class UserProfile {
     // Optional (nếu JOIN sang staff)
     private String fullName;
     private String phone;
-    
-    
-    
+
     private int gender;
-private java.sql.Date dateOfBirth;
-private String identityNumber;
-private String residenceAddress;
+    private java.sql.Date dateOfBirth;
+    private String identityNumber;
+    private String residenceAddress;
 
     public int getGender() {
         return gender;
@@ -59,12 +66,12 @@ private String residenceAddress;
     }
 
     // getters/setters
-    public int getUserId() {
-        return userId;
+    public int getStaffId() {
+        return staffId;
     }
 
-    public void setUserId(int userId) {
-        this.userId = userId;
+    public void setStaffId(int staffId) {
+        this.staffId = staffId;
     }
 
     public String getEmail() {
@@ -131,7 +138,6 @@ private String residenceAddress;
         this.phone = phone;
     }
 
-   
     public String getStatusText() {
         return status == 1 ? "ACTIVE" : "INACTIVE";
     }

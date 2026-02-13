@@ -11,6 +11,16 @@
         <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
 
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+        <style>
+            .hms-title {
+                font-size: 40px !important;       /* Tăng từ 28px lên 40px */
+                font-weight: 700 !important;      /* Giảm độ đậm từ 900 xuống 700 cho thanh thoát */
+                letter-spacing: -0.5px !important; /* Dồn chữ nhẹ */
+                color: #0f172a !important;        /* Màu xanh đen đậm chuẩn */
+                margin-bottom: 8px !important;    /* Căn lề dưới */
+                line-height: 1.1 !important;
+            }
+        </style>
     </head>
 
     <body>
@@ -25,10 +35,8 @@
                         <div class="page-header-content">
 
                             <h1 class="hms-title">
-                                <i class="fas fa-user-plus title-icon"></i>
                                 Create Staff Account
                             </h1>
-                            <p class="hms-subtitle">Create a new staff user and staff profile in the system.</p>
                         </div>
 
                         <a class="btn btn-light btn-with-icon" href="${pageContext.request.contextPath}/admin/staff">
@@ -68,9 +76,7 @@
                                     <i class="fas fa-key"></i>
                                 </div>
                                 <div>
-                                    <h2 class="hms-h2">Account Information</h2>
-                                    <p class="section-description">Login credentials and role assignment</p>
-                                </div>
+                                    <h2 class="hms-h2">Account Information</h2>                                </div>
                             </div>
 
                             <div class="hms-form-grid">
@@ -117,17 +123,23 @@
                                         Password *
                                     </label>
                                     <div class="password-wrapper">
-                                        <input type="password" name="password" id="password" required minlength="6"
+                                        <input type="password" name="password" id="password"
+                                               required
+                                               minlength="8"
+                                               pattern="^(?=.*[A-Z])(?=.*\d)\S{8,}$"
+                                               title="At least 8 characters, 1 uppercase letter, 1 number, no spaces"
                                                placeholder="••••••••"
                                                class="${not empty errors.password ? 'is-invalid' : ''}">
+
                                         <button type="button" class="toggle-password" onclick="togglePassword('password')">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     </div>
                                     <div class="field-hint">
                                         <i class="fas fa-info-circle"></i>
-                                        Minimum 6 characters
+                                        At least 8 characters, 1 uppercase letter, 1 number, no spaces
                                     </div>
+
                                     <c:if test="${not empty errors.password}">
                                         <div class="field-error">
                                             <i class="fas fa-exclamation-triangle"></i>
@@ -142,7 +154,7 @@
                                         Confirm Password *
                                     </label>
                                     <div class="password-wrapper">
-                                        <input type="password" name="confirmPassword" id="confirmPassword" required minlength="6"
+                                        <input type="password" name="confirmPassword" id="confirmPassword" required minlength="8"
                                                placeholder="••••••••"
                                                class="${not empty errors.confirmPassword ? 'is-invalid' : ''}">
                                         <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword')">
@@ -177,7 +189,6 @@
                         <hr class="hms-hr"/>
 
                         <!-- Staff Profile Section -->
-                        <!-- Staff Profile Section (FIX layout đồng bộ) -->
                         <div class="form-section">
                             <div class="section-header">
                                 <div class="section-icon">
@@ -185,7 +196,6 @@
                                 </div>
                                 <div>
                                     <h2 class="hms-h2">Staff Profile</h2>
-                                    <p class="section-description">Personal details and identity information</p>
                                 </div>
                             </div>
 
@@ -266,11 +276,9 @@
 
                         <div class="hms-actions">
                             <a class="btn btn-light btn-with-icon" href="${pageContext.request.contextPath}/admin/staff">
-                                <i class="fas fa-times"></i>
                                 Cancel
                             </a>
                             <button class="btn btn-primary btn-with-icon" type="submit">
-                                <i class="fas fa-save"></i>
                                 Create Staff Account
                             </button>
                         </div>
@@ -300,4 +308,4 @@
         </script>
     </body>
 </html>
-```__
+

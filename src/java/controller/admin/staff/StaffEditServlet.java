@@ -13,7 +13,11 @@ import model.UserProfile;
 public class StaffEditServlet extends HttpServlet {
 
     private int parseIntOrDefault(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return def; }
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     @Override
@@ -72,9 +76,7 @@ public class StaffEditServlet extends HttpServlet {
             }
 
             dao.updateUserRoleStatus(userId, roleId, status);
-
-            response.sendRedirect(request.getContextPath() + "/admin/staff/detail?id=" + userId);
-
+            response.sendRedirect(request.getContextPath() + "/admin/staff");
         } catch (Exception ex) {
             throw new ServletException(ex);
         }

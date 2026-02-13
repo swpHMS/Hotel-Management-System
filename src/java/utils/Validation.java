@@ -83,5 +83,12 @@ public class Validation {
 
     return null;
 }
+    public static boolean isValidFullNameNoNumber(String s){
+    if (s == null) return false;
+    // cho phép chữ unicode + khoảng trắng + . ' -
+    if (s.matches(".*\\d.*")) return false; // cấm số
+    return s.matches("^[\\p{L}]+([\\p{L}\\s.'-]*[\\p{L}])?$");
+}
+
 
 }

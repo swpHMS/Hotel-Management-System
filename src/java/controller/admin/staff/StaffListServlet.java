@@ -23,8 +23,10 @@ public class StaffListServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        final int pageSize = 10;
+        int pageSize = parseIntOrDefault(request.getParameter("size"), 10);
+        if (pageSize <= 0) {
+            pageSize = 10;
+        }
 
         int page = parseIntOrDefault(request.getParameter("page"), 1);
         if (page < 1) {

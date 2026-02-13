@@ -42,20 +42,19 @@ a{
 .app-shell{
     display:flex;
     min-height:100vh;
-    overflow: hidden;
+    overflow: visible;
 }
 .hms-main{
     flex: 1;
     height: 100vh;
-    overflow-y: auto;      /* scroll nằm ở đây */
+    overflow-y: auto;      
     overflow-x: hidden;
 }
 
-/* ====== Sidebar ====== */
 .hms-sidebar{
-    width: 280px;          /* hoặc size bạn muốn */
+    width: 280px;          
     height: 100vh;
-    position: sticky;      /* hoặc fixed (xem phần dưới) */
+    position: sticky;      
     top: 0;
     flex-shrink: 0;
 
@@ -84,7 +83,7 @@ a{
 }
 
 .hms-nav{
-    flex: 1;              /* đẩy user xuống đáy */
+    flex: 1;              
     overflow-y: auto;
 }
 
@@ -274,7 +273,8 @@ a{
 .hms-page__top{
     display:flex;
     justify-content:space-between;
-    align-items:flex-end;
+    /*align-items:flex-end;*/
+    align-items:center;
     gap: 16px;
     margin-bottom: 18px;
 }
@@ -293,10 +293,11 @@ a{
 }
 
 .hms-title{
-    margin: 6px 0 2px;
-    font-size: 28px;
-    font-weight: 900;
-    letter-spacing: -0.2px;
+    margin: 0 0 22px;
+    font-size: 40px;      /* Mới: 40px */
+    font-weight: 700;     /* Giảm nhẹ độ đậm nếu muốn */
+    letter-spacing: -0.5px;
+    color: #0f172a;
 }
 .hms-subtitle{
     margin: 0;
@@ -460,7 +461,8 @@ a{
 }
 
 .cell-title{
-    font-weight: 900;
+    font-weight: 500;
+    color: #212529;
 }
 .cell-sub{
     font-size: 12px;
@@ -470,8 +472,8 @@ a{
 }
 .muted{
     color: var(--muted);
-    font-weight: 800;
-    font-size: 12px;
+    font-weight: 400;
+    font-size: 14px;
 }
 
 .tag{
@@ -633,6 +635,12 @@ hr{
     gap:8px;
     flex-wrap:wrap;
     justify-content:flex-end;
+}
+
+.top-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;          /* khoảng cách 2 nút */
 }
 
 .btn{
@@ -1129,4 +1137,20 @@ hr{
   .status-note{
     max-width: 100%;
   }
+}
+/* ===== FIX SIDEBAR DROPDOWN ===== */
+.app-shell{ overflow: visible !important; }
+
+.hms-user__dropdown{
+  display:none !important;
+  z-index:9999;
+}
+
+.hms-user.is-open .hms-user__dropdown{
+  display:block !important;
+}
+
+/* tắt hover */
+.hms-user:hover .hms-user__dropdown{
+  display:none !important;
 }

@@ -10,43 +10,54 @@
         <title>HMS Admin - Dashboard</title>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
         <style>
-  .donut-wrap{
-    position: relative;
-    width: 320px;
-    height: 260px;
-  }
-  #userStatusDonut{
-    width: 100% !important;
-    height: 100% !important;
-  }
-  .donut-center{
-    position:absolute;
-    inset:0;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    pointer-events:none;
-    padding: 0 18px;
-    text-align:center;
-  }
-  .donut-big{
-    font-weight:800;
-    line-height:1.05;
-    font-size: clamp(20px, 4vw, 36px);
-    white-space:nowrap;
-    max-width:100%;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .donut-small{
-    margin-top: 6px;
-    font-weight:700;
-    letter-spacing:.12em;
-    font-size: 12px;
-    color:#64748b;
-  }
-</style>
+            .donut-wrap{
+                position: relative;
+                width: 320px;
+                height: 260px;
+            }
+            #userStatusDonut{
+                width: 100% !important;
+                height: 100% !important;
+            }
+            .donut-center{
+                position:absolute;
+                inset:0;
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                justify-content:center;
+                pointer-events:none;
+                padding: 0 18px;
+                text-align:center;
+            }
+            .donut-big{
+                font-weight:800;
+                line-height:1.05;
+                font-size: clamp(20px, 4vw, 36px);
+                white-space:nowrap;
+                max-width:100%;
+                overflow:hidden;
+                text-overflow:ellipsis;
+            }
+            .donut-small{
+                margin-top: 6px;
+                font-weight:700;
+                letter-spacing:.12em;
+                font-size: 12px;
+                color:#64748b;
+            }
+            /* Ghi đè tiêu đề Dashboard cho giống Customer List */
+            .hms-title {
+                font-size: 40px !important;       /* Tăng từ 28px lên 40px */
+                font-weight: 700 !important;      /* Giảm độ đậm từ 900 xuống 700 cho thanh thoát */
+                letter-spacing: -0.5px !important; /* Dồn chữ nhẹ */
+                color: #0f172a !important;        /* Màu xanh đen đậm chuẩn */
+                margin-bottom: 8px !important;    /* Căn lề dưới */
+                line-height: 1.1 !important;
+            }
+
+
+        </style>
 
     </head>
 
@@ -59,10 +70,7 @@
                 <main class="hms-page">
                     <div class="hms-page__top">
                         <div>
-
                             <h1 class="hms-title">Dashboard</h1>
-                            <p class="hms-subtitle">Overview of system users, customers, and quick access controls.</p>
-
                             <c:if test="${not empty error}">
                                 <div class="hms-alert hms-alert--danger">
                                     <b>Error:</b> ${error}
@@ -80,10 +88,10 @@
                         <div class="hms-card">
                             <div class="hms-card__label">Total Users</div>
                             <div class="hms-card__value">${totalUsers}</div>
-                            <div class="hms-card__meta">
-                                <span class="pill green">${activeUsers} Active</span>
-                                <span class="pill gray">${inactiveUsers} Inactive</span>
-                            </div>
+                            <!--                            <div class="hms-card__meta">
+                                                            <span class="pill green">${activeUsers} Active</span>
+                                                            <span class="pill gray">${inactiveUsers} Inactive</span>
+                                                        </div>-->
                         </div>
 
                         <div class="hms-card">
@@ -92,11 +100,11 @@
                             <div class="hms-card__meta"></div>
                         </div>
 
-                        <div class="hms-card">
-                            <div class="hms-card__label">Avg. Engagement</div>
-                            <div class="hms-card__value">${engagement}%</div>
-                            <div class="hms-card__hint">System-wide active accounts (Users only)</div>
-                        </div>
+                        <!--                        <div class="hms-card">
+                                                    <div class="hms-card__label">Avg. Engagement</div>
+                                                    <div class="hms-card__value">${engagement}%</div>
+                                                    <div class="hms-card__hint">System-wide active accounts (Users only)</div>
+                                                </div>-->
                     </div>
 
                     <!-- Donut: User Status Overview (under KPI cards) -->
@@ -119,39 +127,35 @@
                         <div class="status-body">
                             <div class="status-left">
                                 <div class="donut-wrap">
-                                <canvas id="userStatusDonut"></canvas>
-                                <div class="donut-center">
-                                   <div class="donut-big">${activePctText}%</div>
+                                    <canvas id="userStatusDonut"></canvas>
+                                    <div class="donut-center">
+                                        <div class="donut-big">${activePctText}%</div>
 
-                                    <div class="donut-small">ACTIVE</div>
-                                </div>
-                            </div>
-                            </div>
-
-                                   <div class="status-right">
-                                       <div class="status-metrics">
-                                <div class="metric">
-                                    <span class="dot dot-active"></span>
-                                    <div>
-                                        <div class="metric-label">Active Users</div>
-                                        <div class="metric-value">${activeCount}</div>
+                                        <div class="donut-small">ACTIVE</div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="metric">
-                                    <span class="dot dot-inactive"></span>
-                                    <div>
-                                        <div class="metric-label">Inactive Users</div>
-                                        <div class="metric-value">${inactiveCount}</div>
+                            <div class="status-right">
+                                <div class="status-metrics">
+                                    <div class="metric">
+                                        <span class="dot dot-active"></span>
+                                        <div>
+                                            <div class="metric-label">Active Users</div>
+                                            <div class="metric-value">${activeCount}</div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="status-note">
-                                    System health is optimal. <b>${activePctText}%</b> users are currently active.
+                                    <div class="metric">
+                                        <span class="dot dot-inactive"></span>
+                                        <div>
+                                            <div class="metric-label">Inactive Users</div>
+                                            <div class="metric-value">${inactiveCount}</div>
+                                        </div>
+                                    </div>
 
                                 </div>
                             </div>
-                                   </div>
                         </div>
                     </section>
 

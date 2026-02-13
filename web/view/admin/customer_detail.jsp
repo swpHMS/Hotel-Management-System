@@ -5,417 +5,507 @@
 
 <!doctype html>
 <html lang="vi">
-    <head>
-        <meta charset="utf-8"/>
-        <title>HMS Admin | Customer Detail</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<head>
+  <meta charset="utf-8"/>
+  <title>HMS Admin | Customer Detail</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
-        <style>
-            :root{
-                --bg:#f5f7fb;
-                --card:#fff;
-                --text:#0f172a;
-                --muted:#667085;
-                --line:#e6eaf2;
-                --primary:#4f46e5;
-                --primary2:#4338ca;
-                --shadow:0 14px 40px rgba(15,23,42,.08);
-                --radius:18px;
-            }
+  <style>
+    :root {
+      --color-primary: #0f172a;
+      --color-secondary: #1e293b;
+      --color-accent: #3b82f6;
+      --color-accent-light: #60a5fa;
+      --color-success: #10b981;
+      --color-border: #e2e8f0;
+      --color-bg-subtle: #f8fafc;
+      --color-text-primary: #0f172a;
+      --color-text-secondary: #64748b;
+      --color-text-tertiary: #94a3b8;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
 
-            body{
-                background:var(--bg);
-            }
+    * { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-            .page-head{
-                display:flex;
-                align-items:flex-start;
-                justify-content:space-between;
-                gap:16px;
-                margin: 6px 0 18px;
-            }
+    body { background: var(--color-bg-subtle); }
 
-            .head-actions{
-                display:flex;
-                gap:12px;
-            }
+    /* Page animation */
+    .hms-page { animation: fadeIn 0.6s ease-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-            .btnx{
-                height:44px;
-                padding:0 18px;
-                border-radius:12px;
-                font-weight:900;
-                border:1px solid transparent;
-                display:inline-flex;
-                align-items:center;
-                text-decoration:none;
-                cursor:pointer;
-                font-size:14px;
-            }
-            .btnx-outline{
-                background:#fff;
-                border-color:#dbe2f0;
-                color:#344054;
-            }
-            .btnx-outline:hover{
-                background:#f8fafc
-            }
-            .btnx-primary{
-                background:var(--primary);
-                color:#fff;
-                box-shadow: 0 10px 22px rgba(79,70,229,.18);
-            }
-            .btnx-primary:hover{
-                background:var(--primary2)
-            }
-            .btnx:disabled, .btnx.disabled{
-                opacity:.5;
-                cursor:not-allowed
-            }
+    /* Top header like Staff Detail */
+    .hms-page__top{
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid var(--color-border);
+      position: relative;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 20px;
+    }
+    .hms-page__top::after{
+      content:'';
+      position:absolute;
+      bottom:-2px; left:0;
+      width:120px; height:2px;
+      background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
+      animation: slideIn 0.8s ease-out;
+    }
+    @keyframes slideIn { from { width:0; } to { width:120px; } }
 
-            .detail-card{
-                background:var(--card);
-                border:1px solid var(--line);
-                border-radius:var(--radius);
-                box-shadow:var(--shadow);
-                overflow:hidden;
-            }
+    .hms-title{
+      font-family:'Playfair Display', serif;
+      font-size:36px;
+      font-weight:700;
+      color: var(--color-primary);
+      margin:0 0 8px 0;
+      letter-spacing:-0.02em;
+    }
+    .hms-subtitle{
+      font-size:15px;
+      color: var(--color-text-secondary);
+      font-weight:400;
+      margin:0;
+    }
 
-            .hero{
-                display:flex;
-                align-items:center;
-                gap:22px;
-                padding:26px;
-            }
+    /* Top actions */
+    .top-actions{
+      display:flex;
+      gap:12px;
+      animation: slideInRight 0.6s ease-out 0.2s both;
+      flex-wrap: wrap;
+    }
+    @keyframes slideInRight{
+      from { opacity:0; transform: translateX(20px); }
+      to { opacity:1; transform: translateX(0); }
+    }
 
-            .avatar{
-                width:110px;
-                height:110px;
-                border-radius:18px;
-                background:var(--primary);
-                color:#fff;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                font-size:42px;
-                font-weight:900;
-                letter-spacing:1px;
-                box-shadow: 0 14px 30px rgba(79,70,229,.22);
-                flex:0 0 auto;
-            }
+    /* Buttons (same hover shine) */
+    .btn{
+      padding:12px 24px;
+      border-radius:10px;
+      font-weight:600;
+      font-size:14px;
+      text-decoration:none;
+      border:2px solid var(--color-border);
+      background:white;
+      color: var(--color-text-primary);
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: var(--shadow-sm);
+      position:relative;
+      overflow:hidden;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      white-space: nowrap;
+      height: 44px;
+    }
+    .btn::before{
+      content:'';
+      position:absolute;
+      top:0; left:-100%;
+      width:100%; height:100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition:left 0.5s;
+    }
+    .btn:hover::before{ left:100%; }
+    .btn:hover{
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--color-accent);
+    }
+    .btn-primary{
+      background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
+      color:white;
+      border:none;
+    }
+    .btn-primary:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px -5px rgba(59,130,246,0.4);
+    }
+    .btn[disabled], .btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      pointer-events:none;
+      transform:none !important;
+      box-shadow: var(--shadow-sm) !important;
+    }
 
-            .hero h2{
-                margin:0;
-                font-size:40px;
-                letter-spacing:-0.6px;
-            }
+    /* Detail card (same shimmer top bar) */
+    .detail-card{
+      background:white;
+      border:none;
+      border-radius:20px;
+      padding:0;
+      box-shadow: var(--shadow-xl);
+      overflow:hidden;
+      margin-bottom: 24px;
+      animation: scaleIn 0.6s ease-out 0.3s both;
+      position:relative;
+    }
+    @keyframes scaleIn{
+      from { opacity:0; transform: scale(0.95); }
+      to { opacity:1; transform: scale(1); }
+    }
+    .detail-card::before{
+      content:'';
+      position:absolute;
+      top:0; left:0; right:0;
+      height:6px;
+      background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 50%, var(--color-accent) 100%);
+      background-size:200% 100%;
+      animation: shimmer 3s infinite;
+    }
+    @keyframes shimmer{
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
 
-            .hero-sub{
-                margin-top:8px;
-                display:flex;
-                gap:12px;
-                align-items:center;
-                color:var(--muted);
-                font-size:14px;
-            }
-            .dot{
-                width:5px;
-                height:5px;
-                border-radius:999px;
-                background:#cbd5e1;
-                display:inline-block
-            }
+    /* 3 columns like Staff Detail */
+    .detail-grid-3{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:0;
+      padding:40px;
+    }
 
-            .divider{
-                height:1px;
-                background:var(--line)
-            }
+    .detail-col{
+      padding: 0 32px;
+      border-right: 1px solid var(--color-border);
+      position:relative;
+      animation: fadeInUp 0.6s ease-out both;
+    }
+    .detail-col:nth-child(1){ animation-delay: 0.4s; }
+    .detail-col:nth-child(2){ animation-delay: 0.5s; }
+    .detail-col:nth-child(3){ animation-delay: 0.6s; }
 
-            .grid3{
-                display:grid;
-                grid-template-columns: 1fr 1fr 1fr;
-                padding: 22px 26px 26px;
-            }
-            .col{
-                padding: 0 18px;
-            }
-            .col:not(:first-child){
-                border-left:1px solid #eef2f7;
-            }
+    @keyframes fadeInUp{
+      from { opacity:0; transform: translateY(30px); }
+      to { opacity:1; transform: translateY(0); }
+    }
 
-            .section-title{
-                font-size:12px;
-                letter-spacing:.2em;
-                font-weight:900;
-                color:#98a2b3;
-                text-transform:uppercase;
-                padding-bottom:12px;
-                border-bottom:1px solid #eef2f7;
-                margin: 6px 0 18px;
-            }
+    .detail-col:first-child{ padding-left:0; }
+    .detail-col:last-child{ border-right:none; padding-right:0; }
 
-            .kv{
-                display:grid;
-                gap:18px;
-            }
-            .k{
-                font-size:12px;
-                letter-spacing:.1em;
-                font-weight:900;
-                color:#98a2b3;
-                text-transform:uppercase;
-                margin-bottom:6px;
-            }
-            .v{
-                font-size:14px;
-                font-weight:900;
-                color:#111827;
-                line-height:1.4;
-                word-break:break-word;
-            }
+    .detail-col__title{
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:0.15em;
+      color: var(--color-accent);
+      margin-bottom:28px;
+      text-transform:uppercase;
+      position:relative;
+      padding-bottom:12px;
+    }
+    .detail-col__title::after{
+      content:'';
+      position:absolute;
+      bottom:0; left:0;
+      width:40px; height:2px;
+      background: var(--color-accent);
+    }
 
-            .badge{
-                display:inline-flex;
-                align-items:center;
-                padding:7px 12px;
-                border-radius:999px;
-                font-weight:900;
-                font-size:12px;
-                line-height:1;
-            }
-            .badge-green{
-                background:#e9fbef;
-                color:#137a3a
-            }
-            .badge-red{
-                background:#ffe9e9;
-                color:#a11a1a
-            }
-            .badge-gray{
-                background:#f2f4f7;
-                color:#344054
-            }
+    /* Item hover same style */
+    .detail-item{
+      margin-bottom:28px;
+      transition: all 0.3s ease;
+      padding:12px;
+      margin-left:-12px;
+      margin-right:-12px;
+      border-radius:8px;
+    }
+    .detail-item:hover{
+      background: var(--color-bg-subtle);
+      transform: translateX(4px);
+    }
 
-            .link{
-                color:#2563eb;
-                font-weight:900;
-                text-decoration:none
-            }
-            .link:hover{
-                text-decoration:underline
-            }
+    .detail-k{
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:0.08em;
+      color: var(--color-text-tertiary);
+      margin-bottom:6px;
+      text-transform:uppercase;
+    }
+    .detail-v{
+      font-size:16px;
+      font-weight:600;
+      color: var(--color-text-primary);
+      line-height:1.5;
+    }
 
-            @media (max-width: 1000px){
-                .grid3{
-                    grid-template-columns:1fr;
-                    gap:18px;
-                }
-                .col{
-                    padding:0;
-                    border-left:none !important;
-                }
-                .hero{
-                    flex-direction:column;
-                    align-items:flex-start;
-                }
-                .hero h2{
-                    font-size:30px;
-                }
-                .avatar{
-                    width:96px;
-                    height:96px;
-                    font-size:38px;
-                }
-                .head-actions{
-                    flex-direction:column;
-                    align-items:stretch;
-                }
-                .btnx{
-                    justify-content:center
-                }
-            }
-        </style>
-    </head>
+    /* Link underline animation like Staff Detail */
+    .detail-v.link{
+      color: var(--color-accent);
+      transition: all 0.3s ease;
+      cursor:pointer;
+      position:relative;
+      text-decoration:none;
+      display:inline-block;
+    }
+    .detail-v.link::after{
+      content:'';
+      position:absolute;
+      bottom:-2px; left:0;
+      width:0; height:2px;
+      background: var(--color-accent);
+      transition: width 0.3s ease;
+    }
+    .detail-v.link:hover::after{ width:100%; }
 
-    <body class="admin-shell">
-        <div class="app-shell">
-            <%@ include file="/view/admin_layout/sidebar.jsp" %>
+    /* Pills */
+    .pill{
+      display:inline-block;
+      padding:6px 16px;
+      border-radius:100px;
+      font-size:13px;
+      font-weight:600;
+      letter-spacing:0.02em;
+      transition: all 0.3s ease;
+      line-height: 1.2;
+    }
+    .pill.green{
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color:white;
+      box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+    }
+    .pill.red{
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color:white;
+      box-shadow: 0 4px 12px rgba(239,68,68,0.28);
+    }
+    .pill.gray{
+      background:#e2e8f0;
+      color: var(--color-text-secondary);
+    }
+    .pill:hover{ transform: scale(1.05); }
 
+    /* Back link like Staff Detail */
+    .hms-link{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color: var(--color-text-secondary);
+      text-decoration:none;
+      font-weight:500;
+      font-size:14px;
+      transition: all 0.3s ease;
+      padding:12px 20px;
+      border-radius:10px;
+      margin-top:16px;
+    }
+    .hms-link:hover{
+      color: var(--color-accent);
+      background: var(--color-bg-subtle);
+      transform: translateX(-4px);
+    }
 
-            <main class="hms-main">
+    /* Error card */
+    .error-message{
+      background:white;
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:16px;
+      padding:28px;
+      box-shadow: 0 8px 24px rgba(15,23,42,.06);
+      color: var(--color-text-secondary);
+      font-weight:600;
+    }
 
-                <div class="admin-content">
+    /* Decorative background (same) */
+    .hms-page::before{
+      content:'';
+      position:fixed;
+      top:0; right:0;
+      width:600px; height:600px;
+      background: radial-gradient(circle at center, rgba(59,130,246,0.08) 0%, transparent 70%);
+      pointer-events:none;
+      z-index:-1;
+    }
+    .hms-page::after{
+      content:'';
+      position:fixed;
+      bottom:0; left:0;
+      width:400px; height:400px;
+      background: radial-gradient(circle at center, rgba(59,130,246,0.05) 0%, transparent 70%);
+      pointer-events:none;
+      z-index:-1;
+    }
 
-                    
-                    <div class="page-head">
-                        <h1 class="page-title" style="margin:0;">Customer Detail</h1>
+    /* Responsive */
+    @media (max-width: 1024px){
+      .detail-grid-3{ grid-template-columns:1fr; padding:24px; }
+      .detail-col{
+        border-right:none;
+        padding:0;
+        border-bottom:1px solid var(--color-border);
+        padding-bottom:32px;
+        margin-bottom:32px;
+      }
+      .detail-col:last-child{
+        border-bottom:none;
+        margin-bottom:0;
+        padding-bottom:0;
+      }
+      .hms-page__top{ flex-direction:column; align-items:stretch; }
+      .top-actions{ flex-direction:column; width:100%; }
+      .btn{ width:100%; text-align:center; }
+      .hms-title{ font-size:28px; }
+    }
+  </style>
+</head>
 
-                        <div class="head-actions">
-                            <a class="btnx btnx-outline" href="${pageContext.request.contextPath}/admin/customers">
-                                Back to List
-                            </a>
+<body class="admin-shell">
+<div class="app-shell">
+  <%@ include file="/view/admin_layout/sidebar.jsp" %>
 
-                            <c:choose>
-                                <c:when test="${c != null && c.userId != null}">
-                                    <a class="btnx btnx-primary"
-                                       href="${pageContext.request.contextPath}/admin/customer-status?id=${c.customerId}">
-                                        Change Account Status
-                                    </a>
-                                </c:when>
-                                <c:otherwise>
-                                    <button class="btnx btnx-primary" disabled>Change Account Status</button>
-                                </c:otherwise>
-                            </c:choose>
-                        </div>
-                    </div>
-
-                    <c:if test="${c == null}">
-                        <div class="detail-card" style="padding:20px;">
-                            <div style="color:var(--muted); font-weight:800;">Customer not found.</div>
-                        </div>
-                    </c:if>
-
-                    <c:if test="${c != null}">
-                        <%-- initials: lấy 2 ký tự đầu của full_name (fallback 1 ký tự) --%>
-                        <c:set var="nm" value="${c.fullName}" />
-                        <c:set var="i1" value="${nm != null && fn:length(nm) >= 1 ? fn:toUpperCase(fn:substring(nm,0,1)) : 'C'}" />
-                        <c:set var="i2" value="${nm != null && fn:length(nm) >= 2 ? fn:toUpperCase(fn:substring(nm,1,2)) : ''}" />
-                        <c:set var="initials" value="${i1}${i2}" />
-
-                        <div class="detail-card">
-                            <div class="hero">
-                                <div class="avatar">${initials}</div>
-
-                                <div style="flex:1;">
-                                    <h2>${c.fullName}</h2>
-
-                                    <div class="hero-sub">
-                                        <span>${c.residenceAddress != null ? c.residenceAddress : '—'}</span>
-                                        <span class="dot"></span>
-
-                                        <span>
-                                            <c:choose>
-                                                <c:when test="${c.accountStatus == 'ACTIVE'}">Active Account</c:when>
-                                                <c:when test="${c.accountStatus == 'INACTIVE'}">Inactive Account</c:when>
-                                                <c:otherwise>No Account</c:otherwise>
-                                            </c:choose>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="divider"></div>
-
-                            <div class="grid3">
-                                <!-- BASIC INFO -->
-                                <div class="col">
-                                    <div class="section-title">Basic Info</div>
-                                    <div class="kv">
-                                        <div>
-                                            <div class="k">Full Name</div>
-                                            <div class="v">${c.fullName}</div>
-                                        </div>
-
-                                        <div>
-                                            <div class="k">Gender</div>
-                                            <div class="v">
-                                                <c:choose>
-                                                    <c:when test="${c.gender == 1}">Male</c:when>
-                                                    <c:when test="${c.gender == 2}">Female</c:when>
-                                                    <c:when test="${c.gender == 3}">Other</c:when>
-                                                    <c:otherwise>—</c:otherwise>
-                                                </c:choose>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div class="k">Date of Birth</div>
-                                            <div class="v">
-                                                <c:choose>
-                                                    <c:when test="${c.dateOfBirth != null}">
-                                                        <fmt:formatDate value="${c.dateOfBirth}" pattern="yyyy-MM-dd"/>
-                                                    </c:when>
-                                                    <c:otherwise>—</c:otherwise>
-                                                </c:choose>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div class="k">Residence Address</div>
-                                            <div class="v">${c.residenceAddress != null ? c.residenceAddress : '—'}</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- IDENTITY & CONTACT -->
-                                <div class="col">
-                                    <div class="section-title">Identity & Contact</div>
-                                    <div class="kv">
-                                        <div>
-                                            <div class="k">Identity Number</div>
-                                            <div class="v">${c.identityNumber != null ? c.identityNumber : '—'}</div>
-                                        </div>
-
-                                        <div>
-                                            <div class="k">Phone</div>
-                                            <div class="v">${c.phone != null ? c.phone : '—'}</div>
-                                        </div>
-
-                                        <div>
-                                            <div class="k">Email Address</div>
-                                            <div class="v">
-                                                <c:choose>
-                                                    <c:when test="${not empty c.email}">
-                                                        <a class="link" href="mailto:${c.email}">${c.email}</a>
-                                                    </c:when>
-                                                    <c:otherwise>—</c:otherwise>
-                                                </c:choose>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- ACCOUNT INFO -->
-                                <div class="col">
-                                    <div class="section-title">Account Info</div>
-                                    <div class="kv">
-                                        <div>
-                                            <div class="k">Account Status</div>
-                                            <div class="v">
-                                                <c:choose>
-                                                    <c:when test="${c.accountStatus == 'ACTIVE'}">
-                                                        <span class="badge badge-green">Active</span>
-                                                    </c:when>
-                                                    <c:when test="${c.accountStatus == 'INACTIVE'}">
-                                                        <span class="badge badge-red">Inactive</span>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <span class="badge badge-gray">No Account</span>
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <div class="k">Customer ID</div>
-                                            <div class="v">${c.customerId}</div>
-                                        </div>
-
-                                        <div>
-                                            <div class="k">User ID</div>
-                                            <div class="v">${c.userId != null ? c.userId : '—'}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </c:if>
-
-                </div>
-            </main>
+  <main class="hms-main">
+    <main class="hms-page" style="padding: 28px;">
+      <div class="hms-page__top">
+        <div>
+          <h1 class="hms-title">Customer Profile</h1>
         </div>
-    </body>
+
+        <div class="top-actions">
+          <c:choose>
+            <c:when test="${c != null && c.userId != null}">
+              <a class="btn btn-primary"
+                 href="${pageContext.request.contextPath}/admin/customer-status?id=${c.customerId}">
+                Change Account Status
+              </a>
+            </c:when>
+            <c:otherwise>
+              <button class="btn btn-primary" disabled>Change Account Status</button>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+
+      <c:if test="${c == null}">
+        <div class="error-message">Customer not found or has been removed.</div>
+        <a class="hms-link" href="${pageContext.request.contextPath}/admin/customers">← Back to Customer List</a>
+      </c:if>
+
+      <c:if test="${c != null}">
+        <section class="detail-card">
+          <div class="detail-grid-3">
+
+            <!-- BASIC INFORMATION -->
+            <div class="detail-col">
+              <div class="detail-col__title">Basic Information</div>
+
+              <div class="detail-item">
+                <div class="detail-k">Full Name</div>
+                <div class="detail-v">${c.fullName}</div>
+              </div>
+
+              <div class="detail-item">
+                <div class="detail-k">Gender</div>
+                <div class="detail-v">
+                  <c:choose>
+                    <c:when test="${c.gender == 1}">Male</c:when>
+                    <c:when test="${c.gender == 2}">Female</c:when>
+                    <c:when test="${c.gender == 3}">Other</c:when>
+                    <c:otherwise>—</c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+
+              <div class="detail-item">
+                <div class="detail-k">Date of Birth</div>
+                <div class="detail-v">
+                  <c:choose>
+                    <c:when test="${c.dateOfBirth != null}">
+                      <fmt:formatDate value="${c.dateOfBirth}" pattern="dd MMM yyyy"/>
+                    </c:when>
+                    <c:otherwise>—</c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+
+              <div class="detail-item">
+                <div class="detail-k">Residence Address</div>
+                <div class="detail-v">${c.residenceAddress != null ? c.residenceAddress : '—'}</div>
+              </div>
+            </div>
+
+            <!-- CONTACT INFORMATION -->
+            <div class="detail-col">
+              <div class="detail-col__title">Contact Information</div>
+
+              <div class="detail-item">
+                <div class="detail-k">Phone Number</div>
+                <div class="detail-v">${c.phone != null ? c.phone : '—'}</div>
+              </div>
+
+              <div class="detail-item">
+                <div class="detail-k">Email Address</div>
+                <div class="detail-v">
+                  <c:choose>
+                    <c:when test="${not empty c.email}">
+                      <a class="detail-v link" href="mailto:${c.email}">${c.email}</a>
+                    </c:when>
+                    <c:otherwise>—</c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+            </div>
+
+            <!-- ACCOUNT DETAILS -->
+            <div class="detail-col">
+              <div class="detail-col__title">Account Details</div>
+
+              <div class="detail-item">
+                <div class="detail-k">Account Status</div>
+                <div class="detail-v">
+                  <c:choose>
+                    <c:when test="${c.accountStatus == 'ACTIVE'}">
+                      <span class="pill green">Active</span>
+                    </c:when>
+                    <c:when test="${c.accountStatus == 'INACTIVE'}">
+                      <span class="pill red">Inactive</span>
+                    </c:when>
+                    <c:otherwise>
+                      <span class="pill gray">No Account</span>
+                    </c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+
+              <div class="detail-item">
+                <div class="detail-k">Customer ID</div>
+                <div class="detail-v">#${c.customerId}</div>
+              </div>
+
+              <div class="detail-item">
+                <div class="detail-k">User ID</div>
+                <div class="detail-v">
+                  <c:choose>
+                    <c:when test="${c.userId != null}">#${c.userId}</c:when>
+                    <c:otherwise>—</c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <a class="hms-link" href="${pageContext.request.contextPath}/admin/customers">← Back to Customer List</a>
+      </c:if>
+    </main>
+  </main>
+</div>
+</body>
 </html>

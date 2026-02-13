@@ -119,11 +119,15 @@ public class StaffCreateServlet extends HttpServlet {
             }
 
             // Password
+            String passwordRegex = "^(?=.*[A-Z])(?=.*\\d)\\S{8,}$";
+
             if (isBlank(password)) {
                 errors.put("password", "Password is required.");
-            } else if (password.length() < 6) {
-                errors.put("password", "Password must be at least 6 characters.");
+            } else if (!password.matches(passwordRegex)) {
+                errors.put("password",
+                        "Password must be ≥8 characters, include at least 1 uppercase letter, 1 number and contain no spaces.");
             }
+
             if (isBlank(confirmPassword)) {
                 errors.put("confirmPassword", "Confirm password is required.");
             } else if (!confirmPassword.equals(password)) {
@@ -186,8 +190,7 @@ public class StaffCreateServlet extends HttpServlet {
                 dob = Validation.parseDateOrNull(dobRaw); // đã chắc chắn không null
             }
 
-            // ===== 4) Check duplicate (DB) nếu DAO có hỗ trợ =====
-            // Nếu bạn CHƯA có 2 hàm này trong AdminUserDAO thì comment 2 đoạn dưới.
+            // ===== 4) Check duplicate ===
             if (!errors.containsKey("email") && dao.emailExists(email)) {
                 errors.put("email", "Email already exists.");
             }
@@ -216,11 +219,10 @@ public class StaffCreateServlet extends HttpServlet {
                     phone,
                     address
             );
-
-            response.sendRedirect(request.getContextPath() + "/admin/staff/detail?id=" + newUserId);
+            response.sendRedirect(request.getContextPath() + "/admin/staff");
 
         } catch (java.sql.SQLException sqlEx) {
-            // fallback nếu chưa dùng emailExists/identityExists hoặc DB báo unique
+
             String msg = sqlEx.getMessage();
             if (msg != null && (msg.contains("2627") || msg.contains("2601"))) {
                 errors.put("common", "Duplicate data: email or identity number already exists.");

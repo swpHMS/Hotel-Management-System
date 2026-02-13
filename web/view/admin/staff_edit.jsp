@@ -5,7 +5,6 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>HMS Admin - Edit User</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
   <style>
     /* Enhanced Styles for Edit User Page */
@@ -365,6 +364,24 @@
       outline: 2px solid #4f46e5;
       outline-offset: 2px;
     }
+    /* Keep primary button color unchanged on hover/focus/active */
+.btn-primary,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary:focus-visible{
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
+  color: #fff !important;
+  transform: none !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+  outline: none !important;
+}
+
+/* If browser adds inner focus outline (sometimes on button) */
+.btn-primary::-moz-focus-inner{
+  border: 0;
+}
+
   </style>
 </head>
 <body>
@@ -375,60 +392,17 @@
     <main class="hms-page">
       <div class="hms-page__top">
         <div>
-          <div class="hms-breadcrumb">
-            <span>Admin</span><span class="sep">›</span>
-            <span>User Management</span><span class="sep">›</span>
-            <span class="current">Edit User</span>
-          </div>
           <h1 class="hms-title">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17 3C17.2626 2.73735 17.5744 2.52901 17.9176 2.38687C18.2608 2.24473 18.6286 2.17157 19 2.17157C19.3714 2.17157 19.7392 2.24473 20.0824 2.38687C20.4256 2.52901 20.7374 2.73735 21 3C21.2626 3.26264 21.471 3.57444 21.6131 3.9176C21.7553 4.26077 21.8284 4.62856 21.8284 5C21.8284 5.37143 21.7553 5.73923 21.6131 6.08239C21.471 6.42555 21.2626 6.73735 21 7L7.5 20.5L2 22L3.5 16.5L17 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Edit User Account
+   
+            Edit Account
           </h1>
         </div>
       </div>
 
-      <!-- Info Box -->
-      <div class="info-box">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="10" stroke-width="2"/>
-          <path d="M12 16V12M12 8H12.01" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <div class="info-box__content">
-          <div class="info-box__title">Important Information</div>
-          <div class="info-box__text">
-            Changes to user roles and status take effect immediately. Please review your changes carefully before saving.
-          </div>
-        </div>
-      </div>
 
       <form method="post" action="${pageContext.request.contextPath}/admin/staff/edit">
         <input type="hidden" name="id" value="${user.userId}"/>
 
-        <!-- User Information (Read-only) -->
-        <section class="hms-panel">
-          <h2 class="hms-h2">User Information</h2>
-          <div class="hms-kv-grid">
-            <div class="kv">
-              <div class="kv__k">Full Name</div>
-              <div class="kv__v">
-                <c:choose>
-                  <c:when test="${not empty user.fullName}">
-                    <c:out value="${user.fullName}"/>
-                  </c:when>
-                  <c:otherwise>
-                    <span style="color: #adb5bd; font-style: italic;">Not provided</span>
-                  </c:otherwise>
-                </c:choose>
-              </div>
-            </div>
-            <div class="kv">
-              <div class="kv__k">Email Address</div>
-              <div class="kv__v"><c:out value="${user.email}"/></div>
-            </div>
-          </div>
-        </section>
 
         <!-- Change Role Section -->
         <section class="hms-panel">
@@ -436,7 +410,7 @@
             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" style="margin-left: -4px;">
               <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
             </svg>
-            Change Role
+            Edit Role
           </h2>
           <div class="field" style="max-width:500px;">
             <label>
@@ -466,7 +440,7 @@
             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" style="margin-left: -4px;">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
-            Account Status
+            Edit Status
           </h2>
           <div class="field" style="max-width:500px;">
             <label>
@@ -494,16 +468,13 @@
         <!-- Action Buttons -->
         <div class="hms-actions">
           <a class="btn btn-light"
-             href="${pageContext.request.contextPath}/admin/staff/detail?id=${user.userId}">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    href="${pageContext.request.contextPath}/admin/staff"
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
             Cancel
           </a>
           <button class="btn btn-primary" type="submit">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
             Save Changes
           </button>
         </div>
@@ -526,22 +497,6 @@
       } else {
         statusPreview.className = 'status-preview inactive';
         statusPreview.textContent = 'Inactive Account';
-      }
-    });
-  }
-
-  // Form submission confirmation
-  const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      const roleSelect = document.getElementById('roleSelect');
-      const roleName = roleSelect.options[roleSelect.selectedIndex].text;
-      const status = statusSelect.value === '1' ? 'Active' : 'Inactive';
-      
-      const confirmMessage = `Are you sure you want to save these changes?\n\nRole: ${roleName}\nStatus: ${status}`;
-      
-      if (!confirm(confirmMessage)) {
-        e.preventDefault();
       }
     });
   }
