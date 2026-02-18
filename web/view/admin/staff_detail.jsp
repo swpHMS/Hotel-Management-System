@@ -469,7 +469,6 @@
 
             <div class="hms-main">
                 <main class="hms-page">
-
                     <div class="hms-page__top">
                         <div>
                             <h1 class="hms-title">Staff Detail</h1>

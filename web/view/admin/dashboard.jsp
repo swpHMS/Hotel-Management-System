@@ -10,6 +10,18 @@
         <title>HMS Admin - Dashboard</title>
         <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
         <style>
+            .chart-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 24px;
+            }
+
+            .summary-container {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+            }
+
             .donut-wrap{
                 position: relative;
                 width: 320px;
@@ -86,25 +98,29 @@
                     <!-- KPI cards -->
                     <div class="hms-grid-3">
                         <div class="hms-card">
-                            <div class="hms-card__label">Total Users</div>
-                            <div class="hms-card__value">${totalUsers}</div>
-                            <!--                            <div class="hms-card__meta">
-                                                            <span class="pill green">${activeUsers} Active</span>
-                                                            <span class="pill gray">${inactiveUsers} Inactive</span>
-                                                        </div>-->
+                            <div class="hms-card__label">Total Staff</div>
+                            <div class="hms-card__value">${staffTotal}</div>
+                            <div class="hms-card__meta">
+                                <span class="pill green">${staffActive} Active</span>
+                                <span class="pill gray">${staffInactive} Inactive</span>   
+                            </div>
                         </div>
 
                         <div class="hms-card">
                             <div class="hms-card__label">Total Customers</div>
                             <div class="hms-card__value">${totalCustomers}</div>
                             <div class="hms-card__meta"></div>
+                            <span class="pill green">${customerActive} Active</span>
+                            <span class="pill gray">${customerInactive} Inactive</span>
+
                         </div>
 
-                        <!--                        <div class="hms-card">
-                                                    <div class="hms-card__label">Avg. Engagement</div>
-                                                    <div class="hms-card__value">${engagement}%</div>
-                                                    <div class="hms-card__hint">System-wide active accounts (Users only)</div>
-                                                </div>-->
+                        <div class="hms-card">
+                            <div class="hms-card__label">Total Roles</div>
+                            <div class="hms-card__value">${totalRoles}</div>
+
+                        </div>
+
                     </div>
 
                     <!-- Donut: User Status Overview (under KPI cards) -->
@@ -119,41 +135,29 @@
                     <section class="hms-panel hms-panel--wide status-panel" style="margin-top:16px;">
                         <div class="hms-panel__head">
                             <div>
-                                <h2 class="hms-h2">User Status Overview</h2>
-                                <div class="status-sub">Active vs inactive system users</div>
+                                <h2 class="hms-h2">System User Health</h2>
+                                <div class="status-sub">Account activity & role structure overview</div>
                             </div>
                         </div>
 
                         <div class="status-body">
-                            <div class="status-left">
+                            <!-- Left: User Status -->
+                            <div class="hms-panel">
+                                <h2 class="hms-h2">User Status Overview</h2>
                                 <div class="donut-wrap">
                                     <canvas id="userStatusDonut"></canvas>
                                     <div class="donut-center">
                                         <div class="donut-big">${activePctText}%</div>
-
                                         <div class="donut-small">ACTIVE</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="status-right">
-                                <div class="status-metrics">
-                                    <div class="metric">
-                                        <span class="dot dot-active"></span>
-                                        <div>
-                                            <div class="metric-label">Active Users</div>
-                                            <div class="metric-value">${activeCount}</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="metric">
-                                        <span class="dot dot-inactive"></span>
-                                        <div>
-                                            <div class="metric-label">Inactive Users</div>
-                                            <div class="metric-value">${inactiveCount}</div>
-                                        </div>
-                                    </div>
-
+                            <!-- Right: Role Distribution -->
+                            <div class="hms-panel">
+                                <h2 class="hms-h2">Role Distribution</h2>
+                                <div class="donut-wrap">
+                                    <canvas id="roleChart"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -177,44 +181,106 @@
         <!-- Chart.js + Donut -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-            (function () {
-                const canvas = document.getElementById('userStatusDonut');
-                if (!canvas)
-                    return;
+            document.addEventListener("DOMContentLoaded", function () {
 
-                const active = Number("${activeCount}");
-                const inactive = Number("${inactiveCount}");
+                /* ================= USER STATUS DONUT ================= */
+                const userCanvas = document.getElementById('userStatusDonut');
+                if (userCanvas) {
 
-                new Chart(canvas, {
+                    const active = Number("${activeCount}");
+                    const inactive = Number("${inactiveCount}");
+
+                    new Chart(userCanvas, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Active', 'Inactive'],
+                            datasets: [{
+                                    data: [active, inactive],
+                                    backgroundColor: ['#22c55e', '#94a3b8'],
+                                    borderWidth: 0,
+                                    hoverOffset: 8
+                                }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '70%',
+                            plugins: {
+                                legend: {display: false},
+                                tooltip: {
+                                    displayColors: false,
+                                    backgroundColor: '#1e293b',
+                                    titleColor: '#fff',
+                                    bodyColor: '#fff',
+                                    borderColor: '#334155',
+                                    borderWidth: 1,
+                                    cornerRadius: 8,
+                                    callbacks: {
+                                        label: function (ctx) {
+                                            return ctx.label + ": " + ctx.raw;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+
+                /* ================= ROLE DISTRIBUTION DONUT ================= */
+
+                const roleCanvas = document.getElementById('roleChart');
+                if (roleCanvas) {
+
+                const roleLabels = [
+            <c:forEach var="entry" items="${roleDistribution}" varStatus="loop">
+                "${entry.key}"${!loop.last ? "," : ""}
+            </c:forEach>
+                ];
+
+                const roleData = [
+            <c:forEach var="entry" items="${roleDistribution}" varStatus="loop">
+                ${entry.value}${!loop.last ? "," : ""}
+            </c:forEach>
+                ];
+
+                new Chart(roleCanvas, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Active', 'Inactive'],
+                        labels: roleLabels,
                         datasets: [{
-                                data: [active, inactive],
-                                backgroundColor: ['#22c55e', '#94a3b8'],
-                                borderWidth: 0,
-                                hoverOffset: 8
+                                data: roleData,
+                                backgroundColor: [
+                                    '#1f2937',
+                                    '#4f46e5',
+                                    '#10b981',
+                                    '#f59e0b',
+                                    '#9ca3af'
+                                ],
+                                borderWidth: 0
                             }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '70%',
-                        animation: {duration: 900, easing: 'easeOutQuart'},
+                        cutout: '65%',
                         plugins: {
-                            legend: {display: false},
-                            tooltip: {
-                                displayColors: false,
-                                backgroundColor: 'rgba(15, 23, 42, 0.92)',
-                                padding: 10,
-                                callbacks: {
-                                    label: (ctx) => `${ctx.label}: ${ctx.formattedValue}`
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            });
-                                        })();
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 14,
+                                    padding: 16
+                                }
+                            }
+                        }
+                    }
+                });
+                }
+
+            });
         </script>
+
+
+
     </body>
 </html>

@@ -20,26 +20,28 @@ public class DashboardServlet extends HttpServlet {
         try {
             AdminDashboardDAO dao = new AdminDashboardDAO();
 
-            int totalUsers = dao.countUsers();
-            int activeUsers = dao.countUsersByStatus(1);
-            int inactiveUsers = dao.countUsersByStatus(0);
-
             int totalCustomers = dao.countCustomers();
+            int totalStaff = dao.countStaff();
+            int totalRoles = dao.countRoles();
 
-            int totalAccounts = totalUsers + totalCustomers;
-            int activeAccounts = activeUsers; // customers không có status
-            int engagement = totalAccounts == 0 ? 0 : (int) Math.round(activeAccounts * 100.0 / totalAccounts);
-            //nếu chưa có user+customer nào-> engagement=0%
-            request.setAttribute("active", "dashboard"); // highlight menu
-            request.setAttribute("totalUsers", totalUsers);
-            request.setAttribute("activeUsers", activeUsers);
-            request.setAttribute("inactiveUsers", inactiveUsers);
+            Map<String, Integer> roleDistribution = dao.getRoleDistribution();
+            Map<String, Integer> customerStatus = dao.countCustomerStatus();
+            Map<String, Integer> staffStatus = dao.countStaffStatus();
+
+            request.setAttribute("staffActive", staffStatus.get("active"));
+            request.setAttribute("staffInactive", staffStatus.get("inactive"));
+
+            request.setAttribute("customerActive", customerStatus.get("active"));
+            request.setAttribute("customerInactive", customerStatus.get("inactive"));
+
+            request.setAttribute("active", "dashboard");
+            request.setAttribute("staffTotal", totalStaff);
             request.setAttribute("totalCustomers", totalCustomers);
-            request.setAttribute("engagement", engagement);
+            request.setAttribute("totalRoles", totalRoles);
 
             Map<String, Integer> statusCounts = dao.getUserStatusCounts();
             request.setAttribute("statusCounts", statusCounts);
-
+            request.setAttribute("roleDistribution", roleDistribution);
             request.getRequestDispatcher("/view/admin/dashboard.jsp").forward(request, response);
 
         } catch (Exception e) {
