@@ -53,7 +53,7 @@ String initials = parts.length >= 2
         <div class="sb-section">System</div>
 
         <a class="sb-item <%= "system".equals(active)?"active":"" %>"
-           href="${pageContext.request.contextPath}/admin/system">
+           href="${pageContext.request.contextPath}/admin/policies">
             System Config
         </a>
 
