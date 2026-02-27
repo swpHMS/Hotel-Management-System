@@ -24,11 +24,21 @@ public class UserProfile {
     // Optional (nếu JOIN sang staff)
     private String fullName;
     private String phone;
+<<<<<<< Updated upstream
 
     private int gender;
     private java.sql.Date dateOfBirth;
     private String identityNumber;
     private String residenceAddress;
+=======
+    
+    
+    
+    private int gender;
+private java.sql.Date dateOfBirth;
+private String identityNumber;
+private String residenceAddress;
+>>>>>>> Stashed changes
 
     public int getGender() {
         return gender;
@@ -138,6 +148,10 @@ public class UserProfile {
         this.phone = phone;
     }
 
+<<<<<<< Updated upstream
+=======
+   
+>>>>>>> Stashed changes
     public String getStatusText() {
         return status == 1 ? "ACTIVE" : "INACTIVE";
     }

@@ -355,10 +355,17 @@
                         <div class="hms-alert"><b>Error:</b> ${error}</div>
                     </c:if>
                 </div>
+<<<<<<< Updated upstream
                 <div class="sync-badge">
                     <span class="sync-dot"></span>
                     Live &nbsp;·&nbsp; <span class="sync-time" id="lastSynced">--:--:--</span>
                 </div>
+=======
+<!--                <div class="sync-badge">
+                    <span class="sync-dot"></span>
+                    Live &nbsp;·&nbsp; <span class="sync-time" id="lastSynced">--:--:--</span>
+                </div>-->
+>>>>>>> Stashed changes
             </div>
 
             <div class="kpi-grid">
