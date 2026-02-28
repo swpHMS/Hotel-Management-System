@@ -1,0 +1,320 @@
+
+:root{
+  --navy:#071a33;
+  --gold:#c8a24a;
+  --text:#e9eef6;
+}
+
+/* base tối thiểu để header không lỗi font/màu */
+html,body{
+  margin:0;
+  font-family:Inter,system-ui;
+  background:var(--navy);
+  color:var(--text);
+}
+a{ text-decoration:none; color:inherit; }
+.container{
+  width:min(1200px,calc(100% - 48px));
+  margin:0 auto;
+}
+
+/* =========================
+   HEADER
+   ========================= */
+.header{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  z-index:9999;
+
+  background:rgba(7,26,51,.85);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+
+  transition:background .25s ease, backdrop-filter .25s ease, box-shadow .25s ease;
+}
+.header.is-scrolled{
+  background:rgba(7,26,51,.92);
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+}
+
+/* để nội dung không bị header che */
+body{ padding-top:0px; } /* chỉnh theo đúng chiều cao header */
+
+.header-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 0;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.logo{
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--gold);
+  color:var(--gold);
+  font-weight:700;
+}
+.brand-name{
+  font-size:15px;
+  letter-spacing:.18em;
+  font-weight:700;
+}
+.brand-sub{
+  font-size:15px;
+  opacity:.8;
+}
+
+.nav{
+  display:flex;
+  gap:22px;
+}
+.nav a{
+  font-size:15px;
+  letter-spacing:.14em;
+  opacity:.8;
+}
+.nav a.active,
+.nav a:hover{
+  opacity:1;
+}
+
+.header-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.btn{
+  padding:12px 16px;
+  border-radius:10px;
+  font-size:12px;
+  letter-spacing:.14em;
+  font-weight:700;
+  border:none;
+  cursor:pointer;
+}
+.btn-gold{
+  background:var(--gold);
+  color:#0b1b33;
+  transition:background .18s ease, box-shadow .18s ease, transform .12s ease;
+}
+.btn-gold:hover{
+  background:#c19a43;
+  box-shadow:0 6px 16px rgba(0,0,0,.15);
+}
+.btn-gold:active{
+  transform:translateY(1px);
+  box-shadow:0 3px 8px rgba(0,0,0,.18) inset;
+}
+
+.btn-navy{
+  background:#06152b;
+  color:var(--gold);
+  border:1px solid rgba(200,162,74,.4);
+  transition:background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease;
+}
+.btn-navy:hover{
+  background:var(--gold);
+  border:1px solid rgba(200,162,74,.9);
+  color:#0b1b33;
+}
+.btn-navy:active{
+  transform:translateY(1px);
+}
+
+.header{
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+
+  /* 🔝 hòa vào ảnh */
+  background: transparent;
+  box-shadow: none;
+
+  transition: background .25s ease,
+              box-shadow .25s ease,
+              backdrop-filter .25s ease,
+              color .25s ease;
+}
+
+/* chữ & icon sáng lên khi ở đầu trang */
+.header,
+.header a,
+.header .brand-name,
+.header .brand-sub,
+.header .nav a{
+  color: #ffffff;           /* chữ trắng */
+}
+.header.is-scrolled{
+  background: rgba(11, 18, 32, .92);   /* GIỮ NGUYÊN màu hiện tại */
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+
+/* chữ quay về màu cũ */
+.header.is-scrolled,
+.header.is-scrolled a,
+.header.is-scrolled .brand-name,
+.header.is-scrolled .brand-sub,
+.header.is-scrolled .nav a{
+  color: #e5e7eb;   /* hoặc màu bạn đang dùng trước đó */
+}
+.header a:hover{
+  color: #facc15;   /* vàng nhạt – rất hợp UI khách sạn */
+}
+/* =========================
+   USER MENU (match sample)
+   ========================= */
+.user-menu{ position:relative; }
+
+.user-trigger{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:8px 10px;
+  border-radius:14px;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  color:#fff;
+}
+
+.user-role{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  line-height:1.05;
+}
+.user-role__label{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.16em;
+  color:#fff;
+}
+.user-role__sub{
+  margin-top:4px;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.16em;
+  color:var(--gold);
+}
+
+.user-avatar{
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  font-weight:900;
+  letter-spacing:.06em;
+  color:#fff;
+  background:#e11d48;           /* hồng */
+  border:2px solid var(--gold); /* viền vàng */
+  box-shadow:0 6px 16px rgba(0,0,0,.22);
+}
+
+/* caret giống ảnh (mũi tên nhỏ) */
+.user-caret{
+  width:10px;
+  height:10px;
+  display:inline-block;
+  border-right:2px solid rgba(255,255,255,.85);
+  border-bottom:2px solid rgba(255,255,255,.85);
+  transform:rotate(45deg);
+  margin-left:2px;
+  opacity:.9;
+}
+
+/* ===== Dropdown card trắng ===== */
+.user-dropdown{
+  display:none;
+  position:absolute;
+  right:0;
+  top:calc(100% + 14px);
+  width:320px;
+  background:#fff;
+  color:#111827;
+  border-radius:8px;
+  box-shadow:0 26px 60px rgba(0,0,0,.30);
+  border:1px solid rgba(0,0,0,.08);
+  overflow:hidden;
+  z-index:99999;
+}
+.user-menu.open .user-dropdown{ display:block; }
+
+.user-dd-head{
+  padding:18px 18px 16px;
+  border-bottom:1px solid rgba(17,24,39,.06);
+}
+.user-dd-muted{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.14em;
+  color:#9ca3af;
+  margin-bottom:10px;
+}
+.user-dd-email{
+  font-size:16px;
+  font-weight:900;
+  color:#111827;
+  word-break:break-word;
+}
+
+.user-dd-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:16px 18px;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.10em;
+  color:#374151;
+  text-decoration:none;
+}
+.user-dd-item:hover{ background:#f7f7f8; }
+
+.user-dd-divider{
+  height:1px;
+  background:rgba(17,24,39,.06);
+  margin:6px 0;
+}
+
+.user-dd-item.danger{ color:#ef4444; }
+.user-dd-item.danger:hover{ background:#fff1f2; }
+/* FIX: menu item text bị mất */
+.user-dd-item{
+  color:#374151 !important;
+  font-size:13px !important;
+  font-weight:900 !important;
+  letter-spacing:.10em !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+.user-dd-item *{
+  opacity:1 !important;
+  visibility:visible !important;
+  color:inherit !important;
+}
+.user-dd-text{
+  color:#374151 !important;
+}
+.header-user-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.btn-booknow{
+  white-space:nowrap;
+}
