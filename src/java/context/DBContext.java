@@ -5,26 +5,22 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBContext {
-    private Connection connection;
+     protected Connection connection;
 
     public DBContext() {
         try {
-<<<<<<< Updated upstream
-            String url = "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System;encrypt=true;trustServerCertificate=true";
-=======
             // Edit URL , username, password to authenticate with your MS SQL Server
-            String url = "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System1;encrypt=true;trustServerCertificate=true;";
->>>>>>> Stashed changes
+            String url = "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System2;encrypt=true;trustServerCertificate=true;";
             String username = "sa";
             String password = "sa";
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             connection = DriverManager.getConnection(url, username, password);
         } catch (ClassNotFoundException | SQLException ex) {
-            throw new RuntimeException("DB Connection failed: " + ex.getMessage(), ex);
+            System.out.println(ex);
         }
     }
-
-    public Connection getConnection() {
+    
+     public Connection getConnection() {
         return connection;
     }
 }
