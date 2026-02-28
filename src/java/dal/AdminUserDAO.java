@@ -408,57 +408,62 @@ public class AdminUserDAO {
 
     public void updateStaffProfile(UserProfile s) throws Exception {
 
-        // 1) update email trong users
-        String sqlUser = "UPDATE dbo.users SET email = ? WHERE user_id = ?";
+    String sqlUser = "UPDATE dbo.users SET email = ? WHERE user_id = ?";
 
-        // 2) update profile 
-        String sqlStaff
-                = "UPDATE st "
-                + "SET st.full_name = ?, st.gender = ?, st.date_of_birth = ?, st.phone = ?, st.residence_address = ? "
-                + "FROM dbo.staff st "
-                + "JOIN dbo.users u ON u.user_id = st.user_id "
-                + "WHERE st.user_id = ? AND u.role_id IN (1,2,3,4)";
+    String sqlStaff =
+            "UPDATE dbo.staff " +
+            "SET full_name = ?, gender = ?, date_of_birth = ?, phone = ?, residence_address = ?, identity_number = ? " +
+            "WHERE user_id = ?";
 
-        Connection con = null;
-        try {
-            con = new DBContext().getConnection();
-            con.setAutoCommit(false);
+    String sqlStaffInsert =
+            "INSERT INTO dbo.staff(user_id, full_name, gender, date_of_birth, phone, residence_address, identity_number) " +
+            "VALUES(?, ?, ?, ?, ?, ?, ?)";
 
-            // update users.email
-            try (PreparedStatement ps = con.prepareStatement(sqlUser)) {
-                ps.setString(1, s.getEmail());
-                ps.setInt(2, s.getUserId());
+    Connection con = null;
+    try {
+        con = new DBContext().getConnection();
+        con.setAutoCommit(false);
+
+        // 1) update users.email
+        try (PreparedStatement ps = con.prepareStatement(sqlUser)) {
+            ps.setString(1, s.getEmail());
+            ps.setInt(2, s.getUserId());
+            ps.executeUpdate();
+        }
+
+        // 2) update staff profile
+        int updated;
+        try (PreparedStatement ps = con.prepareStatement(sqlStaff)) {
+            ps.setString(1, s.getFullName());
+            ps.setInt(2, s.getGender());
+            ps.setDate(3, s.getDateOfBirth());
+            ps.setString(4, s.getPhone());
+            ps.setString(5, s.getResidenceAddress());
+            ps.setString(6, s.getIdentityNumber());
+            ps.setInt(7, s.getUserId());
+            updated = ps.executeUpdate();
+        }
+
+        // 3) nếu chưa có staff row -> insert
+        if (updated == 0) {
+            try (PreparedStatement ps = con.prepareStatement(sqlStaffInsert)) {
+                ps.setInt(1, s.getUserId());
+                ps.setString(2, s.getFullName());
+                ps.setInt(3, s.getGender());
+                ps.setDate(4, s.getDateOfBirth());
+                ps.setString(5, s.getPhone());
+                ps.setString(6, s.getResidenceAddress());
+                ps.setString(7, s.getIdentityNumber());
                 ps.executeUpdate();
             }
-
-            // update staff profile
-            try (PreparedStatement ps = con.prepareStatement(sqlStaff)) {
-                ps.setString(1, s.getFullName());
-                ps.setInt(2, s.getGender());           // int 1/2/3
-                ps.setDate(3, s.getDateOfBirth());     // java.sql.Date (nullable ok)
-                ps.setString(4, s.getPhone());
-                ps.setString(5, s.getResidenceAddress());
-                ps.setInt(6, s.getUserId());
-
-                int updated = ps.executeUpdate();
-
-                // nếu không update được 
-                if (updated == 0) {
-                    throw new Exception("No staff profile found in dbo.staff for user_id=" + s.getUserId());
-                }
-            }
-
-            con.commit();
-        } catch (Exception ex) {
-            if (con != null) {
-                con.rollback();
-            }
-            throw ex;
-        } finally {
-            if (con != null) {
-                con.close();
-            }
         }
-    }
 
+        con.commit();
+    } catch (Exception ex) {
+        if (con != null) con.rollback();
+        throw ex;
+    } finally {
+        if (con != null) con.close();
+    }
+}
 }

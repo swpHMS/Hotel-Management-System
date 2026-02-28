@@ -160,7 +160,7 @@ public class StaffCreateServlet extends HttpServlet {
                 errors.put("phone", "Phone is required.");
             } else {
                 phone = phone.trim();
-                if (!phone.matches("^0\\d{9,10}$")) {
+                if (!phone.matches("^0\\d{9}$")) {
                     errors.put("phone", "Phone must start with 0 and have 10–11 digits.");
                 }
             }
@@ -176,8 +176,8 @@ public class StaffCreateServlet extends HttpServlet {
                 errors.put("identityNumber", "Identity number is required.");
             } else {
                 identityNumber = identityNumber.trim();
-                if (identityNumber.length() < 6 || identityNumber.length() > 50) {
-                    errors.put("identityNumber", "Identity number length is invalid.");
+                if (!identityNumber.matches("^\\d{12}$")) {
+                    errors.put("identityNumber", "Identity number must be exactly 12 digits");
                 }
             }
 

@@ -204,37 +204,17 @@
 
                                 <div>
                                     <div class="label">Identity Number</div>
-                                    <input class="control readonly"
-                                           value="${empty staff.identityNumber ? 'PENDING-ID' : staff.identityNumber}" readonly/>
-                                    <div class="hint">Identity Number is read-only for verification security.</div>
+                                    <input name="identityNumber"
+                                           value="${staff.identityNumber}"
+                                           class="control ${errors.identityNumber != null ? 'is-invalid' : ''}"/>
+                                    <c:if test="${errors.identityNumber != null}">
+                                        <div class="field-error">${errors.identityNumber}</div>
+                                    </c:if>
+                                    <div class="hint">Example: 012345678901 (CCCD/CMND).</div>
                                 </div>
                             </div>
                         </section>
 
-                        <!-- 3. Account Information (readonly) -->
-                        <!--        <section class="card">
-                                  <div style="border-bottom:1px solid rgba(15,23,42,.08); padding-bottom:14px; margin-bottom:16px;">
-                                    <h3 style="margin:0 0 6px;">3. Account Information</h3>
-                                    <p style="margin:0; color:rgba(15,23,42,.65); font-size:13px;">Current system assignment and status.</p>
-                                  </div>
-                        
-                                  <div class="grid-3" style="opacity:.85;">
-                                    <div>
-                                      <div class="label">User ID</div>
-                                      <div class="control readonly" style="font-family:ui-monospace,Menlo,monospace;">${staff.userId}</div>
-                                    </div>
-                                    <div>
-                                      <div class="label">Role</div>
-                                      <div class="control readonly">${staff.roleName}</div>
-                                    </div>
-                                    <div>
-                                      <div class="label">Status</div>
-                                      <div class="control readonly">${staff.statusText}</div>
-                                    </div>
-                                  </div>
-                        
-                                 
-                                </section>-->
                         <div class="actions">
                             <a class="btn" href="${pageContext.request.contextPath}/admin/staff/detail?id=${staff.userId}">Cancel</a>
                             <button class="btn btn-primary" type="submit">Save Changes</button>

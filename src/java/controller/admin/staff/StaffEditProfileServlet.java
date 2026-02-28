@@ -15,11 +15,17 @@ import utils.Validation;
 public class StaffEditProfileServlet extends HttpServlet {
 
     private int parseIntOrDefault(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return def; }
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     private String normalizeSpaces(String s) {
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
         return s.trim().replaceAll("\\s+", " ");
     }
 
@@ -70,6 +76,7 @@ public class StaffEditProfileServlet extends HttpServlet {
         String phone = Validation.trimToNull(request.getParameter("phone"));
         String email = Validation.trimToNull(request.getParameter("email"));
         String residenceAddress = Validation.trimToNull(request.getParameter("residenceAddress"));
+        String identityNumber = Validation.trimToNull(request.getParameter("identityNumber"));
 
         int gender = parseIntOrDefault(request.getParameter("gender"), 0); // 1/2/3
         String dobRaw = request.getParameter("dateOfBirth");              // yyyy-MM-dd
@@ -86,7 +93,6 @@ public class StaffEditProfileServlet extends HttpServlet {
             }
 
             // ===== VALIDATE =====
-
             // Full name: required + không có số
             if (isBlank(fullName)) {
                 errors.put("fullName", "Full name is required.");
@@ -118,10 +124,12 @@ public class StaffEditProfileServlet extends HttpServlet {
             if (phone != null && !Validation.isPhoneVN(phone)) {
                 errors.put("phone", "Invalid phone number (VN format).");
             }
+            if (identityNumber != null && !Validation.isCCCD(identityNumber)) {
+                errors.put("identityNumber", "Identity Number must be 9 or 12 digits.");
+            }
 
             // Address: optional, bạn có thể bắt buộc nếu muốn
             // if (residenceAddress == null) errors.put("residenceAddress", "Address is required.");
-
             // ===== Nếu có lỗi -> forward lại, giữ data =====
             if (!errors.isEmpty()) {
                 staff.setFullName(fullName);
@@ -130,6 +138,7 @@ public class StaffEditProfileServlet extends HttpServlet {
                 staff.setResidenceAddress(residenceAddress);
                 staff.setPhone(phone);
                 staff.setEmail(email);
+                staff.setIdentityNumber(identityNumber);
 
                 request.setAttribute("active", "staff_list");
                 request.setAttribute("staff", staff);
@@ -145,6 +154,7 @@ public class StaffEditProfileServlet extends HttpServlet {
             staff.setResidenceAddress(residenceAddress);
             staff.setPhone(phone);
             staff.setEmail(email);
+            staff.setIdentityNumber(identityNumber);
 
             dao.updateStaffProfile(staff);
 

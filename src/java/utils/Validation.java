@@ -37,9 +37,14 @@ public class Validation {
         return s != null && VN_PHONE.matcher(s).matches();
     }
 
-    public static boolean isCCCD(String s){
-        return s != null && CCCD.matcher(s).matches();
-    }
+//    public static boolean isCCCD(String s){
+//        return s != null && CCCD.matcher(s).matches();
+//    }
+    public static boolean isCCCD(String s) {
+    return s != null && s.matches("^\\d{12}$");
+}
+    
+    
 
     public static boolean minLen(String s, int n){
         return s != null && s.length() >= n;
