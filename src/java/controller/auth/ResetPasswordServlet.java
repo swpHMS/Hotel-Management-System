@@ -1,13 +1,7 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
-
 package controller.auth;
 
 import dal.UserDAO;
 import java.io.IOException;
-import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -15,90 +9,73 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
- *
- * @author ASUS
+ * ResetPasswordServlet handles the password recovery process.
+ * Author: ASUS
  */
-@WebServlet(name="ResetPasswordServlet", urlPatterns={"/resetPassword"})
+@WebServlet(name = "ResetPasswordServlet", urlPatterns = {"/reset-password"})
 public class ResetPasswordServlet extends HttpServlet {
-   
-    /** 
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet ResetPasswordServlet</title>");  
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet ResetPasswordServlet at " + request.getContextPath () + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    } 
 
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /** 
-     * Handles the HTTP <code>GET</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-    String token = request.getParameter("token");
-    request.setAttribute("token", token);
-    request.getRequestDispatcher("/view/auth/reset-password.jsp").forward(request, response);
-}
-
-    /** 
-     * Handles the HTTP <code>POST</code> method.
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-    String token = request.getParameter("token");
-    // Sửa lại cho đúng name="password" trong file JSP
-    String newPass = request.getParameter("password"); 
-    String confirmPass = request.getParameter("confirmPassword");
-
-    if (newPass != null && newPass.equals(confirmPass)) {
-        UserDAO dao = new UserDAO();
-        // Cập nhật pass mới và hủy token để bảo mật
-        if (dao.resetPassword(token, newPass)) {
-            request.getSession().setAttribute("successMsg", "Đặt lại mật khẩu thành công! Vui lòng đăng nhập.");
-            response.sendRedirect(request.getContextPath() + "/view/auth/login.jsp?message=reset_success");
-        } else {
-            request.setAttribute("error", "Link đã hết hạn hoặc không hợp lệ!");
-            request.setAttribute("token", token); // Giữ lại token để dùng nếu lỗi
-            request.getRequestDispatcher("/view/auth/reset-password.jsp").forward(request, response);
-        }
-    } else {
-        request.setAttribute("error", "Mật khẩu xác nhận không khớp!");
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        String token = request.getParameter("token");
         request.setAttribute("token", token);
         request.getRequestDispatcher("/view/auth/reset-password.jsp").forward(request, response);
     }
-}
 
-    /** 
-     * Returns a short description of the servlet.
-     * @return a String containing servlet description
-     */
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        String token = request.getParameter("token");
+        String newPass = request.getParameter("password");
+        String confirmPass = request.getParameter("confirmPassword");
+        
+        String errorMsg = null;
+
+        // --- PASSWORD VALIDATION LOGIC ---
+        
+        //Check for empty fields
+        if (newPass == null || newPass.isEmpty() || confirmPass == null || confirmPass.isEmpty()) {
+            errorMsg = "Please enter all password fields!";
+        }
+        //Complexity check: >= 8 chars, 1 Uppercase, 1 Digit, No Spaces
+        else if (!newPass.matches("^(?=.*[A-Z])(?=.*\\d)\\S{8,}$")) {
+            errorMsg = "Password must be at least 8 characters long, including at least one uppercase letter, one number, and no spaces!";
+        }
+        //Confirm password check
+        else if (!newPass.equals(confirmPass)) {
+            errorMsg = "Confirm password does not match!";
+        }
+
+        // If there is a validation error, return to the reset page
+        if (errorMsg != null) {
+            request.setAttribute("error", errorMsg);
+            request.setAttribute("token", token);
+            request.getRequestDispatcher("/view/auth/reset-password.jsp").forward(request, response);
+            return;
+        }
+
+        try {
+            UserDAO dao = new UserDAO();
+            // Update the new password and invalidate the token for security
+            if (dao.resetPassword(token, newPass)) {
+                // Use session to persist message across redirect
+                request.getSession().setAttribute("successMsg", "Password reset successfully! Please log in with your new password.");
+                response.sendRedirect(request.getContextPath() + "/view/auth/login.jsp?message=reset_success");
+            } else {
+                request.setAttribute("error", "The reset link is invalid or has expired!");
+                request.setAttribute("token", token);
+                request.getRequestDispatcher("/view/auth/reset-password.jsp").forward(request, response);
+            }
+        } catch (Exception e) {
+            request.setAttribute("error", "System error: " + e.getMessage());
+            request.setAttribute("token", token);
+            request.getRequestDispatcher("/view/auth/reset-password.jsp").forward(request, response);
+        }
+    }
+
     @Override
     public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
+        return "Handles password reset requests and validates new password credentials.";
+    }
 }

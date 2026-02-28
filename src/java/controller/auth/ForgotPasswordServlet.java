@@ -17,7 +17,7 @@ public class ForgotPasswordServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
-        // Chuyển hướng người dùng đến trang nhập email
+
         request.getRequestDispatcher("/view/auth/forgot.jsp").forward(request, response);
     } 
 
@@ -29,28 +29,25 @@ public class ForgotPasswordServlet extends HttpServlet {
         User user = dao.getUserByEmail(email);
 
         if (user != null) {
-            // KIỂM TRA TRẠNG THÁI: Nếu chưa kích hoạt (status = 0) thì không cho reset
             if (user.getStatus() == 0) {
-                request.setAttribute("error", "Tài khoản này chưa được kích hoạt. Vui lòng kiểm tra email để xác thực trước!");
+                request.setAttribute("error", "This account is not yet activated. Please check your email for confirmation first!");
             } else {
-                // Chỉ xử lý cho tài khoản đã kích hoạt (status = 1)
                 String token = UUID.randomUUID().toString();
                 dao.updateToken(email, token);
 
-                // Gửi email chứa link dẫn tới ResetPasswordServlet
                 String resetLink = request.getScheme() + "://" + request.getServerName() + ":" 
                                  + request.getServerPort() + request.getContextPath() 
                                  + "/reset-password?token=" + token;
                 
-                String content = "Bạn đã yêu cầu đặt lại mật khẩu tại Regal Quintet Hotel.\n"
-                               + "Vui lòng nhấn vào đường dẫn sau để thực hiện: " + resetLink;
+                String content = "You have requested a password reset at the Regal Quintet Hotel..\n"
+                               + "Please click on the following link to proceed: " + resetLink;
                 
-                EmailUtils.sendEmail(email, "Regal Quintet - Đặt lại mật khẩu", content);
+                EmailUtils.sendEmail(email, "Regal Quintet - Reset Password", content);
 
-                request.setAttribute("message", "Yêu cầu đã được gửi! Vui lòng kiểm tra email của bạn.");
+                request.setAttribute("message", "Your request has been submitted! Please check your email.");
             }
         } else {
-            request.setAttribute("error", "Email không tồn tại trong hệ thống!");
+            request.setAttribute("error", "The email address does not exist in the system.!");
         }
         
         request.getRequestDispatcher("/view/auth/forgot.jsp").forward(request, response);

@@ -13,16 +13,15 @@ import jakarta.servlet.http.HttpSession;
 import model.GoogleUserDTO;
 import model.User;
 
-@WebServlet(name="LoginServlet", urlPatterns={"/login"})
+@WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
 public class LoginServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
+            throws ServletException, IOException {
         String code = request.getParameter("code");
         String contextPath = request.getContextPath();
 
-        // 1. Xử lý đăng nhập Google
         if (code != null && !code.isEmpty()) {
             try {
                 String accessToken = GoogleUtils.getToken(code);
@@ -35,26 +34,32 @@ public class LoginServlet extends HttpServlet {
                     user = dao.getUserByEmail(googleUser.getEmail());
                 }
 
-                HttpSession session = request.getSession();
-                session.setAttribute("userAccount", user);
-                // Giữ session Google lâu hơn (ví dụ 1 ngày)
-                session.setMaxInactiveInterval(24 * 60 * 60); 
-                
-                redirectUser(user, response, contextPath);
+                if (user != null && user.getStatus() == 1) {
+                    HttpSession session = request.getSession();
+                    session.setAttribute("userAccount", user);
+                    session.setMaxInactiveInterval(24 * 60 * 60);
+                    redirectUser(user, response, contextPath);
+                } else {
+                    response.sendRedirect(contextPath + "/view/auth/login.jsp?error=account_locked");
+                }
                 return;
             } catch (Exception e) {
-                response.sendRedirect(contextPath + "/view/auth/login.jsp?error=google_auth_failed");
+                e.printStackTrace();
+                response.sendRedirect(contextPath + "/view/auth/login.jsp?error=google_failed");
                 return;
             }
         }
 
-        // 2. Đọc Cookie để tự động điền form (Remember Me)
+        // Đọc cookie để tự động điền form login
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie c : cookies) {
-                if (c.getName().equals("cookEmail")) request.setAttribute("email", c.getValue());
-                if (c.getName().equals("cookPass")) request.setAttribute("password", c.getValue());
-                if (c.getName().equals("cookRem")) request.setAttribute("remember", c.getValue());
+                if (c.getName().equals("cookEmail")) {
+                    request.setAttribute("email", c.getValue());
+                }
+                if (c.getName().equals("cookRem")) {
+                    request.setAttribute("remember", c.getValue());
+                }
             }
         }
         request.getRequestDispatcher("/view/auth/login.jsp").forward(request, response);
@@ -62,76 +67,83 @@ public class LoginServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-    throws ServletException, IOException {
+            throws ServletException, IOException {
         String email = request.getParameter("email");
         String password = request.getParameter("password");
-        String remember = request.getParameter("remember"); // Ô tích "Remember me"
+        String remember = request.getParameter("remember");
         String contextPath = request.getContextPath();
 
         try {
             UserDAO dao = new UserDAO();
-            User user = dao.checkLogin(email, password);
+            
+            // 1. Kiểm tra email tồn tại
+            User user = dao.getUserByEmail(email);
 
-            if (user != null) {
+            if (user == null) {
+                request.setAttribute("error", "Account does not exist!");
+                request.setAttribute("email", email);
+                request.getRequestDispatcher("/view/auth/login.jsp").forward(request, response);
+                return;
+            }
+
+            // 2. Kiểm tra mật khẩu (Sử dụng BCrypt)
+            if (user.getPasswordHash() != null && org.mindrot.jbcrypt.BCrypt.checkpw(password, user.getPasswordHash())) {
+                
+                // 3. Kiểm tra trạng thái verify
                 if (user.getStatus() == 0) {
-                    request.setAttribute("error", "Tài khoản chưa được kích hoạt!");
+                    request.setAttribute("error", "Your account is inactive!");
                     request.setAttribute("email", email);
                     request.getRequestDispatcher("/view/auth/login.jsp").forward(request, response);
                     return;
                 }
 
-                // 3. THIẾT LẬP DÙNG LÂU (COOKIE & SESSION)
-                HttpSession session = request.getSession();
+                // ĐĂNG NHẬP THÀNH CÔNG
+                HttpSession session = request.getSession(true);
                 session.setAttribute("userAccount", user);
+                session.setMaxInactiveInterval(24 * 60 * 60);
 
-                // Tạo Cookie
-                Cookie cEmail = new Cookie("cookEmail", email);
-                Cookie cPass = new Cookie("cookPass", password);
-                Cookie cRem = new Cookie("cookRem", "checked");
-
-                if (remember != null) {
-                    // LƯU LÂU: 30 ngày (tính bằng giây)
-                    int age = 60 * 60 * 24 * 30; 
-                    cEmail.setMaxAge(age);
-                    cPass.setMaxAge(age);
-                    cRem.setMaxAge(age);
-                    // Tăng thời gian Session chờ trên server (ví dụ 1 ngày)
-                    session.setMaxInactiveInterval(24 * 60 * 60);
-                } else {
-                    // Xóa cookie nếu không tích chọn
-                    cEmail.setMaxAge(0);
-                    cPass.setMaxAge(0);
-                    cRem.setMaxAge(0);
-                }
-                
-                // Quan trọng: Đặt Path="/" để cookie có tác dụng toàn trang web
-                cEmail.setPath("/");
-                cPass.setPath("/");
-                cRem.setPath("/");
-                
-                response.addCookie(cEmail);
-                response.addCookie(cPass);
-                response.addCookie(cRem);
+                // Gọi hàm xử lý Cookie (Đã thêm bên dưới)
+                handleCookies(email, remember, response);
 
                 redirectUser(user, response, contextPath);
+
             } else {
-                request.setAttribute("error", "Email hoặc mật khẩu không chính xác!");
+                // Sai mật khẩu
+                request.setAttribute("error", "Incorrect password!");
                 request.setAttribute("email", email);
                 request.getRequestDispatcher("/view/auth/login.jsp").forward(request, response);
             }
         } catch (Exception e) {
-            request.setAttribute("error", "Lỗi hệ thống: " + e.getMessage());
+            request.setAttribute("error", "System error: " + e.getMessage());
             request.getRequestDispatcher("/view/auth/login.jsp").forward(request, response);
         }
     }
 
-    private void redirectUser(User user, HttpServletResponse response, String contextPath) throws IOException {
-        if (user.getRoleId() == 1) {
-            response.sendRedirect(contextPath + "/admin/dashboard");
-        } else if (user.getRoleId() == 2) {
-            response.sendRedirect(contextPath + "/staff/management");
+
+    private void handleCookies(String email, String remember, HttpServletResponse response) {
+        Cookie cEmail = new Cookie("cookEmail", email);
+        Cookie cRem = new Cookie("cookRem", "checked");
+        cEmail.setPath("/");
+        cRem.setPath("/");
+
+        if (remember != null) {
+            int age = 60 * 60 * 24 * 7; // 7 ngày
+            cEmail.setMaxAge(age);
+            cRem.setMaxAge(age);
         } else {
-            response.sendRedirect(contextPath + "/view/home.jsp");
+            cEmail.setMaxAge(0);
+            cRem.setMaxAge(0);
+        }
+        response.addCookie(cEmail);
+        response.addCookie(cRem);
+    }
+
+    private void redirectUser(User user, HttpServletResponse response, String contextPath) throws IOException {
+        int role = user.getRoleId();
+        if (role == 1) {
+            response.sendRedirect(contextPath + "/admin/dashboard");
+        } else {
+            response.sendRedirect(contextPath + "/home");
         }
     }
 }

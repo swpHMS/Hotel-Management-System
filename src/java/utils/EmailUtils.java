@@ -90,7 +90,7 @@ public class EmailUtils {
 
     // 4. Hàm gửi mail khôi phục (Dùng cho Forgot Password)
     public static void sendForgotPasswordEmail(String to, String token) {
-        String link = "http://localhost:9999/SWP391_HMS_GR2/resetPassword?token=" + token;
+        String link = "http://localhost:9999/SWP391_HMS_GR2/reset-password?token=" + token;
         String subject = "Đặt lại mật khẩu - Regal Quintet";
         String content = "<h3>Yêu cầu đổi mật khẩu</h3><p>Nhấn vào link: <a href='" + link + "'>Đổi mật khẩu</a></p>";
         sendEmail(to, subject, content); // Hết lỗi gạch đỏ sendEmail
