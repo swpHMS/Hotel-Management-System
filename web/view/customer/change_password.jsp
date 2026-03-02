@@ -250,32 +250,27 @@
         <div class="cp-title">Change Password</div>
 
         <div class="card">
+            <!-- alerts -->
             <c:if test="${not empty flash_success}">
-                <c:set var="justChanged" value="1"/>
                 <div class="alert ok">
                     <c:out value="${flash_success}"/>
                 </div>
+                <c:remove var="flash_success" scope="session"/>
             </c:if>
 
             <c:if test="${not empty flash_error}">
                 <div class="alert err">
                     <c:out value="${flash_error}"/>
                 </div>
+                <c:remove var="flash_error" scope="session"/>
             </c:if>
-            <c:remove var="flash_success" scope="session"/>
-            <c:remove var="flash_error" scope="session"/>
-
-
 
             <form method="post" action="${pageContext.request.contextPath}/customer/change-password">
                 <div class="field">
                     <label class="label" for="currentPassword">Current Password</label>
                     <div class="pw-wrap">
                         <input class="input" id="currentPassword" type="password" name="currentPassword"
-                               value="<c:out value='${sessionScope.cp_current}'/>"
                                autocomplete="current-password" required />
-
-
                         <button type="button" class="pw-toggle" aria-label="Show password" data-target="currentPassword">
                             <svg class="icon-eye" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
@@ -304,10 +299,7 @@
                         <label class="label" for="newPassword">New Password</label>
                         <div class="pw-wrap">
                             <input class="input" id="newPassword" type="password" name="newPassword"
-                                   value="<c:out value='${sessionScope.cp_new}'/>"
                                    autocomplete="new-password" required />
-
-
                             <button type="button" class="pw-toggle" aria-label="Show password" data-target="newPassword">
                                 <svg class="icon-eye" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
@@ -335,9 +327,7 @@
                         <label class="label" for="confirmPassword">Confirm New Password</label>
                         <div class="pw-wrap">
                             <input class="input" id="confirmPassword" type="password" name="confirmPassword"
-                                   value="<c:out value='${sessionScope.cp_confirm}'/>"
                                    autocomplete="new-password" required />
-
                             <button type="button" class="pw-toggle" aria-label="Show password" data-target="confirmPassword">
                                 <svg class="icon-eye" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
@@ -382,15 +372,6 @@
             </form>
         </div>
     </div>
-
-    <c:if test="${justChanged == 1}">
-        <script>
-            setTimeout(() => {
-                window.location.href =
-                        "${pageContext.request.contextPath}/customer/dashboard?tab=viewProfile";
-            }, 2000);
-        </script>
-    </c:if>
 
     <script>
         (function () {

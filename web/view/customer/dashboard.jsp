@@ -768,6 +768,24 @@
                 flex-direction:column;
                 gap:14px; /* khoảng cách giữa 2 card */
             }
+            .vp2-editBtn{
+                display:inline-flex;
+                align-items:center;
+                gap:6px;
+                padding:8px 14px;
+                border-radius:10px;
+                font-size:13px;
+                font-weight:600;
+                text-decoration:none;
+                background:#2563eb;
+                color:#fff;
+                border:1px solid #2563eb;
+                transition:all .15s ease;
+            }
+            .vp2-editBtn:hover{
+                background:#1d4ed8;
+            }
+
 
 
             /* Responsive */
@@ -935,26 +953,27 @@
                 color:#94a3b8;
                 font-weight:500;
             }
-
-            /* actions */
-            .ep-actions{
-                margin-top:14px;
-                display:flex;
-                justify-content:flex-end;
-                gap:10px;
-            }
             .ep-btn{
+                appearance:none;
+                border:1px solid #d7e0ee;
+                background:#fff;
+                color:#0f172a;
+                padding:11px 18px;      /* giống cp */
+                border-radius:10px;     /* giống cp */
+                font-size:14px;
+                font-weight:600;
+                cursor:pointer;
+                text-decoration:none;
                 display:inline-flex;
                 align-items:center;
                 justify-content:center;
-                padding:10px 14px;
-                border-radius:12px;
-                font-size:14px;
-                font-weight:600;
-                text-decoration:none;
-                border:1px solid transparent;
-                cursor:pointer;
+                min-width:140px;        /* QUAN TRỌNG */
+                transition: transform .05s ease, filter .12s ease, background .12s ease;
             }
+            .ep-btn:active{
+                transform: translateY(1px);
+            }
+
             .ep-btn--ghost{
                 background:#f8fafc;
                 color:#0f172a;
@@ -964,11 +983,12 @@
                 background:#f1f5f9;
             }
             .ep-btn--primary{
-                background:#0a1b2a;
+                background:#2563eb;
+                border-color:#2563eb;
                 color:#fff;
             }
             .ep-btn--primary:hover{
-                filter:brightness(.95);
+                background:#1d4ed8;
             }
 
             /* responsive */
@@ -1083,7 +1103,7 @@
                 padding-top:14px;
                 border-top:1px solid #eef2f7;
                 display:flex;
-                justify-content:flex-end;
+                justify-content:flex-start;
                 gap:10px;
             }
 
@@ -1188,13 +1208,26 @@
                     </div>
 
                     <div class="back">
-                        <a href="${pageContext.request.contextPath}/">← Back to Home</a>
+                        <a href="${pageContext.request.contextPath}/home">← Back to Home</a>
                     </div>
                 </div>
 
                 <div class="content">
-                    <jsp:include page="${contentPage}" />
+                    <c:choose>
+                        <c:when test="${not empty contentPage}">
+                            <jsp:include page="${contentPage}" />
+                        </c:when>
+                        <c:otherwise>
+                            <div class="empty">
+                                <div class="icon">!</div>
+                                <h3>Missing content</h3>
+                                <p>contentPage is empty.</p>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
+
+
 
             </div>
         </div>

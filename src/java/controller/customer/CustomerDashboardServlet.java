@@ -1,6 +1,6 @@
 package controller.customer;
 
-import dal.ProfileDAO;
+import dal.CustomerProfileDAO;
 import model.ProfileView;
 import utils.AuthUtils;
 import utils.NameUtils;
@@ -14,7 +14,7 @@ import java.io.IOException;
 @WebServlet(name = "CustomerDashboardServlet", urlPatterns = {"/customer/dashboard"})
 public class CustomerDashboardServlet extends HttpServlet {
 
-    private final ProfileDAO profileDAO = new ProfileDAO();
+    private final CustomerProfileDAO profileDAO = new CustomerProfileDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -26,7 +26,7 @@ public class CustomerDashboardServlet extends HttpServlet {
             return;
         }
 
-        // 1) Load profile chung
+        // Load profile chung
         ProfileView profile = profileDAO.getCustomerProfileByUserId(userId);
         request.setAttribute("profile", profile);
 
@@ -47,21 +47,21 @@ public class CustomerDashboardServlet extends HttpServlet {
                 session.removeAttribute("flash_success");
             }
 
-            // sticky form (editProfile) giữ nguyên như bạn đang làm
+            // sticky form (editProfile)
             request.setAttribute("form_fullName", session.getAttribute("form_fullName"));
             request.setAttribute("form_gender", session.getAttribute("form_gender"));
             request.setAttribute("form_dob", session.getAttribute("form_dob"));
             request.setAttribute("form_phone", session.getAttribute("form_phone"));
             request.setAttribute("form_address", session.getAttribute("form_address"));
-
+            
             session.removeAttribute("form_fullName");
             session.removeAttribute("form_gender");
             session.removeAttribute("form_dob");
             session.removeAttribute("form_phone");
             session.removeAttribute("form_address");
+
         }
 
-        // 3) Tab routing
         String tab = request.getParameter("tab");
         if (tab == null || tab.isBlank()) {
             tab = "current";
@@ -69,11 +69,14 @@ public class CustomerDashboardServlet extends HttpServlet {
 
         String contentPage;
         switch (tab) {
-            case "viewProfile":
-                contentPage = "/view/customer/view_profile.jsp";
+            case "current":
+                contentPage = "/view/customer/current_bookings.jsp";
                 break;
             case "past":
-                contentPage = "/view/customer/past.jsp";
+                contentPage = "/view/customer/past_stays.jsp";
+                break;
+            case "viewProfile":
+                contentPage = "/view/customer/view_profile.jsp";
                 break;
             case "editProfile":
                 contentPage = "/view/customer/edit_profile.jsp";
@@ -81,16 +84,15 @@ public class CustomerDashboardServlet extends HttpServlet {
             case "changePassword":
                 contentPage = "/view/customer/change_password.jsp";
                 break;
-            case "current":
             default:
                 tab = "current";
-                contentPage = "/view/customer/current.jsp";
-                break;
+                contentPage = "/view/customer/current_bookings.jsp";
         }
 
         request.setAttribute("activeTab", tab);
         request.setAttribute("contentPage", contentPage);
 
         request.getRequestDispatcher("/view/customer/dashboard.jsp").forward(request, response);
+
     }
 }

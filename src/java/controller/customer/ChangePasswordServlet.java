@@ -44,9 +44,10 @@ public class ChangePasswordServlet extends HttpServlet {
         String newPassword = request.getParameter("newPassword");
         String confirmPassword = request.getParameter("confirmPassword");
 
-        session.setAttribute("cp_current", currentPassword);
-        session.setAttribute("cp_new", newPassword);
-        session.setAttribute("cp_confirm", confirmPassword);
+        // ✅ KHÔNG lưu password vào session (security)
+        // session.setAttribute("cp_current", currentPassword);
+        // session.setAttribute("cp_new", newPassword);
+        // session.setAttribute("cp_confirm", confirmPassword);
 
         if (isBlank(currentPassword) || isBlank(newPassword) || isBlank(confirmPassword)) {
             session.setAttribute("flash_error", "Please fill in all fields.");
@@ -112,12 +113,13 @@ public class ChangePasswordServlet extends HttpServlet {
             return;
         }
 
-        session.removeAttribute("cp_current");
-        session.removeAttribute("cp_new");
-        session.removeAttribute("cp_confirm");
+        // ===== SUCCESS: logout -> new session for login page message =====
+        session.invalidate();
 
-        session.setAttribute("flash_success", "Password changed successfully.");
-        redirectTab(response, request, "changePassword");
+        HttpSession newSession = request.getSession(true);
+        newSession.setAttribute("successMsg", "Password changed successfully. Please login again.");
+
+        response.sendRedirect(request.getContextPath() + "/login");
     }
 
     private void redirectTab(HttpServletResponse res, HttpServletRequest req, String tab)
