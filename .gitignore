@@ -30,3 +30,6 @@ replay_pid*
 nbproject/private/
 build/
 dist/
+nbproject/genfiles.properties
+nbproject/genfiles.properties
+nbproject/project.xml
