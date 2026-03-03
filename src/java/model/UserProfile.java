@@ -1,11 +1,15 @@
 package model;
 
+import java.sql.Date;
+
 public class UserProfile {
 
+    private int staffId;
     private int userId;
+
     private String email;
     private int status;        // 1 = ACTIVE, 0 = INACTIVE
-    private int authProvider;  // 1 = LOCAL, 2 = GOOGLE (theo dữ liệu bạn seed)
+    private int authProvider;  // 1 = LOCAL, 2 = GOOGLE
     private String googleSub;  // nullable
     private int roleId;
     private String roleName;   // lấy từ bảng roles nếu JOIN
@@ -13,11 +17,25 @@ public class UserProfile {
     // Optional (nếu JOIN sang staff)
     private String fullName;
     private String phone;
-    
+
+    // Profile fields
+    private int gender;
+    private Date dateOfBirth;
+    private String identityNumber;
+    private String residenceAddress;
+
     public UserProfile() {
     }
 
-    // getters/setters
+    // ===== getters/setters =====
+    public int getStaffId() {
+        return staffId;
+    }
+
+    public void setStaffId(int staffId) {
+        this.staffId = staffId;
+    }
+
     public int getUserId() {
         return userId;
     }
@@ -90,7 +108,39 @@ public class UserProfile {
         this.phone = phone;
     }
 
-    // helper text
+    public int getGender() {
+        return gender;
+    }
+
+    public void setGender(int gender) {
+        this.gender = gender;
+    }
+
+    public Date getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(Date dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getIdentityNumber() {
+        return identityNumber;
+    }
+
+    public void setIdentityNumber(String identityNumber) {
+        this.identityNumber = identityNumber;
+    }
+
+    public String getResidenceAddress() {
+        return residenceAddress;
+    }
+
+    public void setResidenceAddress(String residenceAddress) {
+        this.residenceAddress = residenceAddress;
+    }
+
+    // ===== helper text =====
     public String getStatusText() {
         return status == 1 ? "ACTIVE" : "INACTIVE";
     }

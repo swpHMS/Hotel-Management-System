@@ -6,19 +6,22 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.sql.Date;
-import java.time.LocalDate;
-import java.time.Period;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import model.Role;
 import org.mindrot.jbcrypt.BCrypt;
+import utils.Validation;
 
 @WebServlet(name = "StaffCreateServlet", urlPatterns = {"/admin/staff/create"})
 public class StaffCreateServlet extends HttpServlet {
 
     private int parseIntOrDefault(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return def; }
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     private boolean isBlank(String s) {
@@ -26,9 +29,9 @@ public class StaffCreateServlet extends HttpServlet {
     }
 
     private void forwardWithForm(HttpServletRequest request, HttpServletResponse response,
-                                 AdminUserDAO dao,
-                                 Map<String, String> errors,
-                                 Map<String, String> oldValues)
+            AdminUserDAO dao,
+            Map<String, String> errors,
+            Map<String, String> oldValues)
             throws Exception {
 
         List<Role> roles = dao.getAllNonCustomerRoles();
@@ -67,9 +70,10 @@ public class StaffCreateServlet extends HttpServlet {
         // ===== 1) Read params =====
         String email = request.getParameter("email");
         String password = request.getParameter("password");
-        String roleIdRaw = request.getParameter("roleId");
-        String statusRaw = request.getParameter("status");
+        String confirmPassword = request.getParameter("confirmPassword");
 
+        String roleIdRaw = request.getParameter("roleId");
+        int status = 1;//khi tạo luôn là active
         String fullName = request.getParameter("fullName");
         String phone = request.getParameter("phone");
         String genderRaw = request.getParameter("gender");
@@ -78,7 +82,9 @@ public class StaffCreateServlet extends HttpServlet {
 
         // hỗ trợ 2 tên param
         String address = request.getParameter("address");
-        if (address == null) address = request.getParameter("residenceAddress");
+        if (address == null) {
+            address = request.getParameter("residenceAddress");
+        }
 
         // ===== 2) Prepare =====
         Map<String, String> errors = new LinkedHashMap<>();
@@ -87,7 +93,7 @@ public class StaffCreateServlet extends HttpServlet {
         // giữ lại dữ liệu để render lại
         old.put("email", email == null ? "" : email);
         old.put("roleId", roleIdRaw == null ? "" : roleIdRaw);
-        old.put("status", statusRaw == null ? "1" : statusRaw);
+        old.put("status", "1");
 
         old.put("fullName", fullName == null ? "" : fullName);
         old.put("phone", phone == null ? "" : phone);
@@ -113,10 +119,19 @@ public class StaffCreateServlet extends HttpServlet {
             }
 
             // Password
+            String passwordRegex = "^(?=.*[A-Z])(?=.*\\d)\\S{8,}$";
+
             if (isBlank(password)) {
                 errors.put("password", "Password is required.");
-            } else if (password.length() < 6) {
-                errors.put("password", "Password must be at least 6 characters.");
+            } else if (!password.matches(passwordRegex)) {
+                errors.put("password",
+                        "Password must be ≥8 characters, include at least 1 uppercase letter, 1 number and contain no spaces.");
+            }
+
+            if (isBlank(confirmPassword)) {
+                errors.put("confirmPassword", "Confirm password is required.");
+            } else if (!confirmPassword.equals(password)) {
+                errors.put("confirmPassword", "Confirm password does not match.");
             }
 
             // Role
@@ -125,28 +140,27 @@ public class StaffCreateServlet extends HttpServlet {
                 errors.put("roleId", "Role is required.");
             }
 
-            // Status
-            int status = parseIntOrDefault(statusRaw, 1);
-            if (!(status == 0 || status == 1)) {
-                errors.put("status", "Status is invalid.");
-            }
-
             // Full name
             if (isBlank(fullName)) {
                 errors.put("fullName", "Full name is required.");
             } else {
-                fullName = fullName.trim();
-                if (fullName.length() < 2 || fullName.length() > 200) {
-                    errors.put("fullName", "Full name must be 2–200 characters.");
+                fullName = fullName.trim().replaceAll("\\s+", " "); // gom nhiều space thành 1
+
+                // Không được có số (và có thể chặn ký tự lạ)
+                if (fullName.matches(".*\\d.*")) {
+                    errors.put("fullName", "Full name must not contain numbers.");
+                } // (Tuỳ chọn) chỉ cho chữ + khoảng trắng (hỗ trợ tiếng Việt)
+                else if (!fullName.matches("^[\\p{L} ]+$")) {
+                    errors.put("fullName", "Full name only allows letters and spaces.");
                 }
             }
 
-            // Phone (tạm theo VN)
+            // Phone 
             if (isBlank(phone)) {
                 errors.put("phone", "Phone is required.");
             } else {
                 phone = phone.trim();
-                if (!phone.matches("^0\\d{9,10}$")) {
+                if (!phone.matches("^0\\d{9}$")) {
                     errors.put("phone", "Phone must start with 0 and have 10–11 digits.");
                 }
             }
@@ -157,40 +171,26 @@ public class StaffCreateServlet extends HttpServlet {
                 errors.put("gender", "Gender is invalid.");
             }
 
-            // DOB
-            Date dob = null;
-            if (isBlank(dobRaw)) {
-                errors.put("dob", "Date of birth is required.");
-            } else {
-                try {
-                    dob = Date.valueOf(dobRaw);
-                    LocalDate birth = dob.toLocalDate();
-                    LocalDate now = LocalDate.now();
-
-                    if (birth.isAfter(now)) {
-                        errors.put("dob", "Date of birth cannot be in the future.");
-                    } else {
-                        int age = Period.between(birth, now).getYears();
-                        // nếu bạn muốn bắt buộc >= 18 thì bật dòng dưới
-                        // if (age < 18) errors.put("dob", "Staff must be at least 18 years old.");
-                    }
-                } catch (Exception e) {
-                    errors.put("dob", "Invalid date format. Use yyyy-MM-dd.");
-                }
-            }
-
             // Identity Number
             if (isBlank(identityNumber)) {
                 errors.put("identityNumber", "Identity number is required.");
             } else {
                 identityNumber = identityNumber.trim();
-                if (identityNumber.length() < 6 || identityNumber.length() > 50) {
-                    errors.put("identityNumber", "Identity number length is invalid.");
+                if (!identityNumber.matches("^\\d{12}$")) {
+                    errors.put("identityNumber", "Identity number must be exactly 12 digits");
                 }
             }
 
-            // ===== 4) Check duplicate (DB) nếu DAO có hỗ trợ =====
-            // Nếu bạn CHƯA có 2 hàm này trong AdminUserDAO thì comment 2 đoạn dưới.
+            String dobError = Validation.validateDobForStaff(dobRaw);
+            Date dob = null;
+
+            if (dobError != null) {
+                errors.put("dob", dobError);
+            } else {
+                dob = Validation.parseDateOrNull(dobRaw); // đã chắc chắn không null
+            }
+
+            // ===== 4) Check duplicate ===
             if (!errors.containsKey("email") && dao.emailExists(email)) {
                 errors.put("email", "Email already exists.");
             }
@@ -219,11 +219,10 @@ public class StaffCreateServlet extends HttpServlet {
                     phone,
                     address
             );
-
-            response.sendRedirect(request.getContextPath() + "/admin/staff/detail?id=" + newUserId);
+            response.sendRedirect(request.getContextPath() + "/admin/staff");
 
         } catch (java.sql.SQLException sqlEx) {
-            // fallback nếu chưa dùng emailExists/identityExists hoặc DB báo unique
+
             String msg = sqlEx.getMessage();
             if (msg != null && (msg.contains("2627") || msg.contains("2601"))) {
                 errors.put("common", "Duplicate data: email or identity number already exists.");

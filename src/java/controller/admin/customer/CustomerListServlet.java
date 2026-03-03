@@ -19,7 +19,6 @@ public class CustomerListServlet extends HttpServlet {
         try {
             String q = req.getParameter("q");
             q = (q == null) ? null : q.trim();
-
             String genderStr = req.getParameter("gender");  // all|1|2|3
             String status = req.getParameter("status");     // all|ACTIVE|INACTIVE|NO_ACCOUNT
 

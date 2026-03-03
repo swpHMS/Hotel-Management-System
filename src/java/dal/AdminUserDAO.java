@@ -24,7 +24,7 @@ public class AdminUserDAO {
                u.role_id, r.role_name
         FROM dbo.users u
         LEFT JOIN dbo.roles r ON r.role_id = u.role_id
-        ORDER BY u.user_id
+        ORDER BY u.user_id DESC
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """;
 
@@ -52,12 +52,12 @@ public class AdminUserDAO {
         return list;
     }
 
-    public List<Role> getAllStaffRoles() throws Exception {
+    //lấy role để đổ vào dropdown "Role"
+    public List<Role> getAllRoles() throws Exception {
         List<Role> list = new ArrayList<>();
         String sql = """
         SELECT role_id, role_name
         FROM roles
-        WHERE role_name <> 'CUSTOMER'
         ORDER BY role_name
     """;
 
@@ -73,12 +73,16 @@ public class AdminUserDAO {
         return list;
     }
 
-    public List<UserProfile> getStaffList(Integer roleId, Integer status, int page, int pageSize) throws Exception {
+    public List<UserProfile> getStaffList(Integer roleId, Integer status, String keyword, int page, int pageSize) throws Exception {
         List<UserProfile> list = new ArrayList<>();
         int offset = (page - 1) * pageSize;
 
-        String sql = """
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("""
         SELECT 
+            s.staff_id,
             u.user_id,
             s.full_name,
             u.email,
@@ -87,19 +91,25 @@ public class AdminUserDAO {
         FROM users u
         JOIN roles r ON r.role_id = u.role_id
         LEFT JOIN staff s ON s.user_id = u.user_id
-        WHERE r.role_name <> 'CUSTOMER'
-    """;
+        WHERE r.role_name IN ('ADMIN','MANAGER','RECEPTIONIST','STAFF')
+    """);
 
         if (roleId != null) {
-            sql += " AND u.role_id = ?";
+            sql.append("\n AND u.role_id = ? ");
         }
         if (status != null) {
-            sql += " AND u.status = ?";
+            sql.append("\n AND u.status = ? ");
         }
 
-        sql += " ORDER BY u.user_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        // search theo NAME 
+        if (hasKeyword) {
+            sql.append("\n AND s.full_name COLLATE Vietnamese_100_CI_AI LIKE ? ");
+        }
 
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+        sql.append("\n ORDER BY u.user_id DESC ");
+        sql.append("\n OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
 
             int idx = 1;
             if (roleId != null) {
@@ -108,6 +118,9 @@ public class AdminUserDAO {
             if (status != null) {
                 ps.setInt(idx++, status);
             }
+            if (hasKeyword) {
+                ps.setString(idx++, "%" + keyword.trim() + "%");
+            }
 
             ps.setInt(idx++, offset);
             ps.setInt(idx, pageSize);
@@ -115,8 +128,10 @@ public class AdminUserDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     UserProfile u = new UserProfile();
+                    Object staffIdObj = rs.getObject("staff_id");
+                    u.setStaffId(staffIdObj == null ? 0 : ((Number) staffIdObj).intValue());
                     u.setUserId(rs.getInt("user_id"));
-                   u.setFullName(rs.getString("full_name")); // ✅ QUAN TRỌNG
+                    u.setFullName(rs.getString("full_name"));
                     u.setEmail(rs.getString("email"));
                     u.setStatus(rs.getInt("status"));
                     u.setRoleName(rs.getString("role_name"));
@@ -127,22 +142,29 @@ public class AdminUserDAO {
         return list;
     }
 
-    public int countStaff(Integer roleId, Integer status) throws Exception {
-        String sql = """
+    public int countStaff(Integer roleId, Integer status, String keyword) throws Exception {
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("""
         SELECT COUNT(*)
         FROM users u
         JOIN roles r ON u.role_id = r.role_id
-        WHERE r.role_name <> 'CUSTOMER'
-    """;
+        LEFT JOIN staff s ON s.user_id = u.user_id
+        WHERE r.role_name IN ('MANAGER','RECEPTIONIST','STAFF')
+    """);
 
         if (roleId != null) {
-            sql += " AND u.role_id = ?";
+            sql.append("\n AND u.role_id = ? ");
         }
         if (status != null) {
-            sql += " AND u.status = ?";
+            sql.append("\n AND u.status = ? ");
+        }
+        if (hasKeyword) {
+            sql.append("\n AND s.full_name COLLATE Vietnamese_100_CI_AI LIKE ? ");
         }
 
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
 
             int idx = 1;
             if (roleId != null) {
@@ -151,6 +173,9 @@ public class AdminUserDAO {
             if (status != null) {
                 ps.setInt(idx++, status);
             }
+            if (hasKeyword) {
+                ps.setString(idx++, "%" + keyword.trim() + "%");
+            }
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
@@ -158,16 +183,27 @@ public class AdminUserDAO {
         }
     }
 
+    //detail staff
     public UserProfile getStaffByUserId(int userId) throws Exception {
         String sql = """
-        SELECT u.user_id, u.email, u.status, u.auth_provider, u.role_id,
-               r.role_name,
-               s.full_name, s.phone
+        SELECT
+            s.staff_id,            
+            u.user_id,
+            u.email,
+            u.status,
+            u.role_id,
+            r.role_name,
+            s.full_name,
+            s.phone,
+            s.gender,
+            s.date_of_birth,
+            s.identity_number,
+            s.residence_address
         FROM users u
         JOIN roles r ON r.role_id = u.role_id
         LEFT JOIN staff s ON s.user_id = u.user_id
         WHERE u.user_id = ?
-          AND r.role_name <> 'CUSTOMER'
+          AND r.role_name IN ('ADMIN','MANAGER','RECEPTIONIST','STAFF')
     """;
 
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -179,42 +215,32 @@ public class AdminUserDAO {
                     return null;
                 }
 
-                UserProfile u = new UserProfile();
-                u.setUserId(rs.getInt("user_id"));
-                u.setEmail(rs.getString("email"));
-                u.setStatus(rs.getInt("status"));
-                u.setAuthProvider(rs.getInt("auth_provider"));
-                u.setRoleId(rs.getInt("role_id"));
-                u.setRoleName(rs.getString("role_name"));
+                UserProfile p = new UserProfile();
 
-                u.setFullName(rs.getString("full_name")); // có thể null nếu thiếu staff row
-                u.setPhone(rs.getString("phone"));
-                return u;
+                // ✅ staff_id có thể NULL nếu không có row staff
+                Object staffIdObj = rs.getObject("staff_id");
+                p.setStaffId(staffIdObj == null ? 0 : ((Number) staffIdObj).intValue());
+
+                p.setUserId(rs.getInt("user_id"));
+                p.setEmail(rs.getString("email"));
+                p.setStatus(rs.getInt("status"));
+                p.setRoleId(rs.getInt("role_id"));
+                p.setRoleName(rs.getString("role_name"));
+
+                p.setFullName(rs.getString("full_name"));
+                p.setPhone(rs.getString("phone"));
+                p.setGender(rs.getInt("gender"));
+                p.setDateOfBirth(rs.getDate("date_of_birth"));
+                p.setIdentityNumber(rs.getString("identity_number"));
+                p.setResidenceAddress(rs.getString("residence_address"));
+
+                return p;
             }
         }
     }
 
-    public List<Role> getAllNonCustomerRoles() throws Exception {
-        List<Role> list = new ArrayList<>();
-        String sql = """
-        SELECT role_id, role_name
-        FROM roles
-        WHERE role_name <> 'CUSTOMER'
-        ORDER BY role_name
-    """;
-
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                Role r = new Role();
-                r.setRoleId(rs.getInt("role_id"));
-                r.setRoleName(rs.getString("role_name"));
-                list.add(r);
-            }
-        }
-        return list;
-    }
-
+    //dùng cho crateStaff+ Staff Edit
+    //lấy role ko phải Customer
     public boolean updateUserRoleStatus(int userId, int roleId, int status) throws Exception {
         String sql = """
         UPDATE users
@@ -235,52 +261,68 @@ public class AdminUserDAO {
     // ======================
 // CHECK DUPLICATE STAFF
 // ======================
-public boolean emailExists(String email) throws Exception {
-    String sql = "SELECT 1 FROM dbo.users WHERE email = ?";
-    try (Connection con = new DBContext().getConnection();
-         PreparedStatement ps = con.prepareStatement(sql)) {
-        ps.setString(1, email);
-        try (ResultSet rs = ps.executeQuery()) {
-            return rs.next();
+    public boolean emailExists(String email) throws Exception {
+        String sql = "SELECT 1 FROM dbo.users WHERE email = ?";
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
-}
 
-public boolean identityExists(String identityNumber) throws Exception {
-    String sql = "SELECT 1 FROM dbo.staff WHERE identity_number = ?";
-    try (Connection con = new DBContext().getConnection();
-         PreparedStatement ps = con.prepareStatement(sql)) {
-        ps.setString(1, identityNumber);
-        try (ResultSet rs = ps.executeQuery()) {
-            return rs.next();
+    public boolean identityExists(String identityNumber) throws Exception {
+        String sql = "SELECT 1 FROM dbo.staff WHERE identity_number = ?";
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, identityNumber);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
-}
 
-public boolean phoneExistsInStaff(String phone) throws Exception {
-    String sql = "SELECT 1 FROM staff WHERE phone = ?";
-    try (Connection con = new DBContext().getConnection();
-         PreparedStatement ps = con.prepareStatement(sql)) {
+    public boolean phoneExistsInStaff(String phone) throws Exception {
+        String sql = "SELECT 1 FROM staff WHERE phone = ?";
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
-        ps.setString(1, phone);
-        try (ResultSet rs = ps.executeQuery()) {
-            return rs.next();
+            ps.setString(1, phone);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
-}
 
-public boolean cccdExistsInStaff(String identityNumber) throws Exception {
-    String sql = "SELECT 1 FROM staff WHERE identity_number = ?";
-    try (Connection con = new DBContext().getConnection();
-         PreparedStatement ps = con.prepareStatement(sql)) {
+    public boolean cccdExistsInStaff(String identityNumber) throws Exception {
+        String sql = "SELECT 1 FROM staff WHERE identity_number = ?";
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
-        ps.setString(1, identityNumber);
-        try (ResultSet rs = ps.executeQuery()) {
-            return rs.next();
+            ps.setString(1, identityNumber);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
-}
 
+    public List<Role> getAllNonCustomerRoles() throws Exception {
+        List<Role> list = new ArrayList<>();
+        String sql = """
+        SELECT role_id, role_name
+        FROM roles
+        WHERE role_name IN ('MANAGER', 'RECEPTIONIST', 'STAFF','ADMIN')
+        ORDER BY role_name
+    """;
+
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                Role r = new Role();
+                r.setRoleId(rs.getInt("role_id"));
+                r.setRoleName(rs.getString("role_name"));
+                list.add(r);
+            }
+        }
+        return list;
+    }
 
     public int createStaffAccount(
             String email,
@@ -352,4 +394,76 @@ public boolean cccdExistsInStaff(String identityNumber) throws Exception {
         }
     }
 
+    //CỦA EDIT PROFILE
+    public boolean emailExistsExceptUserId(String email, int userId) throws Exception {
+        String sql = "SELECT 1 FROM dbo.users WHERE email = ? AND user_id <> ?";
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, email);
+            ps.setInt(2, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public void updateStaffProfile(UserProfile s) throws Exception {
+
+    String sqlUser = "UPDATE dbo.users SET email = ? WHERE user_id = ?";
+
+    String sqlStaff =
+            "UPDATE dbo.staff " +
+            "SET full_name = ?, gender = ?, date_of_birth = ?, phone = ?, residence_address = ?, identity_number = ? " +
+            "WHERE user_id = ?";
+
+    String sqlStaffInsert =
+            "INSERT INTO dbo.staff(user_id, full_name, gender, date_of_birth, phone, residence_address, identity_number) " +
+            "VALUES(?, ?, ?, ?, ?, ?, ?)";
+
+    Connection con = null;
+    try {
+        con = new DBContext().getConnection();
+        con.setAutoCommit(false);
+
+        // 1) update users.email
+        try (PreparedStatement ps = con.prepareStatement(sqlUser)) {
+            ps.setString(1, s.getEmail());
+            ps.setInt(2, s.getUserId());
+            ps.executeUpdate();
+        }
+
+        // 2) update staff profile
+        int updated;
+        try (PreparedStatement ps = con.prepareStatement(sqlStaff)) {
+            ps.setString(1, s.getFullName());
+            ps.setInt(2, s.getGender());
+            ps.setDate(3, s.getDateOfBirth());
+            ps.setString(4, s.getPhone());
+            ps.setString(5, s.getResidenceAddress());
+            ps.setString(6, s.getIdentityNumber());
+            ps.setInt(7, s.getUserId());
+            updated = ps.executeUpdate();
+        }
+
+        // 3) nếu chưa có staff row -> insert
+        if (updated == 0) {
+            try (PreparedStatement ps = con.prepareStatement(sqlStaffInsert)) {
+                ps.setInt(1, s.getUserId());
+                ps.setString(2, s.getFullName());
+                ps.setInt(3, s.getGender());
+                ps.setDate(4, s.getDateOfBirth());
+                ps.setString(5, s.getPhone());
+                ps.setString(6, s.getResidenceAddress());
+                ps.setString(7, s.getIdentityNumber());
+                ps.executeUpdate();
+            }
+        }
+
+        con.commit();
+    } catch (Exception ex) {
+        if (con != null) con.rollback();
+        throw ex;
+    } finally {
+        if (con != null) con.close();
+    }
+}
 }

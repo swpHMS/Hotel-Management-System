@@ -13,7 +13,11 @@ import model.UserProfile;
 public class StaffEditServlet extends HttpServlet {
 
     private int parseIntOrDefault(String s, int def) {
-        try { return Integer.parseInt(s); } catch (Exception e) { return def; }
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     @Override
@@ -34,15 +38,11 @@ public class StaffEditServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/admin/staff");
                 return;
             }
-
             List<Role> roles = dao.getAllNonCustomerRoles();
-
             request.setAttribute("active", "staff_list");
             request.setAttribute("user", user);
             request.setAttribute("roles", roles);
-
             request.getRequestDispatcher("/view/admin/staff_edit.jsp").forward(request, response);
-
         } catch (Exception ex) {
             throw new ServletException(ex);
         }
@@ -72,9 +72,7 @@ public class StaffEditServlet extends HttpServlet {
             }
 
             dao.updateUserRoleStatus(userId, roleId, status);
-
-            response.sendRedirect(request.getContextPath() + "/admin/staff/detail?id=" + userId);
-
+            response.sendRedirect(request.getContextPath() + "/admin/staff");
         } catch (Exception ex) {
             throw new ServletException(ex);
         }
