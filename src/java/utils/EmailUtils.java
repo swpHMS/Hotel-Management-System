@@ -1,5 +1,6 @@
 package utils;
 
+import dal.AdminTemplateDAO;
 import java.util.Properties;
 import jakarta.mail.Authenticator;
 import jakarta.mail.Message;
@@ -9,6 +10,8 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import java.util.Map;
+import model.EmailTemplate;
 
 public class EmailUtils {
     
@@ -90,9 +93,31 @@ public class EmailUtils {
 
     // 4. Hàm gửi mail khôi phục (Dùng cho Forgot Password)
     public static void sendForgotPasswordEmail(String to, String token) {
-        String link = "http://localhost:9999/SWP391_HMS_GR2/resetPassword?token=" + token;
+        String link = "http://localhost:9999/SWP391_HMS_GR2/reset-password?token=" + token;
         String subject = "Đặt lại mật khẩu - Regal Quintet";
         String content = "<h3>Yêu cầu đổi mật khẩu</h3><p>Nhấn vào link: <a href='" + link + "'>Đổi mật khẩu</a></p>";
         sendEmail(to, subject, content); // Hết lỗi gạch đỏ sendEmail
+    }
+    
+    // 5. Hàm gửi tông báo confirm booking thành công 
+    public static void sendBookingEmail(String to, String templateCode, Map<String, String> replacements) {
+        // 1. Lấy Template từ DB
+        AdminTemplateDAO dao = new AdminTemplateDAO();
+        EmailTemplate template = dao.getTemplateByCode(templateCode);
+
+        if (template != null) {
+            String subject = template.getSubject();
+            String htmlContent = template.getContent();
+
+            // 2. Duyệt Map để thay thế các biến {{key}} trong HTML
+            for (Map.Entry<String, String> entry : replacements.entrySet()) {
+                htmlContent = htmlContent.replace("{{" + entry.getKey() + "}}", entry.getValue());
+            }
+
+            // 3. Gọi hàm sendEmail chung bạn đã viết để gửi đi
+            sendEmail(to, subject, htmlContent);
+        } else {
+            System.out.println("Không tìm thấy template với mã: " + templateCode);
+        }
     }
 }
