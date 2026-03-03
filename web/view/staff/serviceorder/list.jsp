@@ -1,5 +1,5 @@
 <%-- 
-    Document   : list
+    
     Created on : Mar 1, 2026, 10:21:35 PM
     Author     : DieuBHHE191686
 --%>
@@ -468,8 +468,8 @@
                                     <thead>
                                         <tr>
                                             <th style="width:130px;">Order ID</th>
-                                            <th style="width:100px;">Room</th>
-                                            <th style="width:110px;">Booking</th>
+                                            <th style="width:100px;">Room Number</th>
+                                            <th style="width:110px;">Booking ID</th>
                                             <th style="width:100px;">Status</th>
                                             <th style="text-align:right; padding-right:18px;">Total</th>
                                         </tr>
@@ -529,7 +529,7 @@
                                 <div class="detail-head">
                                     <div>
                                         <div class="meta">Service Order</div>
-                                        <div class="so-code">Order #${selected.serviceOrderId}</div>
+                                        <div class="so-code">Service Order ID #${selected.serviceOrderId}</div>
                                         <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
                                             <c:choose>
                                                 <c:when test="${selected.status == 0}"><span class="badge b-draft">Draft</span></c:when>
@@ -538,14 +538,14 @@
                                             </c:choose>
                                         </div>
                                         <div class="meta" style="margin-top:10px;">
-                                            Booking: ${selected.bookingId}
+                                            Booking ID : ${selected.bookingId}
                                             <c:if test="${selected.postedAt != null}">
                                                 &nbsp;·&nbsp; Posted: <c:out value="${selected.postedAt}"/>
                                             </c:if>
                                         </div>
                                     </div>
                                     <div style="text-align:right;">
-                                        <div class="meta">Room</div>
+                                        <div class="meta">Room Number</div>
                                         <div class="big-room"><c:out value="${selected.roomNo == null ? '—' : selected.roomNo}"/></div>
                                     </div>
                                 </div>
@@ -629,8 +629,24 @@
                                     </div>
                                 </div>
 
+                                <c:set var="detailTotal" value="0" />
+                                <c:forEach var="it" items="${selected.items}">
+                                    <c:set var="detailTotal" value="${detailTotal + (it.quantity * it.unitPriceSnapshot)}" />
+                                </c:forEach>                
+
                                 <!-- FOOTER -->
-                                <div class="footer-actions" style="justify-content:flex-end;">
+                                <div class="footer-actions">
+
+                                    <!--  LEFT: TOTAL -->
+                                    <div style="display:flex; flex-direction:column; gap:4px;">
+                                        <div class="meta" style="margin-top:0;">Total</div>
+
+                                        <div style="font-size:24px; font-weight:900; color:var(--amber); line-height:1;">
+                                            <fmt:formatNumber value="${detailTotal}" pattern="#,##0"/>
+                                        </div>
+                                    </div>
+
+                                    <!--  RIGHT: ACTIONS -->
                                     <div style="display:flex; gap:10px; align-items:center;">
                                         <c:if test="${selected.status == 0}">
                                             <form method="post" action="${pageContext.request.contextPath}/staff/service-orders/status">
@@ -643,7 +659,9 @@
                                                 <input type="hidden" name="action"  value="post"/>
                                                 <input type="hidden" name="orderId" value="${selected.serviceOrderId}"/>
                                                 <button class="btn-primary" type="submit">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <polyline points="20 6 9 17 4 12"/>
+                                                    </svg>
                                                     Mark as Posted
                                                 </button>
                                             </form>
@@ -662,7 +680,6 @@
                                         </c:if>
                                     </div>
                                 </div>
-
                             </c:if>
                         </div>
 
