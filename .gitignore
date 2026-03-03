@@ -33,3 +33,6 @@ dist/
 nbproject/genfiles.properties
 nbproject/genfiles.properties
 nbproject/project.xml
+lib/nblibraries.properties
+nbproject/genfiles.properties
+nbproject/project.properties
