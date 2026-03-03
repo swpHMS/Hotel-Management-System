@@ -93,7 +93,7 @@ public class StaffEditProfileServlet extends HttpServlet {
             }
 
             // ===== VALIDATE =====
-
+            // Full name: required + không có số
             if (isBlank(fullName)) {
                 errors.put("fullName", "Full name is required.");
             } else if (!Validation.isValidFullNameNoNumber(fullName)) {

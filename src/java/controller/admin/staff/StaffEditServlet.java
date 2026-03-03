@@ -38,15 +38,11 @@ public class StaffEditServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/admin/staff");
                 return;
             }
-
             List<Role> roles = dao.getAllNonCustomerRoles();
-
             request.setAttribute("active", "staff_list");
             request.setAttribute("user", user);
             request.setAttribute("roles", roles);
-
             request.getRequestDispatcher("/view/admin/staff_edit.jsp").forward(request, response);
-
         } catch (Exception ex) {
             throw new ServletException(ex);
         }
