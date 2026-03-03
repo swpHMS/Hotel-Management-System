@@ -513,6 +513,72 @@ public class Staff_ServiceOrderDAO {
         return false;
     }
 
+    //nhập Room trước → auto ra Booking ID
+    public static record BookingLookup(int bookingId, int roomId, int assignmentId) {
+    }
+    public BookingLookup findActiveBookingByRoomNo(String roomNo) {
+        final int BOOKING_ACTIVE = 3;
+        final int SRA_IN_HOUSE = 2;
+
+        String sql
+                = "SELECT TOP 1 b.booking_id, r.room_id, sra.assignment_id "
+                + "FROM dbo.rooms r "
+                + "JOIN dbo.stay_room_assignments sra ON sra.room_id = r.room_id "
+                + "JOIN dbo.bookings b ON b.booking_id = sra.booking_id "
+                + "WHERE r.room_no = ? "
+                + "  AND b.status = ? "
+                + "  AND sra.status = ? "
+                + "  AND sra.actual_check_in IS NOT NULL "
+                + "  AND sra.actual_check_out IS NULL "
+                + "ORDER BY sra.actual_check_in DESC, sra.assignment_id DESC";
+
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, roomNo);
+            ps.setInt(2, BOOKING_ACTIVE);
+            ps.setInt(3, SRA_IN_HOUSE);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new BookingLookup(
+                            rs.getInt("booking_id"),
+                            rs.getInt("room_id"),
+                            rs.getInt("assignment_id")
+                    );
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+//Room đấy phải dam bao đk là Inhouse chứ ko phải Upgrade, Initial
+    public boolean isRoomInHouseForBooking(int bookingId, int roomId) {
+        String sql
+                = "SELECT 1 "
+                + "FROM dbo.stay_room_assignments sra "
+                + "JOIN dbo.bookings b ON b.booking_id = sra.booking_id "
+                + "WHERE sra.booking_id = ? "
+                + "  AND sra.room_id = ? "
+                + "  AND b.status = 3 "
+                + // booking active
+                "  AND sra.status = 2 "
+                + // IN_HOUSE
+                "  AND sra.actual_check_in IS NOT NULL "
+                + "  AND sra.actual_check_out IS NULL";
+
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+            ps.setInt(2, roomId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     // ===== helper bind params =====
     private void bindParams(PreparedStatement ps, List<Object> params) throws SQLException {
         for (int i = 0; i < params.size(); i++) {

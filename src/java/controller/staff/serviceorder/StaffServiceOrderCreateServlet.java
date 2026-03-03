@@ -9,14 +9,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@WebServlet(name="StaffServiceOrderCreateServlet", urlPatterns={"/staff/service-orders/create"})
+@WebServlet(name = "StaffServiceOrderCreateServlet", urlPatterns = {"/staff/service-orders/create"})
 public class StaffServiceOrderCreateServlet extends HttpServlet {
 
     private final Staff_ServiceOrderDAO dao = new Staff_ServiceOrderDAO();
 
     private Integer parseIntOrNull(String s) {
         try {
-            if (s == null || s.trim().isEmpty()) return null;
+            if (s == null || s.trim().isEmpty()) {
+                return null;
+            }
             return Integer.parseInt(s.trim());
         } catch (Exception e) {
             return null;
@@ -46,7 +48,9 @@ public class StaffServiceOrderCreateServlet extends HttpServlet {
         // staffId từ session
         HttpSession session = req.getSession(false);
         Integer staffId = (session != null) ? (Integer) session.getAttribute("staffId") : null;
-        if (staffId == null) staffId = 1;
+        if (staffId == null) {
+            staffId = 1;
+        }
 
         // items arrays
         String[] serviceIdsRaw = req.getParameterValues("serviceId");
@@ -56,9 +60,15 @@ public class StaffServiceOrderCreateServlet extends HttpServlet {
         req.setAttribute("bookingIdVal", bookingId);
         req.setAttribute("roomIdVal", roomId);
 
-        if (bookingId == null) {
+        if (bookingId == null || roomId == null) {
             loadServiceDropdown(req);
             req.setAttribute("err", "booking_required");
+            req.getRequestDispatcher("/view/staff/serviceorder/createdraft.jsp").forward(req, resp);
+            return;
+        }
+        if (!dao.isRoomInHouseForBooking(bookingId, roomId)) {
+            loadServiceDropdown(req);
+            req.setAttribute("err", "room_booking_mismatch");
             req.getRequestDispatcher("/view/staff/serviceorder/createdraft.jsp").forward(req, resp);
             return;
         }
