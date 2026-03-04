@@ -206,7 +206,6 @@
 
                         <!-- POST confirm: gửi đủ data -->
                         <form method="post" action="${pageContext.request.contextPath}/receptionist/booking/create" class="mt-3">
-                            <input type="hidden" name="action" value="holdAndNext">
                             <input type="hidden" name="checkIn" value="<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>">
                             <input type="hidden" name="checkOut" value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>">
                             <input type="hidden" name="rooms" value="${rooms}">

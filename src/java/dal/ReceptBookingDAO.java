@@ -7,8 +7,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import model.RoomTypeCard;
+import model.HoldSummary;
 
 public class ReceptBookingDAO extends DBContext {
+
+    // ===== HOLD STATUS (INT) =====
+    public static final int HOLD_CANCELLED = 0;
+    public static final int HOLD_ACTIVE    = 1;
+    public static final int HOLD_CONFIRMED = 2;
+    public static final int HOLD_EXPIRED   = 3;
 
     public long calcNights(LocalDate checkIn, LocalDate checkOut) {
         if (checkIn == null || checkOut == null) return 0;
@@ -56,12 +63,8 @@ public class ReceptBookingDAO extends DBContext {
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             int idx = 1;
-
-            // Dates
             ps.setDate(idx++, checkIn);
             ps.setDate(idx++, checkOut);
-
-            // rate at checkIn
             ps.setDate(idx++, checkIn);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -74,7 +77,6 @@ public class ReceptBookingDAO extends DBContext {
                     int av = rs.getInt("available_rooms");
                     c.setAvailableRooms(av);
 
-                    // UI status for requested rooms
                     if (av <= 0) c.setUiStatus("soldout");
                     else if (av < roomsRequested) c.setUiStatus("limited");
                     else c.setUiStatus("ok");
@@ -90,147 +92,102 @@ public class ReceptBookingDAO extends DBContext {
     }
 
     // ================================
-    // 2) SEARCH BY QTY (optional reuse)
+    // 2) CREATE HOLD (NEXT step) - insert holds + items + nights + increase held_rooms
     // ================================
-    public List<RoomTypeCard> searchByQty(Date checkIn, Date checkOut, int roomsRequested) {
-        // basically same as getRoomTypeCards but you could filter min_available >= roomsRequested
-        List<RoomTypeCard> list = new ArrayList<>();
-
-        String sql =
-            "WITH Dates AS ( " +
-            "   SELECT ? AS d " +
-            "   UNION ALL " +
-            "   SELECT DATEADD(DAY, 1, d) " +
-            "   FROM Dates " +
-            "   WHERE DATEADD(DAY, 1, d) < ? " +
-            ") " +
-            "SELECT rt.room_type_id, rt.name, " +
-            "       COALESCE(rv.price, 0) AS rate_per_night, " +
-            "       COALESCE(inv.min_available, 0) AS available_rooms " +
-            "FROM dbo.room_types rt " +
-            "OUTER APPLY ( " +
-            "   SELECT TOP 1 price, rate_version_id " +
-            "   FROM dbo.rate_versions " +
-            "   WHERE room_type_id = rt.room_type_id " +
-            "     AND ? BETWEEN valid_from AND valid_to " +
-            "   ORDER BY valid_from DESC, rate_version_id DESC " +
-            ") rv " +
-            "OUTER APPLY ( " +
-            "   SELECT MIN( " +
-            "       COALESCE(i.total_rooms,0) - COALESCE(i.booked_rooms,0) - COALESCE(i.held_rooms,0) " +
-            "   ) AS min_available " +
-            "   FROM Dates x " +
-            "   LEFT JOIN dbo.room_type_inventory i " +
-            "     ON i.room_type_id = rt.room_type_id " +
-            "    AND i.inventory_date = x.d " +
-            ") inv " +
-            "WHERE rt.status = 1 " +
-            "  AND COALESCE(inv.min_available,0) >= ? " +
-            "ORDER BY inv.min_available DESC, rt.room_type_id DESC " +
-            "OPTION (MAXRECURSION 400);";
-
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            int idx = 1;
-            ps.setDate(idx++, checkIn);
-            ps.setDate(idx++, checkOut);
-            ps.setDate(idx++, checkIn);
-            ps.setInt(idx++, roomsRequested);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    RoomTypeCard c = new RoomTypeCard();
-                    c.setRoomTypeId(rs.getInt("room_type_id"));
-                    c.setRoomTypeName(rs.getString("name"));
-                    c.setRatePerNight(rs.getBigDecimal("rate_per_night").longValue());
-
-                    int av = rs.getInt("available_rooms");
-                    c.setAvailableRooms(av);
-                    c.setUiStatus("ok"); // since filtered >= roomsRequested
-                    list.add(c);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return list;
-    }
-
-    // ================================
-    // 3) HOLD rooms (increase held_rooms) with transaction + availability check
-    // ================================
-    public void holdInventory(int roomTypeId, Date checkIn, Date checkOut, int rooms) throws SQLException {
-        if (rooms <= 0) throw new SQLException("rooms must be > 0");
+    public int createHold(int userId, int roomTypeId, Date checkIn, Date checkOut, int qty, int expireMinutes) throws SQLException {
+        if (qty <= 0) throw new SQLException("qty must be > 0");
         if (checkIn == null || checkOut == null) throw new SQLException("checkIn/checkOut required");
         if (!checkIn.before(checkOut)) throw new SQLException("checkIn must be before checkOut");
 
-        String sqlCheck =
-            "WITH Dates AS ( " +
-            "   SELECT ? AS d " +
-            "   UNION ALL " +
-            "   SELECT DATEADD(DAY, 1, d) " +
-            "   FROM Dates " +
-            "   WHERE DATEADD(DAY, 1, d) < ? " +
-            ") " +
-            "SELECT MIN(COALESCE(i.total_rooms,0) - COALESCE(i.booked_rooms,0) - COALESCE(i.held_rooms,0)) AS min_av " +
-            "FROM Dates x " +
-            "LEFT JOIN dbo.room_type_inventory i " +
-            "  ON i.room_type_id = ? AND i.inventory_date = x.d " +
-            "OPTION (MAXRECURSION 400);";
+        final String sqlInsertHold =
+            "INSERT INTO dbo.availability_holds(user_id, expires_at, check_in_date, check_out_date, status) " +
+            "VALUES(?, DATEADD(MINUTE, ?, SYSDATETIME()), ?, ?, ?)";
 
-        String sqlUpdate =
-            "WITH Dates AS ( " +
-            "   SELECT ? AS d " +
-            "   UNION ALL " +
-            "   SELECT DATEADD(DAY, 1, d) " +
-            "   FROM Dates " +
-            "   WHERE DATEADD(DAY, 1, d) < ? " +
-            ") " +
-            "UPDATE i " +
-            "SET held_rooms = held_rooms + ? " +
-            "FROM dbo.room_type_inventory i " +
-            "JOIN Dates x ON i.inventory_date = x.d " +
-            "WHERE i.room_type_id = ? " +
-            "OPTION (MAXRECURSION 400);";
+        final String sqlInsertItem =
+            "INSERT INTO dbo.availability_hold_items(hold_id, room_type_id, quantity) VALUES(?,?,?)";
+
+        final String sqlCheckDay =
+            "SELECT 1 FROM dbo.room_type_inventory " +
+            "WHERE room_type_id=? AND inventory_date=? AND (total_rooms - booked_rooms - held_rooms) >= ?";
+
+        final String sqlInsertNight =
+            "INSERT INTO dbo.availability_hold_nights(hold_id, room_type_id, inventory_date, quantity) VALUES(?,?,?,?)";
+
+        final String sqlIncHeld =
+            "UPDATE dbo.room_type_inventory SET held_rooms = held_rooms + ? WHERE room_type_id=? AND inventory_date=?";
 
         Connection con = null;
         try {
             con = this.connection;
             con.setAutoCommit(false);
 
-            // lock rows to prevent race: use SERIALIZABLE for correctness
             try (Statement st = con.createStatement()) {
                 st.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
             }
 
-            int minAv = 0;
-            try (PreparedStatement ps = con.prepareStatement(sqlCheck)) {
-                ps.setDate(1, checkIn);
-                ps.setDate(2, checkOut);
-                ps.setInt(3, roomTypeId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) minAv = rs.getInt("min_av");
+            // 1) insert hold header
+            int holdId;
+            try (PreparedStatement ps = con.prepareStatement(sqlInsertHold, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, expireMinutes);
+                ps.setDate(3, checkIn);
+                ps.setDate(4, checkOut);
+                ps.setInt(5, HOLD_ACTIVE);
+                ps.executeUpdate();
+
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (!rs.next()) throw new SQLException("Cannot get hold_id.");
+                    holdId = rs.getInt(1);
                 }
             }
 
-            if (minAv < rooms) {
-                con.rollback();
-                throw new SQLException("Not enough availability to hold. min_available=" + minAv + ", requested=" + rooms);
+            // 2) insert hold item
+            try (PreparedStatement ps = con.prepareStatement(sqlInsertItem)) {
+                ps.setInt(1, holdId);
+                ps.setInt(2, roomTypeId);
+                ps.setInt(3, qty);
+                ps.executeUpdate();
             }
 
-            try (PreparedStatement ps = con.prepareStatement(sqlUpdate)) {
-                ps.setDate(1, checkIn);
-                ps.setDate(2, checkOut);
-                ps.setInt(3, rooms);
-                ps.setInt(4, roomTypeId);
-                int affected = ps.executeUpdate();
-                if (affected <= 0) {
-                    con.rollback();
-                    throw new SQLException("Hold failed: no inventory rows updated. Did you seed inventory for all days?");
+            // 3) loop each day [checkIn, checkOut)
+            LocalDate d = checkIn.toLocalDate();
+            LocalDate end = checkOut.toLocalDate();
+
+            while (d.isBefore(end)) {
+                Date day = Date.valueOf(d);
+
+                boolean ok;
+                try (PreparedStatement ps = con.prepareStatement(sqlCheckDay)) {
+                    ps.setInt(1, roomTypeId);
+                    ps.setDate(2, day);
+                    ps.setInt(3, qty);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        ok = rs.next();
+                    }
                 }
+                if (!ok) throw new SQLException("Not enough rooms on " + day);
+
+                try (PreparedStatement ps = con.prepareStatement(sqlInsertNight)) {
+                    ps.setInt(1, holdId);
+                    ps.setInt(2, roomTypeId);
+                    ps.setDate(3, day);
+                    ps.setInt(4, qty);
+                    ps.executeUpdate();
+                }
+
+                try (PreparedStatement ps = con.prepareStatement(sqlIncHeld)) {
+                    ps.setInt(1, qty);
+                    ps.setInt(2, roomTypeId);
+                    ps.setDate(3, day);
+                    ps.executeUpdate();
+                }
+
+                d = d.plusDays(1);
             }
 
             con.commit();
+            return holdId;
+
         } catch (SQLException ex) {
             if (con != null) con.rollback();
             throw ex;
@@ -240,85 +197,307 @@ public class ReceptBookingDAO extends DBContext {
     }
 
     // ================================
-    // 4) CONFIRM rooms (held -> booked)
+    // 3) LOAD HOLD SUMMARY (for Step 2 + Payment)
     // ================================
-    public void confirmInventory(int roomTypeId, Date checkIn, Date checkOut, int rooms) throws SQLException {
-        if (rooms <= 0) throw new SQLException("rooms must be > 0");
-
+    public HoldSummary getHoldSummary(int holdId) throws SQLException {
         String sql =
-            "WITH Dates AS ( " +
-            "   SELECT ? AS d " +
-            "   UNION ALL " +
-            "   SELECT DATEADD(DAY, 1, d) " +
-            "   FROM Dates " +
-            "   WHERE DATEADD(DAY, 1, d) < ? " +
-            ") " +
-            "UPDATE i " +
-            "SET booked_rooms = booked_rooms + ?, " +
-            "    held_rooms   = held_rooms - ? " +
-            "FROM dbo.room_type_inventory i " +
-            "JOIN Dates x ON i.inventory_date = x.d " +
-            "WHERE i.room_type_id = ? " +
-            "OPTION (MAXRECURSION 400);";
-
-        Connection con = null;
-        try {
-            con = this.connection;
-            con.setAutoCommit(false);
-            try (Statement st = con.createStatement()) {
-                st.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
-            }
-
-            try (PreparedStatement ps = con.prepareStatement(sql)) {
-                ps.setDate(1, checkIn);
-                ps.setDate(2, checkOut);
-                ps.setInt(3, rooms);
-                ps.setInt(4, rooms);
-                ps.setInt(5, roomTypeId);
-                int affected = ps.executeUpdate();
-                if (affected <= 0) {
-                    con.rollback();
-                    throw new SQLException("Confirm failed: no inventory rows updated.");
-                }
-            }
-
-            con.commit();
-        } catch (SQLException ex) {
-            if (con != null) con.rollback();
-            throw ex;
-        } finally {
-            if (con != null) con.setAutoCommit(true);
-        }
-    }
-
-    // ================================
-    // 5) RELEASE HOLD (decrease held_rooms)
-    // ================================
-    public void releaseHold(int roomTypeId, Date checkIn, Date checkOut, int rooms) throws SQLException {
-        if (rooms <= 0) throw new SQLException("rooms must be > 0");
-
-        String sql =
-            "WITH Dates AS ( " +
-            "   SELECT ? AS d " +
-            "   UNION ALL " +
-            "   SELECT DATEADD(DAY, 1, d) " +
-            "   FROM Dates " +
-            "   WHERE DATEADD(DAY, 1, d) < ? " +
-            ") " +
-            "UPDATE i " +
-            "SET held_rooms = CASE WHEN held_rooms >= ? THEN held_rooms - ? ELSE 0 END " +
-            "FROM dbo.room_type_inventory i " +
-            "JOIN Dates x ON i.inventory_date = x.d " +
-            "WHERE i.room_type_id = ? " +
-            "OPTION (MAXRECURSION 400);";
+            "SELECT h.hold_id, h.user_id, h.expires_at, h.check_in_date, h.check_out_date, h.status, " +
+            "       i.room_type_id, i.quantity, rt.name AS room_type_name, " +
+            "       COALESCE(rv.price, 0) AS rate_per_night " +
+            "FROM dbo.availability_holds h " +
+            "JOIN dbo.availability_hold_items i ON i.hold_id = h.hold_id " +
+            "JOIN dbo.room_types rt ON rt.room_type_id = i.room_type_id " +
+            "OUTER APPLY ( " +
+            "   SELECT TOP 1 price, rate_version_id " +
+            "   FROM dbo.rate_versions " +
+            "   WHERE room_type_id = i.room_type_id " +
+            "     AND h.check_in_date BETWEEN valid_from AND valid_to " +
+            "   ORDER BY valid_from DESC, rate_version_id DESC " +
+            ") rv " +
+            "WHERE h.hold_id = ?;";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setDate(1, checkIn);
-            ps.setDate(2, checkOut);
-            ps.setInt(3, rooms);
-            ps.setInt(4, rooms);
-            ps.setInt(5, roomTypeId);
-            ps.executeUpdate();
+            ps.setInt(1, holdId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+
+                HoldSummary s = new HoldSummary();
+                s.holdId = rs.getInt("hold_id");
+                s.userId = rs.getInt("user_id");
+                s.expiresAt = rs.getTimestamp("expires_at");
+                s.checkIn = rs.getDate("check_in_date");
+                s.checkOut = rs.getDate("check_out_date");
+                s.status = rs.getInt("status");
+                s.roomTypeId = rs.getInt("room_type_id");
+                s.roomTypeName = rs.getString("room_type_name");
+                s.qty = rs.getInt("quantity");
+                s.ratePerNight = rs.getBigDecimal("rate_per_night").longValue();
+
+                long nights = calcNights(s.checkIn.toLocalDate(), s.checkOut.toLocalDate());
+                s.nights = nights;
+                s.total = s.ratePerNight * nights * s.qty;
+                return s;
+            }
         }
     }
+    // ================================
+// 6) FINALIZE BOOKING FROM HOLD (held -> booked) + insert customer + booking + payment
+// ================================
+public int finalizeBookingFromHold(
+        int holdId,
+        String fullName,
+        String phone,
+        String email,
+        String identity,
+        String address,
+        double depositRatio,          // ví dụ 0.5
+        String paymentMethod,         // CASH / QR / CARD / TRANSFER...
+        String paymentStatus          // SUCCESS / FAILED ...
+) throws SQLException {
+
+    // Bạn chỉnh map status booking ở đây nếu DB bạn dùng INT
+    // Nếu bookings.status là VARCHAR: dùng "PENDING_DEPOSIT" / "CONFIRMED"...
+    final String BOOKING_STATUS_PENDING_DEPOSIT = "PENDING_DEPOSIT";
+
+    Connection con = null;
+    try {
+        con = this.connection;
+        con.setAutoCommit(false);
+
+        try (Statement st = con.createStatement()) {
+            st.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
+        }
+
+        // 1) Load hold summary + lock hold row
+        HoldSummary hs = null;
+        String sqlHold =
+            "SELECT h.hold_id, h.user_id, h.expires_at, h.check_in_date, h.check_out_date, h.status, " +
+            "       i.room_type_id, i.quantity, rt.name AS room_type_name, " +
+            "       COALESCE(rv.price, 0) AS rate_per_night " +
+            "FROM dbo.availability_holds h WITH (UPDLOCK, HOLDLOCK) " +
+            "JOIN dbo.availability_hold_items i ON i.hold_id = h.hold_id " +
+            "JOIN dbo.room_types rt ON rt.room_type_id = i.room_type_id " +
+            "OUTER APPLY ( " +
+            "   SELECT TOP 1 price, rate_version_id " +
+            "   FROM dbo.rate_versions " +
+            "   WHERE room_type_id = i.room_type_id " +
+            "     AND h.check_in_date BETWEEN valid_from AND valid_to " +
+            "   ORDER BY valid_from DESC, rate_version_id DESC " +
+            ") rv " +
+            "WHERE h.hold_id = ?;";
+
+        try (PreparedStatement ps = con.prepareStatement(sqlHold)) {
+            ps.setInt(1, holdId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new SQLException("Hold not found: " + holdId);
+
+                hs = new HoldSummary();
+                hs.holdId = rs.getInt("hold_id");
+                hs.userId = rs.getInt("user_id");
+                hs.expiresAt = rs.getTimestamp("expires_at");
+                hs.checkIn = rs.getDate("check_in_date");
+                hs.checkOut = rs.getDate("check_out_date");
+                hs.status = rs.getInt("status");
+                hs.roomTypeId = rs.getInt("room_type_id");
+                hs.roomTypeName = rs.getString("room_type_name");
+                hs.qty = rs.getInt("quantity");
+                hs.ratePerNight = rs.getBigDecimal("rate_per_night").longValue();
+                hs.nights = calcNights(hs.checkIn.toLocalDate(), hs.checkOut.toLocalDate());
+                hs.total = hs.ratePerNight * hs.nights * hs.qty;
+            }
+        }
+
+        // 2) Check hold status + expiry
+        if (hs.status != HOLD_ACTIVE) throw new SQLException("Hold is not ACTIVE.");
+        if (hs.expiresAt != null && hs.expiresAt.toInstant().isBefore(java.time.Instant.now())) {
+            // expire -> release
+            releaseHoldByIdTx(con, holdId);
+            throw new SQLException("Hold expired.");
+        }
+
+        // 3) Ensure still enough held nights (lock nights rows)
+        String sqlMinHeld =
+            "SELECT MIN(i.held_rooms) AS minHeld " +
+            "FROM dbo.room_type_inventory i WITH (UPDLOCK, HOLDLOCK) " +
+            "JOIN dbo.availability_hold_nights n ON n.inventory_date = i.inventory_date " +
+            "WHERE n.hold_id=? AND n.room_type_id=i.room_type_id AND i.room_type_id=?;";
+
+        int minHeld = 0;
+        try (PreparedStatement ps = con.prepareStatement(sqlMinHeld)) {
+            ps.setInt(1, holdId);
+            ps.setInt(2, hs.roomTypeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) minHeld = rs.getInt("minHeld");
+            }
+        }
+        if (minHeld < hs.qty) throw new SQLException("Hold inventory mismatch (held_rooms < qty).");
+
+        // 4) Upsert Customer (tối thiểu tạo customer)
+        // Bạn có thể đổi logic: tìm theo phone/email/identity
+        Integer customerId = null;
+
+        String sqlFindCustomer =
+            "SELECT TOP 1 customer_id FROM dbo.customers WHERE phone = ? ORDER BY customer_id DESC;";
+        if (phone != null) {
+            try (PreparedStatement ps = con.prepareStatement(sqlFindCustomer)) {
+                ps.setString(1, phone);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) customerId = rs.getInt("customer_id");
+                }
+            }
+        }
+
+        if (customerId == null) {
+            String sqlInsertCustomer =
+                "INSERT INTO dbo.customers(full_name, phone) VALUES(?,?);";
+            try (PreparedStatement ps = con.prepareStatement(sqlInsertCustomer, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, fullName);
+                ps.setString(2, phone);
+                ps.executeUpdate();
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (!rs.next()) throw new SQLException("Cannot get customer_id.");
+                    customerId = rs.getInt(1);
+                }
+            }
+        } else {
+            // update name/phone if needed
+            String sqlUpdateCustomer =
+                "UPDATE dbo.customers SET full_name = COALESCE(?, full_name), phone = COALESCE(?, phone) WHERE customer_id=?;";
+            try (PreparedStatement ps = con.prepareStatement(sqlUpdateCustomer)) {
+                ps.setString(1, fullName);
+                ps.setString(2, phone);
+                ps.setInt(3, customerId);
+                ps.executeUpdate();
+            }
+        }
+
+        // 5) Insert booking
+        String sqlInsertBooking =
+            "INSERT INTO dbo.bookings(customer_id, status, check_in_date, check_out_date, total_amount) " +
+            "VALUES(?,?,?,?,?);";
+
+        int bookingId;
+        try (PreparedStatement ps = con.prepareStatement(sqlInsertBooking, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, customerId);
+            ps.setString(2, BOOKING_STATUS_PENDING_DEPOSIT);
+            ps.setDate(3, hs.checkIn);
+            ps.setDate(4, hs.checkOut);
+            ps.setBigDecimal(5, new java.math.BigDecimal(hs.total));
+            ps.executeUpdate();
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (!rs.next()) throw new SQLException("Cannot get booking_id.");
+                bookingId = rs.getInt(1);
+            }
+        }
+
+        // 6) Insert booking_room_types (price_at_booking = rate lúc booking)
+        String sqlInsertBRT =
+            "INSERT INTO dbo.booking_room_types(booking_id, room_type_id, quantity, price_at_booking) " +
+            "VALUES(?,?,?,?);";
+        try (PreparedStatement ps = con.prepareStatement(sqlInsertBRT)) {
+            ps.setInt(1, bookingId);
+            ps.setInt(2, hs.roomTypeId);
+            ps.setInt(3, hs.qty);
+            ps.setBigDecimal(4, new java.math.BigDecimal(hs.ratePerNight));
+            ps.executeUpdate();
+        }
+
+        // 7) Insert payment deposit (50%)
+        long depositAmount = Math.round(hs.total * depositRatio);
+        String sqlInsertPayment =
+            "INSERT INTO dbo.payments(booking_id, amount, method, status) VALUES(?,?,?,?);";
+        try (PreparedStatement ps = con.prepareStatement(sqlInsertPayment)) {
+            ps.setInt(1, bookingId);
+            ps.setBigDecimal(2, new java.math.BigDecimal(depositAmount));
+            ps.setString(3, paymentMethod);
+            ps.setString(4, paymentStatus);
+            ps.executeUpdate();
+        }
+
+        // 8) held -> booked theo từng night (dựa trên availability_hold_nights)
+        String sqlMoveHeldToBooked =
+            "UPDATE i " +
+            "SET i.booked_rooms = i.booked_rooms + n.quantity, " +
+            "    i.held_rooms   = i.held_rooms   - n.quantity " +
+            "FROM dbo.room_type_inventory i " +
+            "JOIN dbo.availability_hold_nights n " +
+            "  ON n.room_type_id = i.room_type_id AND n.inventory_date = i.inventory_date " +
+            "WHERE n.hold_id = ?;";
+
+        try (PreparedStatement ps = con.prepareStatement(sqlMoveHeldToBooked)) {
+            ps.setInt(1, holdId);
+            int aff = ps.executeUpdate();
+            if (aff <= 0) throw new SQLException("No inventory rows moved held->booked.");
+        }
+
+        // 9) Update hold status -> CONFIRMED
+        String sqlUpdateHold =
+            "UPDATE dbo.availability_holds SET status = ? WHERE hold_id = ?;";
+        try (PreparedStatement ps = con.prepareStatement(sqlUpdateHold)) {
+            ps.setInt(1, HOLD_CONFIRMED);
+            ps.setInt(2, holdId);
+            ps.executeUpdate();
+        }
+
+        con.commit();
+        return bookingId;
+
+    } catch (SQLException ex) {
+        if (con != null) con.rollback();
+        throw ex;
+    } finally {
+        if (con != null) con.setAutoCommit(true);
+    }
+}
+
+// ================================
+// 7) RELEASE HOLD BY ID (public)
+// ================================
+public void releaseHoldById(int holdId) throws SQLException {
+    Connection con = null;
+    try {
+        con = this.connection;
+        con.setAutoCommit(false);
+        try (Statement st = con.createStatement()) {
+            st.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
+        }
+        releaseHoldByIdTx(con, holdId);
+        con.commit();
+    } catch (SQLException ex) {
+        if (con != null) con.rollback();
+        throw ex;
+    } finally {
+        if (con != null) con.setAutoCommit(true);
+    }
+}
+
+// ===== internal tx helper =====
+private void releaseHoldByIdTx(Connection con, int holdId) throws SQLException {
+    // giảm held_rooms theo nights
+    String sqlDec =
+        "UPDATE i " +
+        "SET i.held_rooms = CASE WHEN i.held_rooms >= n.quantity THEN i.held_rooms - n.quantity ELSE 0 END " +
+        "FROM dbo.room_type_inventory i " +
+        "JOIN dbo.availability_hold_nights n " +
+        "  ON n.room_type_id = i.room_type_id AND n.inventory_date = i.inventory_date " +
+        "WHERE n.hold_id = ?;";
+
+    try (PreparedStatement ps = con.prepareStatement(sqlDec)) {
+        ps.setInt(1, holdId);
+        ps.executeUpdate();
+    }
+
+    // update hold status -> CANCELLED (hoặc EXPIRED)
+    String sqlHold =
+        "UPDATE dbo.availability_holds SET status=? WHERE hold_id=? AND status=?;";
+    try (PreparedStatement ps = con.prepareStatement(sqlHold)) {
+        ps.setInt(1, HOLD_CANCELLED);
+        ps.setInt(2, holdId);
+        ps.setInt(3, HOLD_ACTIVE);
+        ps.executeUpdate();
+    }
+}
+
+
 }

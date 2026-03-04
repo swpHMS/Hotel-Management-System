@@ -56,8 +56,7 @@
                     <input type="hidden" name="adults"   value="${fn:escapeXml(not empty adults ? adults : param.adults)}">
                     <input type="hidden" name="children" value="${fn:escapeXml(not empty children ? children : param.children)}">
                     <input type="hidden" name="roomTypeId" value="${fn:escapeXml(not empty roomTypeId ? roomTypeId : param.roomTypeId)}">
-
-                    <div class="cb-wrap cb-wrap-step2">
+<input type="hidden" name="holdId" value="${fn:escapeXml(not empty holdId ? holdId : param.holdId)}">                    <div class="cb-wrap cb-wrap-step2">
                         <!-- LEFT: CUSTOMER INFO (NO inner form) -->
                         <div class="card-soft p-4">
                             <div class="section-title mb-3">

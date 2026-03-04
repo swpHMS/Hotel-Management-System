@@ -4,18 +4,21 @@ import java.sql.Date;
 import java.sql.Timestamp;
 
 public class HoldSummary {
-    private int holdId;
-    private int roomTypeId;
-    private String roomTypeName;
-    private int quantity;
-    private Date checkIn;
-    private Date checkOut;
-    private Timestamp expiresAt;
-    private int status;
+    public int holdId;
+    public int roomTypeId;
+    public String roomTypeName;
+    public int quantity;
+    public Date checkIn;
+    public Date checkOut;
+    public Timestamp expiresAt;
+    public int status;
 
-    private long nights;
-    private long ratePerNight;
-    private long total;
+    public long nights;
+    public long ratePerNight;
+    public long total;
+    public int userId;
+    public int qty;
+    
 
     // getters/setters
     public int getHoldId() { return holdId; }
