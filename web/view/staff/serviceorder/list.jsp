@@ -613,12 +613,14 @@
 
                                                         <c:if test="${selected.status == 0}">
                                                             <td style="text-align:center;">
-                                                                <form method="post" action="${pageContext.request.contextPath}/staff/service-orders/status"
-                                                                      onsubmit="return confirm('Remove this item?')">
+                                                                <form method="post" action="${pageContext.request.contextPath}/staff/service-orders/status">
                                                                     <input type="hidden" name="action"  value="remove"/>
                                                                     <input type="hidden" name="itemId"  value="${it.serviceOrderItemId}"/>
                                                                     <input type="hidden" name="orderId" value="${selected.serviceOrderId}"/>
-                                                                    <button class="btn-link danger" type="submit" style="padding:6px 8px; font-size:14px; border-radius:8px;">🗑</button>
+                                                                    <button class="btn-link danger" type="submit" 
+                                                                            style="padding:6px 8px; font-size:14px; border-radius:8px;">
+                                                                        🗑
+                                                                    </button>
                                                                 </form>
                                                             </td>
                                                         </c:if>
