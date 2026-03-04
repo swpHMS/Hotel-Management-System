@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package context;
 
 import com.google.gson.Gson;
@@ -10,10 +7,7 @@ import java.io.IOException;
 import model.GoogleUserDTO;
 import org.apache.http.client.fluent.Form;
 import org.apache.http.client.fluent.Request;
-/**
- *
- * @author ASUS
- */
+
 public class GoogleUtils {
     public static String getToken(String code) throws IOException {
         String response = Request.Post("https://oauth2.googleapis.com/token")

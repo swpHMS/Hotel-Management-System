@@ -421,7 +421,7 @@
                         <div class="panel-label">Policy Sections</div>
 
                         <c:forEach var="entry" items="${sidebarMap}">
-                            <a class="nav-item ${entry.key eq activeKey ? 'active' : ''}"
+                            <a class="nav-item ${entry.key == activeKey ? 'active' : ''}"
                                href="${pageContext.request.contextPath}/admin/policies?key=${entry.key}">
                                 <span class="nav-name">${entry.value}</span>
                                 <span class="nav-arrow">›</span>

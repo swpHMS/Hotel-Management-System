@@ -477,7 +477,7 @@
                     <tbody>
                         <c:forEach items="${customers}" var="c" varStatus="loop">
                             <tr>
-                                <td class="col-center cell-no">${(page - 1) * size + loop.index + 1}</td>
+                                <td class="col-center cell-no">${(page - 1) * pageSize + loop.index + 1}</td>
 
                                 <td class="col-left">
                                     <div class="cell-title">${c.fullName}</div>

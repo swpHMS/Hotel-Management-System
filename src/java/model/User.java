@@ -11,7 +11,7 @@ public class User {
     private int authProvider;        // 1 LOCAL, 2 GOOGLE
     private String googleSub;        // null nếu LOCAL
     private int status;              // 1 active, 0 inactive
-    private int roleId;               // 1 ADMIN, 2 MANAGER, 3 RECEPTIONIST, 4 STAFF, 5 CUSTOMER
+    private int roleId;              // 1 admin, 2 receptionist, 3 staff, 4 customer
     private String token;            // Dùng cho verify email và reset password
 
     // --- Bổ sung thêm các trường từ bảng Profile (customers/staff) ---
