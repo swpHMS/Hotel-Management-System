@@ -17,7 +17,18 @@ String initials = parts.length >= 2
 <aside class="sb">
 
     <div class="sb-brand">
-        <div class="sb-logo">HMS</div>
+        <div class="diamond-icons" style="display: flex; align-items: center; margin-bottom: 5px;">
+            <a href="${pageContext.request.contextPath}/home" 
+               style="text-decoration: none; display: flex; gap: 1px; border: none; outline: none; align-items: center;">
+
+                <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
+
+                <span style="color: #FF0000; font-size: 18px; line-height: 1; text-shadow: 0 0 0px #FF0000, 0 0 10px rgba(255, 0, 0, 0.4);">◆</span>
+
+                <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
+
+            </a>
+        </div>
         <div>
             <div class="sb-title">Admin Panel</div>
             <div class="sb-sub">Hotel System</div>
