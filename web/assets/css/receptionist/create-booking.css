@@ -1,0 +1,197 @@
+/* ===== Layout ===== */
+html{
+    overflow-y: scroll;
+}
+.hms-main {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    padding: 26px;
+    background: #f5f0e8;
+    min-height: 100vh;
+}
+
+.cb-wrap{
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr; /* hoặc 1.2fr .9fr tuỳ bạn */
+    gap: 22px;
+
+    align-items: start;   /* ✅ QUAN TRỌNG: không stretch theo chiều cao */
+}
+
+.card-soft {
+    background: #fff;
+    border: 1px solid #eef2f7;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+}
+
+/* ===== Section title ===== */
+.section-title {
+    font-weight: 800;
+    font-size: 12px;
+    color: #64748b;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.form-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 700;
+}
+
+/* ===== Room Type Cards ===== */
+.rt-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 180px);
+    justify-content: start;
+    gap: 14px;
+}
+
+.rt-card {
+    border: 1px solid #e6edf7;
+    background: #fff;
+    border-radius: 14px;
+    padding: 12px;
+    cursor: pointer;
+    transition: .2s;
+    position: relative;
+    text-decoration: none;
+    color: inherit;
+}
+
+.rt-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(2, 6, 23, .08);
+}
+
+.rt-card.active {
+    border: 2px solid #2563eb;
+    box-shadow: 0 14px 30px rgba(37, 99, 235, .16);
+}
+
+.rt-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 999px;
+}
+
+.b-ok {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.b-limited {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.b-soldout {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.rt-name {
+    font-weight: 900;
+}
+
+.rt-price {
+    font-size: 18px;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+/* ===== Summary ===== */
+.summary {
+    background: linear-gradient(180deg, #0b1220, #0f172a);
+    color: #e2e8f0;
+    border-radius: 20px;
+    padding: 16px 18px;   /* giảm padding */
+    position: sticky;
+    top: 18px;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, .3);
+    align-self: start;      /* ✅ tự đứng đầu cột */
+    height: fit-content;    /* ✅ chỉ cao bằng nội dung */
+    max-height: none;       /* tránh bị kéo */
+}
+
+.sum-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;   /* giảm chiều cao */
+}
+
+.sum-row:last-child {
+    border-bottom: none;
+}
+
+.sum-k {
+    color: #94a3b8;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.sum-v {
+    font-weight: 900;
+}
+
+.sum-total {
+    font-size: 24px;
+    font-weight: 1000;
+    color: #60a5fa;
+}
+
+.btn-confirm {
+    width: 100%;
+    border-radius: 14px;
+    padding: 12px;
+    font-weight: 900;
+}
+
+@media (max-width: 1200px) {
+    .cb-wrap {
+        grid-template-columns: 1fr;
+    }
+
+    .summary {
+        position: relative;
+        top: auto;
+    }
+
+    .rt-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.hint{
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.text-primary{
+    color: #2563eb !important;
+}
+
+/* ===== Step 2: force same column width as Step 1 ===== */
+.cb-wrap-step2{
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr; /* giống Step 1 bạn đang dùng */
+    gap: 22px;
+    align-items: start;
+}
+
+/* đảm bảo cột phải không bị co/hẹp do nội dung */
+.cb-wrap-step2 .summary{
+    width: 100%;
+    min-width: 0;
+}
+
+/* đảm bảo cột trái không bị vượt grid */
+.cb-wrap-step2 .card-soft{
+    width: 100%;
+    min-width: 0;
+}
