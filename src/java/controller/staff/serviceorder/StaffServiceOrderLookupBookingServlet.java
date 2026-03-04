@@ -30,7 +30,7 @@ public class StaffServiceOrderLookupBookingServlet extends HttpServlet {
 
         var found = dao.findActiveBookingByRoomNo(roomNo.trim());
         if (found == null) {
-            resp.getWriter().write("{\"ok\":false,\"message\":\"No IN_HOUSE booking (status=3) for this room\"}");
+            resp.getWriter().write("{\"ok\":false,\"message\":\"This room has no active check-in at the moment.\"}");
             return;
         }
 
