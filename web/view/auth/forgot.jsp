@@ -47,7 +47,7 @@
                     </div>
 
                     <p class="footer-text" style="margin-top: 20px;">
-                        Remember your password? <a href="login.jsp">RETURN TO LOGIN PAGE</a>
+                        Remember your password? <a href="${pageContext.request.contextPath}/login">RETURN TO LOGIN PAGE</a>
                     </p>
                 </form>
             </div>

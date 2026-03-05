@@ -1,7 +1,7 @@
 <%-- 
-    Document   : home.jsp
-    Created on : Feb 2, 2026, 7:34:10 AM
-    Author     : ASUS
+    Document   : current_booking.jsp
+    Created on : Feb 5, 2026, 3:12:13 PM
+    Author     : admin
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
@@ -12,6 +12,6 @@
         <title>JSP Page</title>
     </head>
     <body>
-        <h1>Login success</h1>
+        <h1>Hello World!</h1>
     </body>
 </html>

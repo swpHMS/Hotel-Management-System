@@ -19,19 +19,20 @@ public class VerifyServlet extends HttpServlet {
 
         try {
             UserDAO dao = new UserDAO();
-            // Gọi hàm verifyUser để update status = 1 trong database
+            // Call verifyUser to update status = 1 in the database
             boolean isVerified = dao.verifyUser(email, token);
 
             if (isVerified) {
-                // Nếu xác thực thành công, chuyển hướng về login với thông báo
+                // If verification is successful, redirect to login with a success message
                 response.sendRedirect(request.getContextPath() + "/view/auth/login.jsp?verify=success");
             } else {
-                // Nếu thất bại (sai token hoặc email), báo lỗi
-                request.setAttribute("error", "Link xác thực không hợp lệ hoặc đã hết hạn!");
+                // If failed (wrong token or email), report an error
+                request.setAttribute("error", "The verification link is invalid or has expired!");
                 request.getRequestDispatcher("/view/auth/login.jsp").forward(request, response);
             }
         } catch (Exception e) {
             e.printStackTrace();
+            // Redirect to login with a system error notification
             response.sendRedirect(request.getContextPath() + "/view/auth/login.jsp?error=system_error");
         }
     }

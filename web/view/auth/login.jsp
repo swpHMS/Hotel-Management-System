@@ -1,14 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%-- 1. Bắt buộc thêm thư viện JSTL để hiển thị thông báo --%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <title>Login - Regal Quintet Hotel</title>
-    <%-- 2. Cập nhật đường dẫn CSS dùng contextPath để tránh lỗi 404 --%>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/auth/login.css">
-    <%-- Thêm FontAwesome để hiển thị icon --%>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -16,10 +13,19 @@
         <div class="login-card">
             <div class="login-left">
                 <div class="logo-section">
-                    <div class="diamond-icons">
-                        <span>◆</span><span class="black">◆</span><span>◆</span>
+                    <div class="diamond-icons" style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <a href="${pageContext.request.contextPath}/home" 
+                           style="text-decoration: none; display: flex; gap: 1px; border: none; outline: none; align-items: center;">
+
+                            <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
+
+                            <span style="color: #FF0000; font-size: 18px; line-height: 1; text-shadow: 0 0 0px #FF0000, 0 0 10px rgba(255, 0, 0, 0.4);">◆</span>
+
+                            <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
+
+                        </a>
                     </div>
-                    <h1>REGAL QUINTET</h1>
+                        <h1><a href="${pageContext.request.contextPath}/home" style="text-decoration: none; color: inherit">REGAL QUINTET</a></h1>
                     <p class="subtitle">HOTEL & RESORTS</p>
                 </div>
                 <div class="quote-box">
@@ -31,9 +37,7 @@
                 <h2>WELCOME BACK</h2>
                 <p class="hint">Please sign in to your account.</p>
 
-                <%-- --- PHẦN HIỂN THỊ THÔNG BÁO --- --%>
-                
-                <%-- 1. Thông báo đặt lại mật khẩu thành công (Lấy từ Session) --%>
+                <%-- PHẦN HIỂN THỊ THÔNG BÁO --%>
                 <c:if test="${not empty sessionScope.successMsg}">
                     <p style="color: #52c41a; text-align: center; font-size: 13px; margin-bottom: 12px; background: #f6ffed; padding: 10px; border-radius: 6px; border: 1px solid #b7eb8f; animation: fadeIn 0.5s;">
                         <i class="fa-solid fa-circle-check"></i> ${sessionScope.successMsg}
@@ -41,31 +45,30 @@
                     <c:remove var="successMsg" scope="session"/>
                 </c:if>
 
-                <%-- 2. Thông báo kích hoạt thành công từ VerifyServlet --%>
                 <c:if test="${param.verify == 'success'}">
                     <p style="color: #52c41a; text-align: center; font-size: 13px; margin-bottom: 12px; background: #f6ffed; padding: 10px; border-radius: 6px; border: 1px solid #b7eb8f;">
-                        <i class="fa-solid fa-circle-check"></i> Xác thực thành công! Bây giờ bạn có thể đăng nhập.
+                        <i class="fa-solid fa-circle-check"></i> Verification successful! You can log in now..
                     </p>
                 </c:if>
 
-                <%-- 3. Thông báo lỗi --%>
-                <c:if test="${not empty error or param.error == 'google_auth_failed'}">
+                <c:if test="${not empty error or param.error == 'google_auth_failed' or param.error == 'denied'}">
                     <p style="color: #ff4d4d; text-align: center; font-size: 13px; margin-bottom: 12px; background: #fff1f0; padding: 10px; border-radius: 6px; border: 1px solid #ffa39e;">
                         <i class="fa-solid fa-circle-exclamation"></i> 
                         <c:choose>
-                            <c:when test="${param.error == 'google_auth_failed'}">Lỗi xác thực Google. Vui lòng thử lại.</c:when>
+                            <c:when test="${param.error == 'google_auth_failed'}">Google authentication error. Please try again.</c:when>
+                            <c:when test="${param.error == 'denied'}">You do not have access to this area!</c:when>
                             <c:otherwise>${error}</c:otherwise>
                         </c:choose>
                     </p>
                 </c:if>
 
-                <%-- --- FORM ĐĂNG NHẬP --- --%>
+                <%-- FORM ĐĂNG NHẬP --%>
                 <form action="${pageContext.request.contextPath}/login" method="POST">
                     <div class="input-group">
                         <label>IDENTITY</label>
                         <div class="input-wrapper">
                             <i class="fa-regular fa-user"></i>
-                            <%-- CẬP NHẬT: Lấy email từ Cookie gửi sang --%>
+                            <%-- Chỉ tự điền Email --%>
                             <input type="email" name="email" placeholder="email@example.com" value="${not empty email ? email : ''}" required>
                         </div>
                     </div>
@@ -74,18 +77,18 @@
                         <label>PASSWORD</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock"></i>
-                            <%-- CẬP NHẬT: Lấy password từ Cookie gửi sang --%>
-                            <input type="password" name="password" id="password" placeholder="••••••••" value="${not empty password ? password : ''}" required>
+                            <%-- KHÔNG tự điền mật khẩu vì lý do bảo mật --%>
+                            <input type="password" name="password" id="password" placeholder="••••••••" required>
                             <i class="fa-regular fa-eye eye-icon" style="cursor: pointer;"></i>
                         </div>
                     </div>
 
                     <div class="form-options">
                         <label class="remember-me">
-                            <%-- CẬP NHẬT: Giữ trạng thái tích chọn của checkbox --%>
                             <input type="checkbox" name="remember" ${not empty remember ? 'checked' : ''}> Remember me
                         </label>
-                        <a href="forgot.jsp" class="forgot-pwd">FORGOT PASSWORD?</a>
+                        <%-- Dùng đường dẫn tương đối từ gốc --%>
+                        <a href="${pageContext.request.contextPath}/forgot-password" class="forgot-pwd">FORGOT PASSWORD?</a>
                     </div>
 
                     <div class="button-group">
@@ -115,8 +118,8 @@
             const passwordInput = document.getElementById('password');
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-            this.classList.toggle('fa-eye-slash');
             this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
         });
     </script>
 </body>
