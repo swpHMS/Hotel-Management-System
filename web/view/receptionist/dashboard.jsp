@@ -662,7 +662,7 @@
                         </div>
                     </div>
 
-                    <div class="stat-card" data-tag="Pending">
+                    <div class="stat-card" data-tag="Unchecked">
                         <div class="stat-icon-wrapper bg-checkout-icon"><i class="bi bi-arrow-up-right"></i></div>
                         <div class="stat-data">
                             <span class="stat-label">CHECK-OUT</span>
@@ -682,6 +682,9 @@
                 <!-- FILTER -->
 
                 <form class="filter-card" method="get" action="dashboard">
+                    
+                    <input type="hidden" name="index" value="1"> 
+                    <input type="hidden" name="size" value="${currentSize}">
                     <div class="filter-row">
                         <div class="f-field">
                             <label>Search</label>
@@ -799,9 +802,9 @@
                         <div class="footer-left">
                             Show
                             <select id="pageSizeSelect" onchange="changePageSize()">
-                                <option value="5" ${currentSize == 5 ? 'selected' : ''}>5</option>
                                 <option value="10" ${currentSize == 10 ? 'selected' : ''}>10</option>
                                 <option value="20" ${currentSize == 20 ? 'selected' : ''}>20</option>
+                                <option value="50" ${currentSize == 50 ? 'selected' : ''}>50</option>
                             </select>
                             entries per page
                         </div>
@@ -812,19 +815,7 @@
                                         ← Prev
                                     </a>
 
-                                    <c:forEach begin="1" end="${endP}" var="i">
-                                        <c:choose>
-                                            <c:when test="${tag == i}">
-                                                <span class="page-pill">${i}</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <a class="btn-ghost" 
-                                                   href="dashboard?index=${i}&size=${currentSize}&txtSearch=${searchValue}&filterStatus=${statusValue}&filterSort=${sortValue}">
-                                                    ${i}
-                                                </a>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </c:forEach>
+                                    <span class="page-pill">${tag}</span> 
 
                                     <a class="btn-ghost ${tag >= endP ? 'disabled' : ''}" 
                                        href="dashboard?index=${tag + 1}&size=${currentSize}&txtSearch=${searchValue}&filterStatus=${statusValue}&filterSort=${sortValue}">
