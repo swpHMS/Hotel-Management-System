@@ -142,6 +142,10 @@ public class LoginServlet extends HttpServlet {
         int role = user.getRoleId();
         if (role == 1) {
             response.sendRedirect(contextPath + "/admin/dashboard");
+        } else if (role == 3) {
+            response.sendRedirect(contextPath + "/receptionist/dashboard");
+        } else if (role == 4) {
+            response.sendRedirect(contextPath + "/view/staff/dashboard.jsp");
         } else {
             response.sendRedirect(contextPath + "/home");
         }
