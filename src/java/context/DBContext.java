@@ -8,17 +8,13 @@ public class DBContext {
 
     protected Connection connection;
 
-    private static final String URL =
-            "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System1;encrypt=true;trustServerCertificate=true;";
-    private static final String USER = "sa";
-    private static final String PASS = "123";
 
     public DBContext() {
         try {
             // Edit URL , username, password to authenticate with your MS SQL Server
-            String url = "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System2;encrypt=true;trustServerCertificate=true;";
+            String url = "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System1;encrypt=true;trustServerCertificate=true;";
             String username = "sa";
-            String password = "123456789";
+            String password = "123";
             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
             connection = DriverManager.getConnection(url, username, password);
         } catch (ClassNotFoundException | SQLException ex) {

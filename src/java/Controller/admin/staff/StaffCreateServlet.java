@@ -1,5 +1,5 @@
 package controller.admin.staff;
-
+import model.Role;
 import dal.AdminUserDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -9,7 +9,7 @@ import java.sql.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import model.Role;
+import dal.AdminUserDAO;
 import org.mindrot.jbcrypt.BCrypt;
 import utils.Validation;
 

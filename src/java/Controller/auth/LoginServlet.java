@@ -35,12 +35,10 @@ public class LoginServlet extends HttpServlet {
                 }
 
                 if (user != null && user.getStatus() == 1) {
-                    HttpSession session = request.getSession(true);
+                    HttpSession session = request.getSession();
                     session.setAttribute("userAccount", user);
                     session.setMaxInactiveInterval(24 * 60 * 60);
-
-                    // ✅ QUAY LẠI TRANG ĐANG MUỐN FILTER/BOOKING (nếu có)
-                    redirectUser(user, request, response, contextPath);
+                    redirectUser(user, response, contextPath);
                 } else {
                     response.sendRedirect(contextPath + "/view/auth/login.jsp?error=account_locked");
                 }
@@ -77,7 +75,7 @@ public class LoginServlet extends HttpServlet {
 
         try {
             UserDAO dao = new UserDAO();
-
+            
             // 1. Kiểm tra email tồn tại
             User user = dao.getUserByEmail(email);
 
@@ -88,11 +86,10 @@ public class LoginServlet extends HttpServlet {
                 return;
             }
 
-            // 2. Kiểm tra mật khẩu (BCrypt)
-            if (user.getPasswordHash() != null
-                    && org.mindrot.jbcrypt.BCrypt.checkpw(password, user.getPasswordHash())) {
-
-                // 3. Kiểm tra trạng thái
+            // 2. Kiểm tra mật khẩu (Sử dụng BCrypt)
+            if (user.getPasswordHash() != null && org.mindrot.jbcrypt.BCrypt.checkpw(password, user.getPasswordHash())) {
+                
+                // 3. Kiểm tra trạng thái verify
                 if (user.getStatus() == 0) {
                     request.setAttribute("error", "Your account is inactive!");
                     request.setAttribute("email", email);
@@ -100,16 +97,15 @@ public class LoginServlet extends HttpServlet {
                     return;
                 }
 
-                // ✅ ĐĂNG NHẬP THÀNH CÔNG
+                // ĐĂNG NHẬP THÀNH CÔNG
                 HttpSession session = request.getSession(true);
                 session.setAttribute("userAccount", user);
                 session.setMaxInactiveInterval(24 * 60 * 60);
 
-                // Cookie remember
+                // Gọi hàm xử lý Cookie (Đã thêm bên dưới)
                 handleCookies(email, remember, response);
 
-                // ✅ QUAY LẠI TRANG ĐANG MUỐN FILTER/BOOKING (nếu có)
-                redirectUser(user, request, response, contextPath);
+                redirectUser(user, response, contextPath);
 
             } else {
                 // Sai mật khẩu
@@ -141,29 +137,14 @@ public class LoginServlet extends HttpServlet {
         response.addCookie(cRem);
     }
 
-    /**
-     * ✅ Ưu tiên redirectAfterLogin (do AuthorizationFilter set)
-     * Nếu không có thì redirect theo role như cũ.
-     */
-    private void redirectUser(User user, HttpServletRequest request, HttpServletResponse response, String contextPath)
-            throws IOException {
-
-        HttpSession session = request.getSession(false);
-
-        // 1) Nếu có redirectAfterLogin thì quay lại đúng trang trước đó
-        if (session != null) {
-            String redirect = (String) session.getAttribute("redirectAfterLogin");
-            if (redirect != null && !redirect.isBlank()) {
-                session.removeAttribute("redirectAfterLogin");
-                response.sendRedirect(redirect);
-                return;
-            }
-        }
-
-        // 2) Không có thì theo role
+    private void redirectUser(User user, HttpServletResponse response, String contextPath) throws IOException {
         int role = user.getRoleId();
         if (role == 1) {
             response.sendRedirect(contextPath + "/admin/dashboard");
+        } else if (role == 3) {
+            response.sendRedirect(contextPath + "/receptionist/dashboard");
+        } else if (role == 4) {
+            response.sendRedirect(contextPath + "/staff/service-orders");
         } else {
             response.sendRedirect(contextPath + "/home");
         }
