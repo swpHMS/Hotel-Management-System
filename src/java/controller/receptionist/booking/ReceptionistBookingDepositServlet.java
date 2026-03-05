@@ -53,45 +53,48 @@ public class ReceptionistBookingDepositServlet extends HttpServlet {
         }
     }
 
-    @Override
+@Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("active", "create_booking");
-
         Integer holdId = parseIntOrNull(req.getParameter("holdId"));
         if (holdId == null) {
             resp.sendRedirect(req.getContextPath() + "/receptionist/booking/create");
             return;
         }
 
-        // Lấy Payment method từ UI
-String method = req.getParameter("method"); 
-if (method == null || method.isBlank()) method = "CASH";
+        // 1. Lấy phương thức thanh toán
+        String method = req.getParameter("method"); 
+        if (method == null || method.isBlank()) method = "CASH";
 
-// LẤY THÔNG TIN KHÁCH HÀNG TỪ SESSION (Thay thế đoạn req.getParameter cũ)
-HttpSession session = req.getSession();
-String fullName = (String) session.getAttribute("cus_fullName");
-String phone    = (String) session.getAttribute("cus_phone");
-String email    = (String) session.getAttribute("cus_email");
-String identity = (String) session.getAttribute("cus_identity");
-String address  = (String) session.getAttribute("cus_address");
+        // 2. LẤY THÔNG TIN KHÁCH TỪ SESSION (Tuyệt đối không dùng req.getParameter nữa)
+        HttpSession session = req.getSession();
+        String fullName = (String) session.getAttribute("cus_fullName");
+        String phone    = (String) session.getAttribute("cus_phone");
+        String email    = (String) session.getAttribute("cus_email");
+        String identity = (String) session.getAttribute("cus_identity");
+        String address  = (String) session.getAttribute("cus_address");
 
-try {
-    // Gọi hàm hoàn tất booking của bạn
-    int bookingId = dao.finalizeBookingFromHold(
-        holdId, fullName, phone, email, identity, address, 0.5, method, "SUCCESS"
-    );
+        try {
+            // 3. Chốt Booking
+            int bookingId = dao.finalizeBookingFromHold(
+                holdId, fullName, phone, email, identity, address, 0.5, method, "SUCCESS"
+            );
 
-    // Xóa rác trong session sau khi đã lưu DB thành công
-    session.removeAttribute("cus_fullName");
-    session.removeAttribute("cus_phone");
-    session.removeAttribute("cus_email");
-    session.removeAttribute("cus_identity");
-    session.removeAttribute("cus_address");
+            // 4. Tạo thông báo Popup màu xanh
+            session.setAttribute("successMsg", "Tạo Booking #" + bookingId + " thành công!");
 
-    // Chuyển qua trang success
-    resp.sendRedirect(req.getContextPath() + "/receptionist/bookings");
+            // 5. Dọn dẹp Session
+            session.removeAttribute("cus_fullName");
+            session.removeAttribute("cus_phone");
+            session.removeAttribute("cus_email");
+            session.removeAttribute("cus_identity");
+            session.removeAttribute("cus_address");
 
-} catch (Exception ex) {
+            // 6. CHUYỂN HƯỚNG VỀ TRANG BOOKING LIST
+            resp.sendRedirect(req.getContextPath() + "/receptionist/bookings");
+            return;
+
+        } catch (Exception ex) {
             req.setAttribute("errors", java.util.List.of("Payment/confirm failed: " + ex.getMessage()));
             doGet(req, resp);
         }

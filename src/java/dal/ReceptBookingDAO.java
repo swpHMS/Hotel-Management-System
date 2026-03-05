@@ -280,7 +280,7 @@ public class ReceptBookingDAO extends DBContext {
 
         // Bạn chỉnh map status booking ở đây nếu DB bạn dùng INT
         // Nếu bookings.status là VARCHAR: dùng "PENDING_DEPOSIT" / "CONFIRMED"...
-        final String BOOKING_STATUS_PENDING_DEPOSIT = "PENDING_DEPOSIT";
+final int BOOKING_STATUS_PENDING_DEPOSIT = 1; // 1 tương đương với Reserved/Pending
 
         Connection con = null;
         try {
@@ -407,18 +407,17 @@ public class ReceptBookingDAO extends DBContext {
             }
 
             // 5) Insert booking
-            String sqlInsertBooking
-                    = "INSERT INTO dbo.bookings(customer_id, status, check_in_date, check_out_date, total_amount) "
-                    + "VALUES(?,?,?,?,?);";
-
-            int bookingId;
-            try (PreparedStatement ps = con.prepareStatement(sqlInsertBooking, Statement.RETURN_GENERATED_KEYS)) {
-                ps.setInt(1, customerId);
-                ps.setString(2, BOOKING_STATUS_PENDING_DEPOSIT);
-                ps.setDate(3, hs.checkIn);
-                ps.setDate(4, hs.checkOut);
-                ps.setBigDecimal(5, new java.math.BigDecimal(hs.total));
-                ps.executeUpdate();
+        String sqlInsertBooking
+                = "INSERT INTO dbo.bookings(customer_id, status, check_in_date, check_out_date, total_amount) "
+                + "VALUES(?,?,?,?,?);";
+        int bookingId;
+        try (PreparedStatement ps = con.prepareStatement(sqlInsertBooking, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, customerId);
+            ps.setInt(2, BOOKING_STATUS_PENDING_DEPOSIT); // ĐÃ SỬA THÀNH setInt
+            ps.setDate(3, hs.checkIn);
+            ps.setDate(4, hs.checkOut);
+            ps.setBigDecimal(5, new java.math.BigDecimal(hs.total));
+            ps.executeUpdate();
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (!rs.next()) {
@@ -447,8 +446,18 @@ public class ReceptBookingDAO extends DBContext {
             try (PreparedStatement ps = con.prepareStatement(sqlInsertPayment)) {
                 ps.setInt(1, bookingId);
                 ps.setBigDecimal(2, new java.math.BigDecimal(depositAmount));
-                ps.setString(3, paymentMethod);
-                ps.setString(4, paymentStatus);
+                
+                // --- BỔ SUNG: CHUYỂN ĐỔI CHỮ (VARCHAR) SANG SỐ (INT) ---
+                int methodInt = 1; // Mặc định 1 là Tiền mặt (CASH)
+                if ("QR".equalsIgnoreCase(paymentMethod)) {
+                    methodInt = 2; // 2 là Chuyển khoản (QR)
+                }
+                
+                int statusInt = 1; // Mặc định 1 là SUCCESS (Thành công)
+                // -------------------------------------------------------
+
+                ps.setInt(3, methodInt); // Thay vì setString, ta dùng setInt
+                ps.setInt(4, statusInt); // Thay vì setString, ta dùng setInt
                 ps.executeUpdate();
             }
 

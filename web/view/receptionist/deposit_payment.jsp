@@ -90,11 +90,7 @@
       </div>
     </div>
 
-    <c:if test="${not empty errors}">
-      <div class="alert alert-danger">
-        <c:forEach var="e" items="${errors}">${e}<br/></c:forEach>
-      </div>
-    </c:if>
+    
 
     <!-- Overlay modal always show (giống ảnh bạn) -->
     <div class="pay-overlay">
@@ -108,6 +104,13 @@
             <i class="bi bi-x-lg"></i>
           </a>
         </div>
+            
+            <c:if test="${not empty errors}">
+                    <div class="alert alert-danger mb-3 shadow-sm">
+                        <c:forEach var="e" items="${errors}"><i class="bi bi-exclamation-triangle-fill me-2"></i><b>LỖI:</b> ${e}<br/></c:forEach>
+                    </div>
+                </c:if>
+            
 
         <div class="pay-grid">
           <!-- LEFT -->
