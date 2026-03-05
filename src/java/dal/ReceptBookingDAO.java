@@ -280,7 +280,7 @@ public class ReceptBookingDAO extends DBContext {
 
         // Bạn chỉnh map status booking ở đây nếu DB bạn dùng INT
         // Nếu bookings.status là VARCHAR: dùng "PENDING_DEPOSIT" / "CONFIRMED"...
-final int BOOKING_STATUS_PENDING_DEPOSIT = 1; // 1 tương đương với Reserved/Pending
+        final int BOOKING_STATUS_CONFIRMED = 2;
 
         Connection con = null;
         try {
@@ -407,17 +407,17 @@ final int BOOKING_STATUS_PENDING_DEPOSIT = 1; // 1 tương đương với Reserv
             }
 
             // 5) Insert booking
-        String sqlInsertBooking
-                = "INSERT INTO dbo.bookings(customer_id, status, check_in_date, check_out_date, total_amount) "
-                + "VALUES(?,?,?,?,?);";
-        int bookingId;
-        try (PreparedStatement ps = con.prepareStatement(sqlInsertBooking, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setInt(1, customerId);
-            ps.setInt(2, BOOKING_STATUS_PENDING_DEPOSIT); // ĐÃ SỬA THÀNH setInt
-            ps.setDate(3, hs.checkIn);
-            ps.setDate(4, hs.checkOut);
-            ps.setBigDecimal(5, new java.math.BigDecimal(hs.total));
-            ps.executeUpdate();
+            String sqlInsertBooking
+                    = "INSERT INTO dbo.bookings(customer_id, status, check_in_date, check_out_date, total_amount) "
+                    + "VALUES(?,?,?,?,?);";
+            int bookingId;
+            try (PreparedStatement ps = con.prepareStatement(sqlInsertBooking, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, customerId);
+                ps.setInt(2, BOOKING_STATUS_CONFIRMED);
+                ps.setDate(3, hs.checkIn);
+                ps.setDate(4, hs.checkOut);
+                ps.setBigDecimal(5, new java.math.BigDecimal(hs.total));
+                ps.executeUpdate();
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (!rs.next()) {
@@ -446,13 +446,13 @@ final int BOOKING_STATUS_PENDING_DEPOSIT = 1; // 1 tương đương với Reserv
             try (PreparedStatement ps = con.prepareStatement(sqlInsertPayment)) {
                 ps.setInt(1, bookingId);
                 ps.setBigDecimal(2, new java.math.BigDecimal(depositAmount));
-                
+
                 // --- BỔ SUNG: CHUYỂN ĐỔI CHỮ (VARCHAR) SANG SỐ (INT) ---
                 int methodInt = 1; // Mặc định 1 là Tiền mặt (CASH)
                 if ("QR".equalsIgnoreCase(paymentMethod)) {
                     methodInt = 2; // 2 là Chuyển khoản (QR)
                 }
-                
+
                 int statusInt = 1; // Mặc định 1 là SUCCESS (Thành công)
                 // -------------------------------------------------------
 
@@ -554,7 +554,7 @@ final int BOOKING_STATUS_PENDING_DEPOSIT = 1; // 1 tương đương với Reserv
             ps.executeUpdate();
         }
     }
-    
+
     // ================================
     // DỌN DẸP CÁC HOLD QUÁ HẠN (TỰ ĐỘNG NHẢ PHÒNG)
     // ================================
@@ -567,10 +567,14 @@ final int BOOKING_STATUS_PENDING_DEPOSIT = 1; // 1 tương đương với Reserv
             con.commit();
             return affected;
         } catch (SQLException ex) {
-            if (con != null) con.rollback();
+            if (con != null) {
+                con.rollback();
+            }
             throw ex;
         } finally {
-            if (con != null) con.setAutoCommit(true);
+            if (con != null) {
+                con.setAutoCommit(true);
+            }
         }
     }
 
@@ -584,17 +588,17 @@ final int BOOKING_STATUS_PENDING_DEPOSIT = 1; // 1 tương đương với Reserv
                     int holdId = rs.getInt(1);
                     // 1. Trừ số lượng phòng bị giam (held_rooms)
                     try (PreparedStatement psInv = con.prepareStatement(
-                        "UPDATE inv SET inv.held_rooms = inv.held_rooms - hn.quantity " +
-                        "FROM dbo.room_type_inventory inv " +
-                        "JOIN dbo.availability_hold_nights hn " +
-                        "  ON hn.room_type_id = inv.room_type_id AND hn.inventory_date = inv.inventory_date " +
-                        "WHERE hn.hold_id = ?")) {
+                            "UPDATE inv SET inv.held_rooms = inv.held_rooms - hn.quantity "
+                            + "FROM dbo.room_type_inventory inv "
+                            + "JOIN dbo.availability_hold_nights hn "
+                            + "  ON hn.room_type_id = inv.room_type_id AND hn.inventory_date = inv.inventory_date "
+                            + "WHERE hn.hold_id = ?")) {
                         psInv.setInt(1, holdId);
                         psInv.executeUpdate();
                     }
                     // 2. Chuyển trạng thái Hold thành EXPIRED (3)
                     try (PreparedStatement psUp = con.prepareStatement(
-                        "UPDATE dbo.availability_holds SET status = ? WHERE hold_id = ?")) {
+                            "UPDATE dbo.availability_holds SET status = ? WHERE hold_id = ?")) {
                         psUp.setInt(1, HOLD_EXPIRED); // HOLD_EXPIRED = 3
                         psUp.setInt(2, holdId);
                         psUp.executeUpdate();

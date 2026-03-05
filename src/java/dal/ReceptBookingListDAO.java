@@ -47,11 +47,11 @@ public class ReceptBookingListDAO extends DBContext {
             con = connection;
             con.setAutoCommit(false); // Bật Transaction an toàn
 
-            // 1. Lấy thông tin phòng của Booking này (chỉ lấy nếu status = 1 là đang chờ)
+            // 1. CHỈ CHO PHÉP HỦY NẾU ĐƠN ĐANG Ở TRẠNG THÁI 1 (PENDING) HOẶC 2 (CONFIRMED)
             String getInfo = "SELECT b.check_in_date, b.check_out_date, brt.room_type_id, brt.quantity " +
                              "FROM dbo.bookings b " +
                              "JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id " +
-                             "WHERE b.booking_id = ? AND b.status = 1"; 
+                             "WHERE b.booking_id = ? AND b.status IN ('1', '2')"; 
                              
             java.sql.Date checkIn = null;
             java.sql.Date checkOut = null;
@@ -71,20 +71,19 @@ public class ReceptBookingListDAO extends DBContext {
                 }
             }
 
-            // Nếu đơn không tồn tại hoặc đã check-in thì không cho hủy
             if (!found) {
                 con.rollback();
-                return false; 
+                return false; // Đơn không tồn tại hoặc đã bị check-in
             }
 
-            // 2. Chuyển trạng thái Booking thành 0 (Đã hủy)
-            String updateStatus = "UPDATE dbo.bookings SET status = 0 WHERE booking_id = ?";
+            // 2. CHUYỂN TRẠNG THÁI THÀNH 5 (CANCELLED)
+            String updateStatus = "UPDATE dbo.bookings SET status = 5 WHERE booking_id = ?";
             try (PreparedStatement ps = con.prepareStatement(updateStatus)) {
                 ps.setInt(1, bookingId);
                 ps.executeUpdate();
             }
 
-            // 3. Hoàn trả phòng bằng cách TRỪ đi số booked_rooms trong kho
+            // 3. HOÀN TRẢ PHÒNG (Trừ đi số booked_rooms trong kho)
             String refundInv = "UPDATE dbo.room_type_inventory " +
                                "SET booked_rooms = booked_rooms - ? " +
                                "WHERE room_type_id = ? AND inventory_date >= ? AND inventory_date < ?";
@@ -96,11 +95,11 @@ public class ReceptBookingListDAO extends DBContext {
                 ps.executeUpdate();
             }
 
-            con.commit(); // Chốt lưu toàn bộ
+            con.commit();
             return true;
 
         } catch (Exception e) {
-            if (con != null) con.rollback(); // Gặp lỗi thì thu hồi lại hết
+            if (con != null) con.rollback(); 
             throw e;
         } finally {
             if (con != null) con.setAutoCommit(true);

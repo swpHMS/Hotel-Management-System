@@ -50,14 +50,44 @@
                                     <td><fmt:formatDate value="${b.checkInDate}" pattern="dd/MM/yyyy"/></td>
                                     <td><fmt:formatDate value="${b.checkOutDate}" pattern="dd/MM/yyyy"/></td>
                                     <td class="fw-bold"><fmt:formatNumber value="${b.totalAmount}" type="number"/> đ</td>
-                                    <!-- 1. SỬA CỘT STATUS: Dịch số thành nhãn màu sắc đẹp mắt -->
+                                    <!-- CỘT STATUS: Dịch cả số và chữ thành nhãn màu sắc -->
+                                    <!-- CỘT STATUS: Ánh xạ 6 trạng thái chuẩn từ Database -->
                                     <td>
                                         <c:choose>
-                                            <c:when test="${b.status == '1'}"><span class="badge bg-warning text-dark rounded-pill px-3 py-2">RESERVED</span></c:when>
-                                            <c:when test="${b.status == '2'}"><span class="badge bg-primary rounded-pill px-3 py-2">CHECKED IN</span></c:when>
-                                            <c:when test="${b.status == '3'}"><span class="badge bg-success rounded-pill px-3 py-2">COMPLETED</span></c:when>
-                                            <c:when test="${b.status == '0'}"><span class="badge bg-danger rounded-pill px-3 py-2">CANCELLED</span></c:when>
-                                            <c:otherwise><span class="badge bg-secondary rounded-pill px-3 py-2">UNKNOWN</span></c:otherwise>
+                                            <%-- 1: PENDING (Chờ thanh toán/Đặt cọc) - Màu vàng --%>
+                                            <c:when test="${b.status == '1'}">
+                                                <span class="badge bg-warning text-dark rounded-pill px-3 py-2" style="font-weight: 700;">PENDING</span>
+                                            </c:when>
+
+                                            <%-- 2: CONFIRMED (Đã xác nhận/Đã cọc) - Màu xanh lơ --%>
+                                            <c:when test="${b.status == '2'}">
+                                                <span class="badge bg-info text-dark rounded-pill px-3 py-2" style="font-weight: 700;">CONFIRMED</span>
+                                            </c:when>
+
+                                            <%-- 3: CHECKED_IN (Đang ở) - Màu xanh dương --%>
+                                            <c:when test="${b.status == '3'}">
+                                                <span class="badge bg-primary rounded-pill px-3 py-2" style="font-weight: 700;">CHECKED IN</span>
+                                            </c:when>
+
+                                            <%-- 4: CHECKED_OUT (Đã trả phòng) - Màu xanh lá --%>
+                                            <c:when test="${b.status == '4'}">
+                                                <span class="badge bg-success rounded-pill px-3 py-2" style="font-weight: 700;">CHECKED OUT</span>
+                                            </c:when>
+
+                                            <%-- 5: CANCELLED (Đã hủy) - Màu đỏ --%>
+                                            <c:when test="${b.status == '5'}">
+                                                <span class="badge bg-danger rounded-pill px-3 py-2" style="font-weight: 700;">CANCELLED</span>
+                                            </c:when>
+
+                                            <%-- 6: NO-SHOW (Không đến) - Màu đen --%>
+                                            <c:when test="${b.status == '6'}">
+                                                <span class="badge bg-dark rounded-pill px-3 py-2" style="font-weight: 700;">NO SHOW</span>
+                                            </c:when>
+
+                                            <%-- Phòng hờ trường hợp có mã trạng thái lạ --%>
+                                            <c:otherwise>
+                                                <span class="badge bg-secondary rounded-pill px-3 py-2" style="font-weight: 700;">UNKNOWN (${b.status})</span>
+                                            </c:otherwise>
                                         </c:choose>
                                     </td>
 
@@ -66,18 +96,18 @@
                                         <div class="d-flex gap-2 justify-content-center">
                                             <a href="#" class="btn btn-sm btn-light border" title="Xem chi tiết"><i class="bi bi-eye"></i></a>
 
-                                            <!-- Chỉ cho phép hủy nếu đơn đang ở trạng thái Reserved (1) -->
-                                            <c:if test="${b.status == '1'}">
+                                            <!-- Chỉ cho phép hủy nếu đơn đang ở trạng thái 1 (PENDING) hoặc 2 (CONFIRMED) -->
+                                            <c:if test="${b.status == '1' || b.status == '2'}">
                                                 <a href="javascript:void(0);" 
                                                    onclick="if (confirm('Bạn có chắc chắn muốn hủy đơn đặt phòng #${b.bookingId} không?\\nPhòng sẽ được hoàn trả lại cho khách khác đặt.'))
-                                                       window.location.href = '${pageContext.request.contextPath}/receptionist/booking/cancel?id=${b.bookingId}';" 
+                   window.location.href = '${pageContext.request.contextPath}/receptionist/booking/cancel?id=${b.bookingId}';" 
                                                    class="btn btn-sm btn-outline-danger" title="Hủy Booking">
                                                     <i class="bi bi-x-circle"></i>
                                                 </a>
                                             </c:if>
                                         </div>
                                     </td>
-                                    
+
                                 </tr>
                             </c:forEach>
                             <c:if test="${empty bookings}">
