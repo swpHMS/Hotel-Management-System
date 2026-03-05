@@ -6,8 +6,12 @@ package model;
 
 import java.time.LocalTime;
 
+/**
+ *
+ * @author ASUS
+ */
 public class HotelInformation {
-    private int hotelId;
+     private int hotelId;
     private String name;
     private String content;
     private String address;
@@ -40,5 +44,5 @@ public class HotelInformation {
 
     public LocalTime getCheckOut() { return checkOut; }
     public void setCheckOut(LocalTime checkOut) { this.checkOut = checkOut; }
-}
 
+}

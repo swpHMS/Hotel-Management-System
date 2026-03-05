@@ -4,7 +4,10 @@
  */
 package model;
 
-
+/**
+ *
+ * @author ASUS
+ */
 public class Amenity {
     private int amenityId;
     private String code;
@@ -30,5 +33,5 @@ public class Amenity {
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
-}
 
+}

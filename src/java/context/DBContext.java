@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package context;
 
 import java.sql.Connection;
@@ -9,22 +5,31 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBContext {
-     public Connection connection;
+
+    protected Connection connection;
+
+    private static final String URL =
+            "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System1;encrypt=true;trustServerCertificate=true;";
+    private static final String USER = "sa";
+    private static final String PASS = "123";
 
     public DBContext() {
         try {
-            // Edit URL , username, password to authenticate with your MS SQL Server
-            String url = "jdbc:sqlserver://localhost:1433;" +
-                "databaseName=Hotel_Management_System;" +
-                "encrypt=true;" +
-                "trustServerCertificate=true";
-            String username = "sa";
-            String password = "123";
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            connection = DriverManager.getConnection(url, username, password);
-        } catch (ClassNotFoundException | SQLException ex) {
-            System.out.println(ex);
+            ensureConnection();
+        } catch (Exception e) {
+            System.out.println(e);
         }
+    }
+    private void ensureConnection() throws SQLException, ClassNotFoundException {
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        if (connection == null || connection.isClosed()) {
+            connection = DriverManager.getConnection(URL, USER, PASS);
+        }
+    }
+
+    public Connection getConnection() throws SQLException, ClassNotFoundException {
+        ensureConnection();
+        return connection;
     }
 }
 

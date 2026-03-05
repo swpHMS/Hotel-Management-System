@@ -1,0 +1,500 @@
+:root{
+  --bg:#f6f8fc;
+  --card:#fff;
+  --border:#e6eaf2;
+  --text:#0b1b33;
+  --muted: rgba(11,27,51,.6);
+  --navy:#0a1b33;
+  --warn:#c62828;
+  --shadow:0 12px 30px rgba(0,0,0,.06);
+}
+
+*{ box-sizing:border-box; }
+body{
+  margin:0;
+  font-family: Inter, system-ui, Arial;
+  background: var(--bg);
+  color: var(--text);
+}
+/* =========================
+   HEADER / STEPPER (LIKE CONFIRM)
+========================= */
+.cf-header{
+  height:72px;
+  background:#fff;
+  border-bottom:1px solid #e6eaf2;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 22px;
+}
+
+.cf-header__left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:260px;
+}
+.cf-logoMark{ display:flex; gap:6px; }
+.cf-logoMark span{
+  width:10px;height:10px;display:inline-block;
+  transform:rotate(45deg);
+  border-radius:2px;
+}
+.cf-logoMark .d1{ background:#d8a13a; }
+.cf-logoMark .d2{ background:#f3b8b8; }
+.cf-logoMark .d3{ background:#dfe7ff; }
+
+.cf-brandText{ font-weight:900; font-size:20px; color:#0b1b33; }
+
+.cf-steps{
+  display:flex;
+  align-items:center;
+  gap:22px;
+}
+
+.cf-step{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  position:relative;
+}
+
+.cf-dot{
+  width:28px;height:28px;border-radius:50%;
+  display:grid;place-items:center;
+  border:1px solid #d9dfec;
+  background:#fff;
+  color:#7a8599;
+  font-weight:800;
+  font-size:13px;
+}
+.cf-dot.is-done{
+  background:#0a1b33;
+  border-color:#0a1b33;
+  color:#fff;
+}
+.cf-dot.is-active{
+  background:#fff;
+  border:2px solid #0a1b33;
+  color:#0a1b33;
+}
+
+.cf-stepLabel{
+  font-size:14px;
+  color:#7a8599;
+  font-weight:700;
+  white-space:nowrap;
+}
+.cf-stepLabel.is-active{
+  color:#0b1b33;
+}
+
+.cf-line{
+  width:120px;
+  height:2px;
+  background:#e6eaf2;
+  border-radius:10px;
+}
+.cf-line.is-on{ background:#d8a13a; }
+
+.cf-header__right{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:140px;
+  justify-content:flex-end;
+}
+.cf-guestDot{
+  width:40px;height:40px;border-radius:50%;
+  border:1px solid #d8a13a;
+  display:grid;place-items:center;
+  font-weight:900;color:#0b1b33;
+  background:#fff7e8;
+}
+.cf-guestText{ font-weight:800; color:#0b1b33; }
+
+/* =========================
+   HOLD BAR (LIKE CONFIRM)
+========================= */
+.cf-holdbar{
+  width:min(1100px, calc(100% - 40px));
+  margin:18px auto 0;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid #f2e3c3;
+  background:#fff7e8;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+.cf-clock{ opacity:.85; }
+.cf-timer{
+  color:#c62828;
+  font-weight:900;
+}
+/* Top bar */
+.pay-topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 24px;
+  background:#fff;
+  border-bottom:1px solid var(--border);
+}
+.pay-steps{ display:flex; gap:18px; font-size:14px; }
+.pay-step{ color:#7a8599; }
+.pay-step.is-active{ color:var(--text); font-weight:800; }
+
+/* Banner */
+.pay-banner{
+  width: min(1100px, calc(100% - 40px));
+  margin:20px auto 0;
+  background:#fff7e8;
+  border:1px solid #f2e3c3;
+  padding:12px 14px;
+  border-radius:10px;
+  text-align:center;
+  font-weight:600;
+}
+.pay-timer{ color: var(--warn); font-weight:800; margin-left:6px; }
+
+/* Layout */
+.pay-wrap{
+  width: min(1100px, calc(100% - 40px));
+  margin:20px auto;
+  display:grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap:20px;
+}
+
+/* Cards */
+.pay-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow: var(--shadow);
+  padding:20px;
+}
+
+.pay-title{ margin:0 0 6px; }
+.pay-sub{ color:#7a8599; font-size:13px; margin-bottom:10px; }
+
+/* QR */
+.pay-qrBox{ display:flex; justify-content:center; margin:18px 0; }
+.pay-qrPlaceholder{
+  width:200px; height:200px;
+  border-radius:16px;
+  background:#eef2ff;
+  display:grid;
+  place-items:center;
+  font-weight:800;
+}
+
+/* Amount */
+.pay-amount{
+  text-align:center;
+  font-size:26px;
+  font-weight:900;
+  margin:10px 0 6px;
+}
+
+/* Meta rows */
+.pay-meta{ margin-top:10px; }
+.pay-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 0;
+  border-top:1px solid var(--border);
+  font-size:14px;
+}
+.pay-row .k{ color: var(--muted); }
+
+/* Button */
+.pay-form{ margin-top:14px; }
+.pay-btn{
+  width:100%;
+  border:none;
+  border-radius:12px;
+  background:var(--navy);
+  color:#fff;
+  padding:14px 16px;
+  font-weight:800;
+  cursor:pointer;
+}
+.pay-btn:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+/* Summary */
+.sum-title{ margin:0 0 12px; }
+.sum-row{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-top:1px solid var(--border);
+}
+.sum-row:first-of-type{ border-top:none; }
+
+/* =========================
+   MAKE PAYMENT LOOK LIKE CONFIRM
+   (drop-in patch)
+========================= */
+
+/* page background + default text */
+body{
+  background:#f6f8fc;
+  color:#0b1b33;
+}
+
+/* align holdbar / wrap like confirm */
+.cf-holdbar,
+.pay-wrap{
+  width:min(1180px, calc(100% - 40px));
+}
+
+/* payment grid spacing closer to confirm */
+.pay-wrap{
+  margin:18px auto 28px;
+  gap:22px;
+  align-items:start;
+}
+
+/* unify card look */
+.pay-card{
+  background:#fff;
+  border:1px solid #e6eaf2;
+  border-radius:18px;
+  box-shadow: 0 14px 44px rgba(10,27,51,.08);
+  padding:22px;
+}
+
+/* soften QR box */
+.pay-qrPlaceholder{
+  background:#eef2ff;
+  border-radius:22px;
+  box-shadow: 0 10px 22px rgba(10,27,51,.08);
+}
+
+/* titles */
+.pay-title{
+  font-size:28px;
+  font-weight:900;
+  margin:0 0 6px;
+}
+.pay-sub{
+  font-size:12px;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  color: rgba(11,27,51,.55);
+  margin-bottom:16px;
+}
+
+/* amount */
+.pay-amount{
+  font-size:34px;
+  font-weight:900;
+  margin:12px 0 10px;
+}
+
+/* meta rows like confirm */
+.pay-row{
+  padding:14px 0;
+  border-top:1px solid #e9edf6;
+}
+.pay-row .k{
+  color: rgba(11,27,51,.55);
+  font-weight:700;
+}
+.pay-row .v{
+  font-weight:800;
+}
+
+/* button like confirm (pill + deep navy) */
+.pay-btn{
+  height:56px;
+  border-radius:16px;
+  background: linear-gradient(180deg, #0a1b33 0%, #07152a 100%);
+  box-shadow: 0 12px 26px rgba(10,27,51,.18);
+  font-size:16px;
+  letter-spacing:.3px;
+}
+.pay-btn:hover{ filter:brightness(1.03); }
+.pay-btn:active{ transform: translateY(1px); }
+.pay-btn:disabled{
+  background:#94a3b8;
+  box-shadow:none;
+}
+
+/* summary (right card) match confirm spacing */
+.sum-card{ padding:0; }
+.sum-dates{ padding:18px 22px; }
+.sum-room{ padding:18px 22px; }
+.sum-money{ padding:18px 22px; }
+
+.sum-val{ font-size:22px; }
+.sum-avatar{ border-radius:18px; }
+
+/* holdbar like confirm */
+.cf-holdbar{
+  border-radius:14px;
+  box-shadow: 0 10px 24px rgba(10,27,51,.06);
+}
+
+/* stepper header spacing similar */
+.cf-header{
+  background:#fff;
+}
+/* =========================
+   SUMMARY (MATCH IMAGE 1)
+========================= */
+.sum-card{ padding:0; overflow:hidden; }
+
+.sum-dates{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:0;
+  padding:18px 20px;
+  border-bottom:1px solid var(--border);
+}
+.sum-date{ display:flex; flex-direction:column; gap:6px; }
+.sum-date:last-child{ align-items:flex-end; text-align:right; }
+
+.sum-cap{
+  font-size:12px;
+  letter-spacing:.6px;
+  color:#7a8599;
+  font-weight:900;
+}
+.sum-val{
+  font-size:20px;
+  font-weight:900;
+  color:var(--text);
+}
+
+.sum-room{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  padding:18px 20px;
+  border-bottom:1px solid var(--border);
+}
+.sum-avatar{
+  width:56px;height:56px;
+  border-radius:16px;
+  background:#eef2ff;
+  display:grid;
+  place-items:center;
+  font-weight:900;
+  color:#2c3a55;
+  letter-spacing:.6px;
+}
+
+.sum-roomTitle{
+  font-weight:900;
+  font-size:16px;
+  color:var(--text);
+}
+.sum-roomSub{
+  margin-top:4px;
+  font-size:13px;
+  color:var(--muted);
+  font-weight:700;
+}
+
+.sum-money{ padding:18px 20px; }
+.sum-line{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 0;
+  border-top:1px solid var(--border);
+}
+.sum-line:first-child{ border-top:none; }
+
+.sum-left{
+  font-weight:900;
+  letter-spacing:.5px;
+  color:var(--text);
+}
+.sum-right{
+  font-weight:900;
+  font-size:18px;
+  color:var(--text);
+}
+
+.sum-line.is-strong .sum-left,
+.sum-line.is-strong .sum-right{
+  font-size:19px;
+}
+/* ===== ACTIONS ALIGN FIX ===== */
+.pay-actions{
+  display:flex;
+  gap:16px;
+  margin-top:22px;
+  align-items:stretch;          /* ✅ ép 2 nút cao bằng nhau */
+}
+
+.pay-actions > *{
+  min-width:0;
+}
+
+.pay-btn-secondary{
+  flex: 0 0 220px;              /* ✅ nút quay lại cố định rộng vừa đẹp */
+  height:56px;                  /* ✅ cùng height */
+  border-radius:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  font-weight:900;
+  border:1px solid #d9dfec;
+  background:#fff;
+  color:#0b1b33;
+  box-shadow: 0 8px 18px rgba(10,27,51,.06);
+}
+
+/* ✅ form phải co giãn + không tự co chiều cao */
+.pay-form{
+  flex: 1 1 auto;
+  margin:0;
+  display:flex;                 /* ✅ để button ăn full chiều cao */
+}
+
+.pay-btn{
+  flex:1;
+  height:56px;                  /* ✅ cùng height */
+  border-radius:16px;
+  width:100%;
+}
+.pay-btn, .pay-btn-secondary{
+  line-height:56px;   /* optional: làm chữ giữa đều hơn */
+}
+.pay-card{
+  padding:24px;   /* hoặc 22px miễn đồng bộ */
+}
+/* Fix text alignment inside buttons */
+.pay-btn{
+  height:56px;
+  line-height:normal;              /* ✅ bỏ line-height cũ */
+  padding:0 18px;                  /* ✅ không dùng padding top/bottom */
+  display:flex;                    /* ✅ canh giữa chuẩn */
+  align-items:center;
+  justify-content:center;
+}
+
+.pay-btn-secondary{
+  height:56px;
+  line-height:normal;
+  padding:0 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.pay-btn{
+  border:0;
+  appearance:none;
+}
