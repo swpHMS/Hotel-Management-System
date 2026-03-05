@@ -1,0 +1,809 @@
+/* ===============================
+   BOOKING PAGE SCOPE
+================================= */
+.booking-page{
+  --navy:#071a33;
+  --navy2:#06152b;
+  --gold:#c8a24a;
+  --text:#0b1b33;
+  --muted: rgba(11,27,51,.62);
+  --bg:#f4f7fb;
+  --card:#ffffff;
+  --shadow: 0 18px 50px rgba(0,0,0,.10);
+
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, Arial;
+}
+
+.booking-page a{ text-decoration:none; color:inherit; }
+
+/* container chỉ áp dụng trong booking */
+.booking-page .container{
+  width:min(1180px, calc(100% - 40px));
+  margin:0 auto;
+}
+
+/* ===============================
+   TOP BAR
+================================= */
+.booking-page .bk-top{
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy2) 100%);
+  padding: 18px 0 7px;
+  position: sticky;
+  top: 50px;
+  z-index: 100;
+}
+
+.booking-page .bk-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom: 14px;
+  color:#fff;
+}
+
+.booking-page .bk-badge{
+  width:38px;height:38px;border-radius:12px;
+  display:grid;place-items:center;
+  background: rgba(200,162,74,.14);
+  border: 1px solid rgba(200,162,74,.55);
+  color: var(--gold);
+  font-weight:800;
+  letter-spacing:.08em;
+}
+
+.booking-page .bk-name{
+  font-family:"Playfair Display", serif;
+  font-weight:700;
+  letter-spacing:.08em;
+}
+.booking-page .bk-sub{ font-size:12px; color: rgba(255,255,255,.75); }
+
+/* ===============================
+   SEARCH FORM
+================================= */
+.booking-page .bk-top .bk-search{
+  display:grid;
+
+  /* ✅ 5 ô + button: Search | Check-in | Check-out | Guests | Rooms | Button */
+  grid-template-columns: 1.2fr 1fr 1fr 1fr .8fr auto;
+
+  gap:10px;
+  align-items:end;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  padding: 12px;
+}
+.booking-page .bk-field label{
+  display:block;
+  font-size:11px;
+  letter-spacing:.18em;
+  font-weight:800;
+  color: rgba(255,255,255,.75);
+  margin-bottom:6px;
+  text-transform:uppercase;
+}
+
+.booking-page .bk-field input{
+  width:100%;
+  height:42px;
+  border-radius:12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.10);
+  color:#fff;
+  padding: 0 12px;
+  outline:none;
+}
+
+.booking-page .bk-btn{
+  height:42px;
+  border-radius:12px;
+  border:1px solid rgba(200,162,74,.65);
+  background: var(--gold);
+  color: #0b1b33;
+  font-weight:900;
+  letter-spacing:.14em;
+  padding: 0 18px;
+  cursor:pointer;
+}
+
+/* ===============================
+   RESULTS
+================================= */
+.booking-page .bk-wrap{ padding: 60px 0 54px; }
+
+.booking-page .bk-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin: 18px 0;
+}
+
+.booking-page .bk-head h2{
+  margin:0;
+  font-size:18px;
+  letter-spacing:.02em;
+}
+
+.booking-page .bk-sort{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color: var(--muted);
+  font-size:13px;
+}
+.booking-page .bk-sort select{
+  height:38px;
+  border-radius:12px;
+  border:1px solid rgba(11,27,51,.12);
+  padding: 0 12px;
+  background:#fff;
+  outline:none;
+}
+
+.booking-page .bk-list{ display:flex; flex-direction:column; gap:14px; }
+
+.booking-page .bk-card{
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(11,27,51,.08);
+  overflow:hidden;
+  display:grid;
+  grid-template-columns: 360px 1fr 220px;
+  min-height: 190px;
+}
+
+.booking-page .bk-img{ position:relative; }
+.booking-page .bk-img img{
+  width:100%; height:100%;
+  object-fit:cover; display:block;
+}
+
+.booking-page .bk-tag{
+  position:absolute;
+  top:14px; left:14px;
+  background: rgba(7,26,51,.82);
+  border:1px solid rgba(200,162,74,.55);
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size:11px;
+  letter-spacing:.18em;
+  font-weight:900;
+}
+
+.booking-page .bk-info{ padding: 18px 18px 16px; }
+
+.booking-page .bk-title{
+  margin:0 0 10px;
+  font-family:"Playfair Display", serif;
+  font-size:22px;
+}
+
+.booking-page .bk-meta{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  color: rgba(11,27,51,.72);
+  font-size:13px;
+  margin-bottom:10px;
+}
+
+.booking-page .bk-desc{
+  color: rgba(11,27,51,.62);
+  font-size:13px;
+  line-height:1.7;
+  max-height: 4.8em;
+  overflow:hidden;
+}
+
+.booking-page .bk-actions{
+  margin-top: 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.booking-page .bk-link{
+  color: var(--navy2);
+  font-weight:700;
+}
+
+.booking-page .bk-book{
+  background: var(--navy2);
+  color:#fff;
+  border: 1px solid rgba(200,162,74,.55);
+  border-radius: 12px;
+  height: 40px;
+  padding: 0 14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  letter-spacing:.10em;
+}
+
+.booking-page .bk-price{
+  border-left: 1px solid rgba(11,27,51,.08);
+  padding: 18px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:8px;
+}
+
+.booking-page .bk-price-label{
+  font-size:12px;
+  color: rgba(11,27,51,.55);
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+.booking-page .bk-price-value{ font-size:22px; font-weight:900; color: var(--navy2); }
+.booking-page .bk-price-note{ font-size:12px; color: rgba(11,27,51,.45); }
+
+/* ===============================
+   RESPONSIVE
+================================= */
+@media (max-width: 980px){
+  .booking-page .bk-top .bk-search{
+    grid-template-columns: 1fr 1fr;  /* tự xuống hàng */
+  }
+}
+
+/* ===============================
+   FIX + UPGRADE
+================================= */
+.booking-page .bk-title{
+  color: #0b1b33 !important;
+  opacity: 1 !important;
+  font-weight: 900 !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: #0b1b33 !important;
+  text-rendering: geometricPrecision;
+  font-size: 26px;
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+
+.booking-page .bk-card,
+.booking-page .bk-info,
+.booking-page .bk-title{
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.booking-page .bk-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin: 6px 0 10px;
+  color: rgba(11,27,51,.78);
+  font-size: 13px;
+}
+
+.booking-page .bk-meta > *{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(7,26,51,.06);
+  border: 1px solid rgba(11,27,51,.08);
+  color: rgba(11,27,51,.82);
+  font-weight: 600;
+}
+
+.booking-page .bk-meta i{
+  color: rgba(11,27,51,.55);
+  font-size: 13px;
+}
+
+.booking-page .bk-desc{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top: 4px;
+  color: rgba(11,27,51,.68);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.booking-page .bk-desc > *{
+  display:inline-flex;
+  align-items:center;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(244,247,251,.9);
+  border: 1px solid rgba(11,27,51,.06);
+}
+
+.booking-page .bk-link{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(7,26,51,.06);
+  border: 1px solid rgba(11,27,51,.08);
+  color: var(--navy2);
+  font-weight: 800;
+}
+
+.booking-page .bk-link:hover{
+  background: rgba(7,26,51,.09);
+}
+
+.booking-page .bk-info{
+  padding: 22px 22px 18px;
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+}
+
+/* ===============================
+   SLIDER
+================================= */
+.booking-page .bk-gallery{
+  position:relative;
+  overflow:hidden;
+}
+
+.booking-page .bk-slide{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:none;
+}
+.booking-page .bk-slide.is-active{ display:block; }
+
+.booking-page .bk-nav{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,.2);
+  pointer-events: auto !important;
+}
+
+.booking-page .bk-prev{ left: 12px; }
+.booking-page .bk-next{ right: 12px; }
+
+.booking-page .bk-nav:hover{ background: rgba(0,0,0,.58); }
+
+.booking-page .bk-dots{
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:12px;
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  z-index:6;
+}
+
+.booking-page .bk-dot{
+  width:7px;
+  height:7px;
+  border-radius:999px;
+  background: rgba(255,255,255,.45);
+  border:1px solid rgba(0,0,0,.15);
+}
+
+.booking-page .bk-dot.is-active{ background: rgba(255,255,255,.95); }
+
+.booking-page .bk-gallery .bk-nav{ opacity:0; transition: .18s ease; }
+.booking-page .bk-gallery:hover .bk-nav{ opacity:1; }
+
+.booking-page .bk-img{ height: 250px; position: relative; }
+.booking-page .bk-slide{ height: 100%; object-fit: cover; pointer-events: none; }
+
+/* override slider stacking (giữ nguyên logic bạn có) */
+.booking-page .bk-gallery{
+  position: relative;
+  overflow: hidden;
+}
+.booking-page .bk-gallery .bk-slide{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .25s ease;
+  pointer-events: none;
+  display: block !important;
+}
+.booking-page .bk-gallery .bk-slide.is-active{ opacity: 1; }
+.booking-page .bk-nav{ z-index: 10; }
+.booking-page .bk-dots{ z-index: 10; }
+
+/* ===============================
+   QTY + CTA
+================================= */
+.booking-page .bk-qty{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:#f4f7fb;
+  border:1px solid rgba(11,27,51,.1);
+  border-radius:10px;
+  padding:4px;
+}
+
+.booking-page .qty-btn{
+  width:28px;
+  height:28px;
+  border:none;
+  background:var(--navy2);
+  color:#fff;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:900;
+}
+
+.booking-page .qty-input{
+  width:40px;
+  text-align:center;
+  border:none;
+  background:transparent;
+  font-weight:700;
+  outline:none;
+}
+
+.booking-page .qty-btn:hover{ opacity:.85; }
+
+.booking-page .bk-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.booking-page .bk-cta{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+/* ===============================
+   ROOM DETAIL MODAL
+================================= */
+.booking-page .rm-modal{ position:fixed; inset:0; display:none; z-index:99999; }
+.booking-page .rm-modal.is-open{ display:block; }
+
+.booking-page .rm-backdrop{ position:absolute; inset:0; background: rgba(0,0,0,.55); }
+
+.booking-page .rm-panel{
+  position:relative;
+  width:min(1200px, calc(100% - 40px));
+  height:min(760px, calc(100% - 40px));
+  margin: 20px auto;
+  background:#fff;
+  border-radius:18px;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns: 1.35fr 1fr;
+  box-shadow: 0 30px 80px rgba(0,0,0,.35);
+}
+
+.booking-page .rm-close{
+  position:absolute; top:14px; right:14px;
+  width:40px; height:40px; border-radius:12px;
+  border:1px solid rgba(11,27,51,.12);
+  background:#fff; font-size:22px; cursor:pointer; z-index:5;
+}
+
+.booking-page .rm-left{ background:#0b1b33; }
+.booking-page .rm-gallery{ position:relative; width:100%; height:100%; }
+.booking-page .rm-img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+.booking-page .rm-nav{
+  position:absolute; top:50%; transform: translateY(-50%);
+  width:44px; height:44px; border-radius:999px;
+  border:none; background: rgba(0,0,0,.55); color:#fff;
+  font-size:26px; cursor:pointer;
+}
+.booking-page .rm-prev{ left:18px; }
+.booking-page .rm-next{ right:18px; }
+
+.booking-page .rm-badge{
+  position:absolute; top:14px; left:14px;
+  background: rgba(0,0,0,.35); color:#fff;
+  padding:10px 14px; border-radius:999px;
+  font-weight:800; letter-spacing:.08em; font-size:12px;
+}
+
+.booking-page .rm-right{ padding: 26px 26px 22px; overflow:auto; }
+.booking-page .rm-kicker{ letter-spacing:.28em; font-weight:800; font-size:11px; color: rgba(11,27,51,.55); }
+.booking-page .rm-title{ margin:10px 0 6px; font-family:"Playfair Display", serif; font-size:44px; line-height:1.05; color:#0b1b33; }
+.booking-page .rm-sub{ color: rgba(11,27,51,.65); font-size:14px; line-height:1.6; }
+.booking-page .rm-divider{ height:1px; background: rgba(11,27,51,.10); margin: 18px 0; }
+
+.booking-page .rm-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.booking-page .rm-item .rm-label{ font-size:11px; letter-spacing:.22em; font-weight:900; color: rgba(11,27,51,.55); }
+.booking-page .rm-item .rm-value{ margin-top:6px; font-weight:800; color:#0b1b33; }
+.booking-page .rm-wide{ grid-column: 1 / -1; }
+
+.booking-page .rm-amenities{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; color: rgba(11,27,51,.82); font-weight:600; }
+.booking-page .rm-amenity{ display:flex; align-items:center; gap:10px; }
+.booking-page .rm-amenity:before{ content:"✓"; color: rgba(11,27,51,.65); font-weight:900; }
+
+@media (max-width: 900px){
+  .booking-page .rm-panel{ grid-template-columns:1fr; height: calc(100% - 40px); }
+  .booking-page .rm-title{ font-size:34px; }
+}
+
+/* ===============================
+   GUESTS DROPDOWN
+================================= */
+.booking-page .bk-top .bk-guest{ position:relative; }
+
+.booking-page .bk-top .bk-guest-btn{
+  width:100%;
+  height:42px;
+  border-radius:12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.10);
+  color:#fff;
+  padding: 0 12px;
+  outline:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor:pointer;
+}
+
+.booking-page .bk-top .bk-guest-dd{
+  position:absolute;
+  top: calc(100% + 10px);
+  left:0;
+  width:100%;
+  background: #fff;
+  color: #0b1b33;
+  border-radius:16px;
+  padding:14px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.18);
+  display:none;
+  z-index:999;
+}
+
+.booking-page .bk-top .bk-guest-dd.is-open{ display:block; }
+
+.booking-page .bk-top .bk-guest-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:5px;
+  margin-bottom:10px;
+}
+
+.booking-page .bk-top .bk-guest-step{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.booking-page .bk-top .bk-guest-step input{
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  border:1px solid rgba(11,27,51,.15);
+  text-align:center;
+  outline:none;
+}
+
+.booking-page .bk-top .bk-guest-step button{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  border:1px solid rgba(11,27,51,.15);
+  background:#fff;
+  cursor:pointer;
+  font-weight:900;
+}
+
+/* =========================
+   HEADER ON BOOKING PAGE ONLY
+   ========================= */
+.booking-page .header{
+  background:#ffffff !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  border-bottom:1px solid rgba(0,0,0,.08);
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+
+.booking-page .header .brand-name,
+.booking-page .header .brand-sub,
+.booking-page .header .nav a{
+  color:#111 !important;
+  opacity:1 !important;
+  -webkit-text-fill-color:#111 !important;
+}
+
+.booking-page .header .nav a:hover{
+  color: var(--navy) !important;
+}
+
+.bk-room-error{
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #991b1b;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.35;
+}
+/* ===== FIX: Guests dropdown bị che ===== */
+.bk-top,
+.bk-top .container{
+  overflow: visible !important;
+}
+
+.bk-search{
+  overflow: visible !important;
+}
+
+.bk-field{
+  overflow: visible !important;
+}
+
+.bk-guest{
+  position: relative;
+  overflow: visible !important;
+  z-index: 50;
+}
+
+.bk-guest-dd{
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+  z-index: 9999;
+}
+
+/* ===============================
+   GUESTS - FINAL FIX (override)
+================================= */
+
+/* 1) bảo đảm text trong nút Guests hiện */
+.booking-page #bkGuestText{
+  color:#fff !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color:#fff !important;
+}
+
+/* 2) đảm bảo bk-guest-btn không bị style input đè */
+.booking-page .bk-top .bk-guest-btn{
+  border: 1px solid rgba(255,255,255,.14) !important;
+  background: rgba(255,255,255,.10) !important;
+  color:#fff !important;
+}
+
+/* 3) dropdown phải nổi trên header/sticky bar */
+.booking-page .bk-top{ z-index: 200 !important; }          /* tăng hơn header nếu cần */
+.booking-page .bk-top .bk-guest{ z-index: 1000 !important; }
+.booking-page .bk-top .bk-guest-dd{ z-index: 99999 !important; }
+
+/* 4) tránh bị container/form cắt mất dropdown (bạn đã có nhưng fix đầy đủ selector) */
+.booking-page .bk-top,
+.booking-page .bk-top .container,
+.booking-page .bk-top .bk-search,
+.booking-page .bk-top .bk-field{
+  overflow: visible !important;
+}
+
+/* 5) dropdown style: bỏ margin-bottom gây hở dòng cuối */
+.booking-page .bk-top .bk-guest-row{ margin-bottom: 0 !important; }
+.booking-page .bk-top .bk-guest-row + .bk-guest-row{
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(11,27,51,.08);
+}
+.booking-page .bk-top .bk-guest-step input{
+  color:#0b1b33 !important;
+  caret-color:#0b1b33;
+  background:#f4f7fb;
+  font-weight:900;
+  padding: 0 10px;
+}
+/* ===== FIX: number input trong guest dropdown ===== */
+.booking-page .bk-top .bk-guest-step input[type="number"]{
+  color: #0b1b33 !important;
+  background: #f4f7fb !important;
+  border: 1px solid rgba(11,27,51,.14) !important;
+  font-weight: 900 !important;
+  text-align: center;
+}
+
+/* Ẩn spinner (Chrome/Edge/Safari) */
+.booking-page .bk-top .bk-guest-step input[type="number"]::-webkit-outer-spin-button,
+.booking-page .bk-top .bk-guest-step input[type="number"]::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Ẩn spinner (Firefox) */
+.booking-page .bk-top .bk-guest-step input[type="number"]{
+  -moz-appearance: textfield;
+}
+
+/* ===== FORCE: Detail luôn hiện như nút ===== */
+.booking-page .bk-actions .bk-link{
+  display:inline-flex !important;
+  align-items:center;
+  gap:8px;
+
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
+
+  background: rgba(7,26,51,.06) !important;
+  border: 1px solid rgba(11,27,51,.10) !important;
+
+  color: #06152b !important;           /* ép màu chữ */
+  font-weight: 800 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  text-decoration: none !important;
+}
+
+/* ===== tránh slider/dots đè lên khu info/actions ===== */
+.booking-page .bk-img{
+  overflow:hidden !important;
+  isolation:isolate;
+}
+
+.booking-page .bk-info{
+  position:relative;
+  z-index:5;
+}
+
+/* ===== FORCE: Detail luôn hiện như nút ===== */
+.booking-page .bk-actions .bk-link{
+  display:inline-flex !important;
+  align-items:center;
+  gap:8px;
+
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
+
+  background: rgba(7,26,51,.06) !important;
+  border: 1px solid rgba(11,27,51,.10) !important;
+
+  color: #06152b !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  text-decoration: none !important;
+}
+
+/* ===== tránh slider/dots đè lên khu info/actions ===== */
+.booking-page .bk-img{
+  overflow:hidden !important;
+  isolation:isolate;
+}
+.booking-page .bk-info{
+  position:relative;
+  z-index:5;
+}

@@ -18,8 +18,30 @@
         <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/home_css/footer_home.css">
     </head>
 
-    <body>
+    <body data-ctx="${pageContext.request.contextPath}">
         <c:set var="defaultImg" value="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1600&q=80&auto=format&fit=crop"/>
+
+        <!-- ✅ TODAY (NEW) -->
+        <c:set var="today" value="<%= java.time.LocalDate.now().toString() %>" />
+
+        <!-- =============================
+             ✅ DEFAULTS / PARAMS (NEW)
+        ============================== -->
+        <c:set var="ad" value="${empty param.adults ? 2 : param.adults}" />
+        <c:set var="ch" value="${empty param.children ? 0 : param.children}" />
+        <c:set var="rq" value="${empty param.roomQty ? 1 : param.roomQty}" />
+
+        <c:set var="ci" value="${empty param.checkIn ? defaultCheckIn : param.checkIn}" />
+        <c:set var="co" value="${empty param.checkOut ? defaultCheckOut : param.checkOut}" />
+
+        <!-- ✅ build MOVE TO BOOKING URL (keeps params) -->
+        <c:url var="moveBookingUrl" value="/booking">
+            <c:param name="checkIn" value="${ci}" />
+            <c:param name="checkOut" value="${co}" />
+            <c:param name="adults" value="${ad}" />
+            <c:param name="children" value="${ch}" />
+            <c:param name="roomQty" value="${rq}" />
+        </c:url>
 
         <jsp:include page="header.jsp"/>
 
@@ -32,13 +54,13 @@
             </div>
 
             <div class="container booking-wrap">
-                <form class="booking" action="${pageContext.request.contextPath}/home" method="get">
+                <form class="booking" action="${pageContext.request.contextPath}/booking" method="get">
                     <div class="field">
                         <label>Check-in</label>
                         <div class="control">
                             <input type="date" id="checkIn"  name="checkIn"
-                                   value="${defaultCheckIn}"
-                                   min="<%= java.time.LocalDate.now() %>">
+                                   value="${ci}"
+                                   min="${today}">
                         </div>
                     </div>
 
@@ -46,8 +68,8 @@
                         <label>Check-out</label>
                         <div class="control">
                             <input type="date" id="checkOut" name="checkOut"
-                                   value="${defaultCheckOut}"
-                                   min="<%= java.time.LocalDate.now() %>">
+                                   value="${co}"
+                                   min="${today}">
                         </div>
                     </div>
 
@@ -57,12 +79,14 @@
 
                         <div class="control guest-trigger" id="guestTrigger" role="button" tabindex="0"
                              aria-haspopup="dialog" aria-expanded="false">
-                            <span class="guest-value" id="guestValue">2 Adults, 0 Children</span>
+                            <!-- ✅ show current params -->
+                            <span class="guest-value" id="guestValue">${ad} Adults, ${ch} Children</span>
                             <span class="chev" aria-hidden="true"></span>
                         </div>
 
-                        <input type="hidden" name="adults" id="adultsHidden" value="2">
-                        <input type="hidden" name="children" id="childrenHidden" value="0">
+                        <!-- ✅ hidden values must match -->
+                        <input type="hidden" name="adults" id="adultsHidden" value="${ad}">
+                        <input type="hidden" name="children" id="childrenHidden" value="${ch}">
 
                         <div class="guest-panel" id="guestPanel" role="dialog" aria-label="Select guests">
                             <div class="guest-row">
@@ -76,7 +100,7 @@
                                             type="number"
                                             class="step-input"
                                             id="adultsValue"
-                                            value="2"
+                                            value="${ad}"
                                             min="1"
                                             max="30"
                                             inputmode="numeric"
@@ -94,12 +118,11 @@
                                         <button type="button" class="step-btn" data-step="children" data-dir="-1"
                                                 aria-label="Decrease children">−</button>
 
-                                        <!-- ✅ span -> input -->
                                         <input
                                             type="number"
                                             class="step-input"
                                             id="childrenValue"
-                                            value="0"
+                                            value="${ch}"
                                             min="0"
                                             max="15"
                                             inputmode="numeric"
@@ -118,35 +141,18 @@
                         </div>
                     </div>
 
-
-
-                    <div class="field field-sort">
-                        <label>Sort</label>
+                    <div class="field field-roomqty">
+                        <label>Rooms</label>
                         <div class="control">
-                            <select name="priceSort" class="sort-select">
-
-                                <!-- Placeholder -->
-                                <option value=""
-                                        ${empty param.priceSort ? 'selected="selected"' : ''}
-                                        hidden>
-                                    Price
-                                </option>
-
-                                <option value="asc"
-                                        ${param.priceSort eq 'asc' ? 'selected="selected"' : ''}>
-                                    Low → High
-                                </option>
-
-                                <option value="desc"
-                                        ${param.priceSort eq 'desc' ? 'selected="selected"' : ''}>
-                                    High → Low
-                                </option>
-
-                            </select>
+                            <input type="number"
+                                   id="roomQty"
+                                   name="roomQty"
+                                   class="roomqty-input"
+                                   min="1"
+                                   max="20"
+                                   value="${rq}">
                         </div>
                     </div>
-
-
 
                     <button class="btn btn-navy btn-find" type="submit">FIND ROOMS</button>
                 </form>
@@ -219,42 +225,56 @@
                 <p class="suites-sub">“Experience the convergence of heritage and modern luxury in our meticulously curated spaces.”</p>
                 <div class="suites-divider"></div>
 
-                <div class="suites-grid">
-                    <c:forEach var="rt" items="${roomTypes}" varStatus="st">
-                        <c:if test="${st.index < 8}">
+                <!-- ✅ wrapper: mặc định chỉ hiện 8, bấm sẽ show all -->
+                <div id="roomsWrapper" class="rooms-collapsed">
+                    <div class="suites-grid">
+
+                        <c:forEach var="rt" items="${roomTypes}">
 
                             <c:set var="imgs" value="${imagesMap[rt.roomTypeId]}" />
-
-                            <!-- lấy ảnh đầu tiên từ bảng room_type_images -->
                             <c:set var="thumbRaw" value="${(not empty imgs) ? imgs[0] : ''}" />
-
-                            <!-- ưu tiên thumbRaw, fallback rt.imageUrl -->
                             <c:set var="rawImg" value="${not empty thumbRaw ? thumbRaw : (empty rt.imageUrl ? '' : rt.imageUrl)}" />
 
                             <c:choose>
                                 <c:when test="${empty rawImg}">
                                     <c:set var="img" value="${defaultImg}" />
                                 </c:when>
-
                                 <c:when test="${fn:startsWith(rawImg, 'http://') or fn:startsWith(rawImg, 'https://')}">
                                     <c:set var="img" value="${rawImg}" />
                                 </c:when>
-
                                 <c:when test="${fn:startsWith(rawImg, '/')}">
                                     <c:set var="img" value="${pageContext.request.contextPath}${rawImg}" />
                                 </c:when>
-
                                 <c:otherwise>
                                     <c:set var="img" value="${pageContext.request.contextPath}/${rawImg}" />
                                 </c:otherwise>
                             </c:choose>
 
-
+                            <!-- ✅ parse desc để lấy bed/view/size như bạn đang làm -->
                             <c:set var="desc" value="${empty rt.description ? '' : rt.description}" />
                             <c:set var="parts" value="${fn:split(desc, '•')}" />
                             <c:set var="bedText"  value="${fn:length(parts) > 0 ? fn:trim(parts[0]) : ''}" />
                             <c:set var="viewText" value="${fn:length(parts) > 1 ? fn:trim(parts[1]) : ''}" />
                             <c:set var="sizeText" value="${fn:length(parts) > 2 ? fn:trim(parts[2]) : ''}" />
+
+                            <!-- ✅ build dataImages cho modal gallery -->
+                            <c:set var="dataImages" value="" />
+                            <c:if test="${not empty imgs}">
+                                <c:forEach var="u" items="${imgs}" varStatus="s">
+                                    <c:choose>
+                                        <c:when test="${fn:startsWith(u, 'http://') or fn:startsWith(u, 'https://')}">
+                                            <c:set var="full" value="${u}" />
+                                        </c:when>
+                                        <c:when test="${fn:startsWith(u, '/')}">
+                                            <c:set var="full" value="${pageContext.request.contextPath}${u}" />
+                                        </c:when>
+                                        <c:otherwise>
+                                            <c:set var="full" value="${pageContext.request.contextPath}/${u}" />
+                                        </c:otherwise>
+                                    </c:choose>
+                                    <c:set var="dataImages" value="${dataImages}${s.first ? '' : '|'}${full}" />
+                                </c:forEach>
+                            </c:if>
 
                             <div class="suites-card">
                                 <div class="suites-media">
@@ -278,12 +298,13 @@
                                     <div class="room-eyebrow">Room photos and details</div>
                                     <h3 class="room-title"><c:out value="${rt.name}"/></h3>
 
+                                    <!-- ✅ thông tin 3 dòng như cũ -->
                                     <ul class="suites-meta" style="margin-top:14px;">
                                         <li>
                                             <span class="suites-ico" aria-hidden="true">
                                                 <svg viewBox="0 0 24 24">
-                                                <path d="M3 12V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"/>
-                                                <path d="M2 18h20"/><path d="M4 18v-3"/><path d="M20 18v-3"/>
+                                                    <path d="M3 12V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"/>
+                                                    <path d="M2 18h20"/><path d="M4 18v-3"/><path d="M20 18v-3"/>
                                                 </svg>
                                             </span>
                                             <span><c:out value="${not empty bedText ? bedText : 'Bed info'}"/></span>
@@ -292,8 +313,8 @@
                                         <li>
                                             <span class="suites-ico" aria-hidden="true">
                                                 <svg viewBox="0 0 24 24">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
-                                                <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+                                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                                                    <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
                                                 </svg>
                                             </span>
                                             <span><c:out value="${not empty viewText ? viewText : 'View'}"/></span>
@@ -302,34 +323,15 @@
                                         <li>
                                             <span class="suites-ico" aria-hidden="true">
                                                 <svg viewBox="0 0 24 24">
-                                                <path d="M8 3H3v5"/><path d="M16 3h5v5"/>
-                                                <path d="M8 21H3v-5"/><path d="M16 21h5v-5"/>
-                                                <path d="M3 8l6-6"/><path d="M21 8l-6-6"/>
-                                                <path d="M3 16l6 6"/><path d="M21 16l-6 6"/>
+                                                    <path d="M8 3H3v5"/><path d="M16 3h5v5"/>
+                                                    <path d="M8 21H3v-5"/><path d="M16 21h5v-5"/>
+                                                    <path d="M3 8l6-6"/><path d="M21 8l-6-6"/>
+                                                    <path d="M3 16l6 6"/><path d="M21 16l-6 6"/>
                                                 </svg>
                                             </span>
                                             <span><c:out value="${not empty sizeText ? sizeText : 'N/A'}"/></span>
                                         </li>
                                     </ul>
-
-                                    <c:set var="dataImages" value="" />
-                                    <c:if test="${not empty imgs}">
-                                        <c:forEach var="u" items="${imgs}" varStatus="s">
-                                            <c:choose>
-                                                <c:when test="${fn:startsWith(u, 'http://') or fn:startsWith(u, 'https://')}">
-                                                    <c:set var="full" value="${u}" />
-                                                </c:when>
-                                                <c:when test="${fn:startsWith(u, '/')}">
-                                                    <c:set var="full" value="${pageContext.request.contextPath}${u}" />
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <c:set var="full" value="${pageContext.request.contextPath}/${u}" />
-                                                </c:otherwise>
-                                            </c:choose>
-
-                                            <c:set var="dataImages" value="${dataImages}${s.first ? '' : '|'}${full}" />
-                                        </c:forEach>
-                                    </c:if>
 
                                     <div class="suites-actions" style="padding:0 18px 18px; margin-top:14px;">
                                         <a class="suites-btn suites-btn-detail js-room-detail"
@@ -348,25 +350,23 @@
                                            data-amenities="${fn:escapeXml(rt.amenityPipe)}">
                                             DETAILS
                                         </a>
-
-
-
                                     </div>
 
                                 </div>
                             </div>
 
-                        </c:if>
-                    </c:forEach>
+                        </c:forEach>
+
+                    </div>
                 </div>
 
+                <!-- ✅ VIEW ALL: show thêm phòng ở bên dưới (không chuyển trang) -->
                 <div class="view-all-wrap">
-                    <a class="view-all-btn" href="${pageContext.request.contextPath}/rooms">
+                    <a id="viewAllBtn" class="view-all-btn" href="javascript:void(0)">
                         VIEW ALL RESIDENTIAL OPTIONS
                         <span class="arrow" aria-hidden="true">→</span>
                     </a>
                 </div>
-
 
             </div>
         </section>
@@ -396,8 +396,6 @@
                         </div>
                     </div>
 
-
-
                     <div class="room-modal__content">
                         <div class="room-modal__eyebrow">ROOM EXPLORATION</div>
                         <h3 class="room-modal__title" id="roomModalTitle"></h3>
@@ -415,25 +413,27 @@
                         <div class="room-modal__amenities" id="rmAmenities"></div>
 
                         <div class="room-modal__actions">
-                            <a id="rmCheckBtn" class="room-modal__btn room-modal__btn-primary" href="#">CHECK AVAILABILITY</a>
-                            <a id="rmDetailPageBtn" class="room-modal__btn room-modal__btn-outline" href="#">BOOKING</a>
+                            <a id="rmBookingBtn"
+   class="room-modal__btn room-modal__btn-primary"
+   href="${pageContext.request.contextPath}/booking">
+    MOVE TO BOOKING
+</a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
+<script>
+  window.__CTX__ = "${pageContext.request.contextPath}";
+</script>
         <script src="${pageContext.request.contextPath}/assets/js/home_js/header_scroll.js"></script>
-        <script src="${pageContext.request.contextPath}/assets/js/home_js/room_modal.js"></script>
-        <script src="${pageContext.request.contextPath}/assets/js/home_js/booking_date.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/home_js/room_modal.js?v=20260304_1"></script>        <script src="${pageContext.request.contextPath}/assets/js/home_js/booking_date.js"></script>
         <script src="${pageContext.request.contextPath}/assets/js/home_js/guest_panel.js"></script>
-
-
 
         <script src="${pageContext.request.contextPath}/assets/js/home_js/user.js"></script>
         <c:set var="email" value="${sessionScope.user.email}" />
         <c:set var="initials" value="${fn:toUpperCase(fn:substring(email,0,2))}" />
 
-
+        <script src="${pageContext.request.contextPath}/assets/js/home_js/view_all_toggle.js?v=1"></script>
     </body>
 </html>
