@@ -9,10 +9,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>HMS Admin — Dashboard</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
 
     <style>
@@ -35,10 +31,11 @@
             --sage:        #5a7a5c;
             --sage-lt:     #d4e6d4;
             --sidebar-w:   280px;
+            --font-sans:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: var(--font-sans);
             background: var(--bg);
             color: var(--ink);
             overflow-x: hidden;
@@ -92,7 +89,7 @@
             background: var(--gold);
         }
         .page-title {
-            font-family: 'Fraunces', serif;
+            font-family: var(--font-sans);
             font-size: 44px;
             font-weight: 800;
             color: var(--ink);
@@ -210,7 +207,7 @@
             margin-bottom: 6px;
         }
         .kpi-value {
-            font-family: 'Fraunces', serif;
+            font-family: var(--font-sans);
             font-size: 52px;
             font-weight: 800;
             color: var(--ink);
@@ -260,7 +257,7 @@
 
         .chart-head { margin-bottom: 24px; }
         .chart-title {
-            font-family: 'Fraunces', serif;
+            font-family: var(--font-sans);
             font-size: 18px;
             font-weight: 700;
             color: var(--ink);
@@ -283,7 +280,7 @@
             text-align: center;
         }
         .donut-big {
-            font-family: 'Fraunces', serif;
+            font-family: var(--font-sans);
             font-size: 40px;
             font-weight: 800;
             color: var(--ink);
@@ -539,7 +536,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             boxWidth: 12, boxHeight: 12,
                             padding: 16,
                             color: '#5a4e3c',
-                            font: { family: 'DM Sans', size: 12, weight: '600' }
+                            font: { size: 12, weight: '600' }
                         }
                     },
                     tooltip: TOOLTIP
