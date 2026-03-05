@@ -23,10 +23,16 @@ public class UserDAO extends DBContext {
 
     // 2. Lấy User theo Email (JOIN để lấy thêm tên từ bảng Profile)
     public User getUserByEmail(String email) {
-        // Dùng LEFT JOIN để lấy full_name từ bảng customers hoặc staff nếu có
-        String sql = "SELECT u.*, c.full_name FROM users u "
-                + "LEFT JOIN customers c ON u.user_id = c.user_id "
-                + "WHERE u.email = ?";
+        String sql = """
+        SELECT u.*,
+               COALESCE(s.full_name, c.full_name) AS full_name,
+               COALESCE(s.phone, c.phone) AS phone
+        FROM users u
+        LEFT JOIN staff s ON s.user_id = u.user_id
+        LEFT JOIN customers c ON c.user_id = u.user_id
+        WHERE u.email = ?
+    """;
+
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, email);
             ResultSet rs = st.executeQuery();
@@ -37,8 +43,14 @@ public class UserDAO extends DBContext {
                 u.setRoleId(rs.getInt("role_id"));
                 u.setPasswordHash(rs.getString("password_hash"));
                 u.setStatus(rs.getInt("status"));
-                // Giả sử bạn có trường fullName trong Model User để hiển thị lên Header
-                 u.setFullName(rs.getString("full_name")); 
+                u.setAuthProvider(rs.getInt("auth_provider"));
+                u.setGoogleSub(rs.getString("google_sub"));
+                u.setToken(rs.getString("token"));
+
+                // profile
+                u.setFullName(rs.getString("full_name"));
+                u.setPhone(rs.getString("phone"));
+
                 return u;
             }
         } catch (SQLException e) {
