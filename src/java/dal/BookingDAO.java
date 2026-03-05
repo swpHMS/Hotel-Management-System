@@ -131,75 +131,6 @@ public class BookingDAO extends DBContext {
         return executeBookingQuery(sql, customerId);
     }
 
-    // =========================================================
-    // PAST BOOKINGS
-    // =========================================================
-    public List<BookingCardView> getPastStaysByCustomerId(int customerId) {
-
-        updateNoShowBookings();
-
-        String sql = """
-        SELECT
-            b.booking_id       AS bookingId,
-            b.status           AS bookingStatus,
-            b.check_in_date    AS checkInDate,
-            b.check_out_date   AS checkOutDate,
-            b.total_amount     AS totalAmount,
-
-            rt.room_type_id    AS roomTypeId,
-            rt.name            AS roomTypeName,
-            rt.description     AS roomMeta,
-            rt.max_adult       AS maxAdult,
-            rt.max_children    AS maxChildren,
-
-            rti.imageUrls      AS imageUrls,
-
-            SUM(brt.quantity)         AS quantity,
-            MIN(brt.price_at_booking) AS priceAtBooking,
-
-            amen.amenitiesText AS amenitiesText
-
-        FROM dbo.bookings b
-        JOIN dbo.booking_room_types brt 
-             ON brt.booking_id = b.booking_id
-
-        JOIN dbo.room_types rt 
-             ON rt.room_type_id = brt.room_type_id
-
-        OUTER APPLY (
-            SELECT STRING_AGG(image_url, '|') AS imageUrls
-            FROM dbo.room_type_images
-            WHERE room_type_id = rt.room_type_id
-        ) rti
-
-        OUTER APPLY (
-            SELECT STRING_AGG(a.name, ', ') AS amenitiesText
-            FROM dbo.room_type_amenities rta
-            JOIN dbo.amenities a 
-                 ON a.amenity_id = rta.amenity_id
-            WHERE rta.room_type_id = rt.room_type_id
-              AND a.is_active = 1
-        ) amen
-
-        WHERE b.customer_id = ?
-          AND (
-                b.status IN (4,5,6)
-             OR b.check_out_date < CAST(GETDATE() AS DATE)
-          )
-
-        GROUP BY
-            b.booking_id, b.status, b.check_in_date, 
-            b.check_out_date, b.total_amount,
-            rt.room_type_id, rt.name, rt.description, 
-            rt.max_adult, rt.max_children,
-            rti.imageUrls,
-            amen.amenitiesText
-
-        ORDER BY b.check_out_date DESC
-    """;
-
-        return executeBookingQuery(sql, customerId);
-    }
 
     // =========================================================
     public boolean cancelBooking(int bookingId, int customerId) {
@@ -378,6 +309,68 @@ public class BookingDAO extends DBContext {
         b.setAmenitiesText(rs.getString("amenitiesText"));
 
         return b;
+    }
+
+    public List<BookingCardView> getPastStaysByCustomerId(int customerId) {
+
+        String sql = """
+        SELECT
+            b.booking_id       AS bookingId,
+            b.status           AS bookingStatus,
+            b.check_in_date    AS checkInDate,
+            b.check_out_date   AS checkOutDate,
+            b.total_amount     AS totalAmount,
+
+            rt.room_type_id    AS roomTypeId,
+            rt.name            AS roomTypeName,
+            rt.description     AS roomMeta,
+            rt.max_adult       AS maxAdult,
+            rt.max_children    AS maxChildren,
+
+            rti.imageUrls      AS imageUrls,
+
+            SUM(brt.quantity)         AS quantity,
+            MIN(brt.price_at_booking) AS priceAtBooking,
+
+            amen.amenitiesText AS amenitiesText
+
+        FROM dbo.bookings b
+        JOIN dbo.booking_room_types brt 
+             ON brt.booking_id = b.booking_id
+
+        JOIN dbo.room_types rt 
+             ON rt.room_type_id = brt.room_type_id
+
+        OUTER APPLY (
+            SELECT STRING_AGG(image_url, '|') AS imageUrls
+            FROM dbo.room_type_images
+            WHERE room_type_id = rt.room_type_id
+        ) rti
+
+        OUTER APPLY (
+            SELECT STRING_AGG(a.name, ', ') AS amenitiesText
+            FROM dbo.room_type_amenities rta
+            JOIN dbo.amenities a 
+                 ON a.amenity_id = rta.amenity_id
+            WHERE rta.room_type_id = rt.room_type_id
+              AND a.is_active = 1
+        ) amen
+
+        WHERE b.customer_id = ?
+          AND b.status IN (4,5,6)
+
+        GROUP BY
+            b.booking_id, b.status, b.check_in_date, 
+            b.check_out_date, b.total_amount,
+            rt.room_type_id, rt.name, rt.description, 
+            rt.max_adult, rt.max_children,
+            rti.imageUrls,
+            amen.amenitiesText
+
+        ORDER BY b.check_out_date DESC
+    """;
+
+        return executeBookingQuery(sql, customerId);
     }
 
 }
