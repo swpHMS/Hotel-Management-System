@@ -631,9 +631,12 @@
                         <h1 class="dashboard-title">Daily Check-in</h1>
                         <p class="dashboard-date" id="live-clock"></p>
                     </div>
-                    <button class="btn-new-reservation" type="button">
+                    <a href="${pageContext.request.contextPath}/receptionist/booking/create">
+                        <button class="btn-new-reservation" type="button">
                         <i class="bi bi-plus-lg"></i> New Reservation
                     </button>
+                    </a>
+                    
                 </div>
 
                 <!-- Stats -->

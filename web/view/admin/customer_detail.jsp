@@ -5,10 +5,10 @@
 
 <!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="utf-8"/>
-  <title>HMS Admin | Customer Detail</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <head>
+        <meta charset="utf-8"/>
+        <title>HMS Admin | Customer Detail</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
   <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
