@@ -10,109 +10,45 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.Date;
-import java.time.LocalDate;
-
 
 public class RoomTypeDAO {
-    // ===== Search by room quantity (available rooms in date range) =====
-// ===== Search by room quantity (available rooms in date range) =====
-private static final String SQL_SEARCH_QTY_WITH_RATE_TEMPLATE =
-        "SELECT TOP (%d) " +
-        "  rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, " +
-        "  rv.price AS price_today, " +
-        "  x.available_rooms " +
-        "FROM dbo.room_types rt " +
-        "JOIN ( " +
-        "   SELECT r.room_type_id, " +
-        "          COUNT(DISTINCT r.room_id) - COUNT(DISTINCT br.room_id) AS available_rooms " +
-        "   FROM dbo.rooms r " +
-        "   LEFT JOIN dbo.booking_rooms br ON br.room_id = r.room_id " +
-        "   LEFT JOIN dbo.bookings b ON b.booking_id = br.booking_id " +
-        "     AND b.status IN (1,2) " +  // TODO: sửa theo status của bạn (ví dụ CONFIRMED/CHECKED_IN)
-        "     AND NOT (b.check_out <= ? OR b.check_in >= ?) " +
-        "   GROUP BY r.room_type_id " +
-        ") x ON x.room_type_id = rt.room_type_id " +
-        "OUTER APPLY ( " +
-        "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id " +
-        "   FROM dbo.rate_versions " +
-        "   WHERE room_type_id = rt.room_type_id " +
-        "     AND ? BETWEEN valid_from AND valid_to " +
-        "   ORDER BY valid_from DESC, rate_version_id DESC " +
-        ") rv " +
-        "WHERE rt.status = 1 " +
-        "  AND x.available_rooms >= ? " +
-        "ORDER BY x.available_rooms DESC, rt.room_type_id DESC";
 
     // =====================================================
-    // BOOKING SEARCH (DATE RANGE + AVAILABILITY PER NIGHT + CAPACITY BY ROOMQTY + KEYWORD)
+    // BOOKING SEARCH (DATE RANGE + AVAILABILITY BY COUNT BOOKINGS + CAPACITY BY ROOMQTY + KEYWORD)
     // =====================================================
     //
-    // ✅ Your real schema:
-    // - rooms(room_id, room_type_id, status, ...)
-    // - bookings(booking_id, check_in_date, check_out_date, status, ...)
-    // - booking_room_types(booking_room_id, booking_id, room_type_id, quantity, price_at_booking)
+    // ✅ Rule:
+    // available = total_rooms_of_type - SUM(booked quantity overlapping [checkIn, checkOut))
     //
-    // - availability_holds(hold_id, check_in_date, check_out_date, status, expires_at, ...)
-    // - availability_hold_items(hold_id, room_type_id, quantity)
+    // Overlap condition:
+    // booking.check_in < checkOut AND booking.check_out > checkIn
     //
-    // HOLD STATUS in your schema:
-    // - 1: ACTIVE, 2: CONFIRMED, 3: EXPIRED
-    //
-    // BOOKING STATUS in your schema:
-    // - 1:PENDING,2:CONFIRMED,3:CHECKED_IN,4:CHECKED_OUT,5:CANCELLED
-    //
-    // Availability rule per night:
-    // available = total_available_rooms - booked_qty - held_qty
-    // for EVERY night in [checkIn, checkOut)
+    // NOTE:
+    // - This approach does NOT count "holds" (availability_holds).
+    // - It counts existing bookings in DB to decide availability.
     //
     private static final String SQL_SEARCH_BOOKING_TEMPLATE =
-            "WITH d AS ( " +
-            "   SELECT DATEADD(DAY, v.number, ?) AS stay_date " +
-            "   FROM master..spt_values v " +
-            "   WHERE v.type='P' AND DATEADD(DAY, v.number, ?) < ? " +
+            "WITH booked AS ( " +
+            "   SELECT brt.room_type_id, SUM(brt.quantity) AS booked_qty " +
+            "   FROM dbo.bookings b " +
+            "   JOIN dbo.booking_room_types brt ON brt.booking_id = b.booking_id " +
+            "   WHERE b.status IN (2,3) " + // ✅ CONFIRMED / CHECKED_IN (bạn có thể thêm 1 nếu muốn)
+            "     AND b.check_in_date < ? " +  // checkOut
+            "     AND b.check_out_date > ? " + // checkIn
+            "   GROUP BY brt.room_type_id " +
             "), total_rooms AS ( " +
             "   SELECT room_type_id, COUNT(*) AS total_rooms " +
             "   FROM dbo.rooms " +
-            "   WHERE status = 1 " +                       // ✅ only AVAILABLE rooms
+            "   WHERE status IN (1) " +        // ✅ AVAILABLE rooms only (tuỳ nghiệp vụ, có thể bỏ filter status)
             "   GROUP BY room_type_id " +
-            "), booked AS ( " +
-            "   SELECT d.stay_date, brt.room_type_id, SUM(brt.quantity) AS booked_qty " +
-            "   FROM d " +
-            "   JOIN dbo.bookings b ON b.status IN (1,2,3) " + // ✅ PENDING/CONFIRMED/CHECKED_IN
-            "       AND d.stay_date >= b.check_in_date " +
-            "       AND d.stay_date <  b.check_out_date " +
-            "   JOIN dbo.booking_room_types brt ON brt.booking_id = b.booking_id " + // ✅ correct table
-            "   GROUP BY d.stay_date, brt.room_type_id " +
-            "), held AS ( " +
-            "   SELECT d.stay_date, hi.room_type_id, SUM(hi.quantity) AS held_qty " +
-            "   FROM d " +
-            "   JOIN dbo.availability_holds h " +
-            "       ON h.expires_at > SYSDATETIME() " +
-            "       AND h.status = 1 " +                     // ✅ ACTIVE = 1
-            "       AND d.stay_date >= h.check_in_date " +
-            "       AND d.stay_date <  h.check_out_date " +
-            "   JOIN dbo.availability_hold_items hi ON hi.hold_id = h.hold_id " +
-            "   GROUP BY d.stay_date, hi.room_type_id " +
-            "), avail AS ( " +
-            "   SELECT tr.room_type_id, d.stay_date, " +
-            "          tr.total_rooms " +
-            "          - COALESCE(b.booked_qty,0) " +
-            "          - COALESCE(h.held_qty,0) AS available " +
-            "   FROM d " +
-            "   JOIN total_rooms tr ON 1=1 " +
-            "   LEFT JOIN booked b ON b.room_type_id=tr.room_type_id AND b.stay_date=d.stay_date " +
-            "   LEFT JOIN held  h ON h.room_type_id=tr.room_type_id AND h.stay_date=d.stay_date " +
-            "), min_avail AS ( " +
-            "   SELECT room_type_id, MIN(available) min_available " +
-            "   FROM avail GROUP BY room_type_id " +
             ") " +
             "SELECT TOP (%d) " +
             "  rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, " +
             "  rv.price AS price_today, " +
-            "  ma.min_available AS available_rooms " +
+            "  (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) AS available_rooms " +
             "FROM dbo.room_types rt " +
-            "JOIN min_avail ma ON ma.room_type_id=rt.room_type_id " +
+            "LEFT JOIN total_rooms tr ON tr.room_type_id = rt.room_type_id " +
+            "LEFT JOIN booked bk      ON bk.room_type_id = rt.room_type_id " +
             "OUTER APPLY ( " +
             "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id " +
             "   FROM dbo.rate_versions " +
@@ -121,11 +57,11 @@ private static final String SQL_SEARCH_QTY_WITH_RATE_TEMPLATE =
             "   ORDER BY valid_from DESC, rate_version_id DESC " +
             ") rv " +
             "WHERE rt.status=1 " +
-            "  AND ma.min_available >= ? " +
-            "  AND ( ? = '' OR rt.name LIKE '%%' + ? + '%%' ) " +
-            "  AND ( ? <= rt.max_adult * ? ) " +        // ✅ keep your original “capacity by roomQty”
-            "  AND ( ? <= rt.max_children * ? ) " +
-            "ORDER BY ma.min_available DESC, rt.room_type_id DESC";
+            "  AND (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) >= ? " + // >= roomQty
+            "  AND ( ? = '' OR rt.name LIKE '%%' + ? + '%%' OR rt.description LIKE '%%' + ? + '%%' ) " +
+            "  AND ( ? <= rt.max_adult * ? ) " +        // adults <= max_adult * roomQty
+            "  AND ( ? <= rt.max_children * ? ) " +     // children <= max_children * roomQty
+            "ORDER BY (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) DESC, rt.room_type_id DESC";
 
     // =====================================================
     // NORMAL HOME LOAD (NO DATE FILTER)
@@ -180,12 +116,10 @@ private static final String SQL_SEARCH_QTY_WITH_RATE_TEMPLATE =
 
         return new ArrayList<>();
     }
-    public List<RoomType> searchByRoomQty(LocalDate checkIn, LocalDate checkOut, int roomQty, int limit) {
-    List<RoomType> withRate = new ArrayList<>();
 
     /**
      * ✅ Booking search with date range + keyword + capacity by roomQty
-     * Used by BookingServlet
+     * Used by HomeServlet + BookingServlet
      */
     public List<RoomType> searchForBooking(LocalDate checkIn,
                                           LocalDate checkOut,
@@ -206,26 +140,26 @@ private static final String SQL_SEARCH_QTY_WITH_RATE_TEMPLATE =
 
             int idx = 1;
 
-            // d() date range generator params
-            ps.setDate(idx++, Date.valueOf(checkIn));   // start date
-            ps.setDate(idx++, Date.valueOf(checkIn));   // for DATEADD limit
-            ps.setDate(idx++, Date.valueOf(checkOut));  // exclusive end
+            // booked CTE overlap params
+            ps.setDate(idx++, Date.valueOf(checkOut)); // b.check_in < checkOut
+            ps.setDate(idx++, Date.valueOf(checkIn));  // b.check_out > checkIn
 
             // rate at checkIn
             ps.setDate(idx++, Date.valueOf(checkIn));
 
-            // min_available >= roomQty
+            // availability >= roomQty
             ps.setInt(idx++, roomQty);
 
-            // keyword: (?='' OR name like %?%)
+            // keyword
+            ps.setString(idx++, keyword);
             ps.setString(idx++, keyword);
             ps.setString(idx++, keyword);
 
-            // capacity adults <= max_adult * roomQty
+            // capacity adults
             ps.setInt(idx++, adults);
             ps.setInt(idx++, roomQty);
 
-            // capacity children <= max_children * roomQty
+            // capacity children
             ps.setInt(idx++, children);
             ps.setInt(idx++, roomQty);
 
@@ -243,8 +177,7 @@ private static final String SQL_SEARCH_QTY_WITH_RATE_TEMPLATE =
                     // price can be null if no rate
                     rt.setPriceToday(rs.getBigDecimal("price_today"));
 
-                    // available_rooms column is selected; map it if your RoomType has a field for it.
-                    // (If not, you can ignore it or add: private int availableRooms; + getter/setter)
+                    // available_rooms column exists; ignore if your model doesn't have field
                     // rt.setAvailableRooms(rs.getInt("available_rooms"));
 
                     list.add(rt);

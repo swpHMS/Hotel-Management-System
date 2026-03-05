@@ -19,60 +19,61 @@
 <body class="confirm-page" data-ctx="${ctx}" data-holdms="${holdMs}">
   <c:set var="forceBookingHeader" value="true" scope="request"/>
 
-<div class="cf-topbar">
-  <div class="container cf-topbar-inner">
-    <div class="cf-brand">
-  <div class="rq-logo">
-    <span class="rq-diamond d1">◆</span>
-    <span class="rq-diamond d2">◆</span>
-    <span class="rq-diamond d3">◆</span>
-  </div>
-  <span class="cf-name">Regal Quintet Hotel</span>
-</div>
+  <div class="cf-topbar">
+    <div class="container cf-topbar-inner">
+      <div class="cf-brand">
+        <div class="rq-logo">
+          <span class="rq-diamond d1">◆</span>
+          <span class="rq-diamond d2">◆</span>
+          <span class="rq-diamond d3">◆</span>
+        </div>
+        <span class="cf-name">Regal Quintet Hotel</span>
+      </div>
 
-    <div class="cf-steps">
-      <span class="cf-step is-active"><span class="dot">1</span> Billing Information <span class="bar"></span></span>
-      <span class="cf-step"><span class="dot">2</span> Payment <span class="bar"></span></span>
-      <span class="cf-step"><span class="dot">3</span> Confirmation</span>
-    </div>
+      <div class="cf-steps">
+        <span class="cf-step is-active"><span class="dot">1</span> Billing Information <span class="bar"></span></span>
+        <span class="cf-step"><span class="dot">2</span> Payment <span class="bar"></span></span>
+        <span class="cf-step"><span class="dot">3</span> Confirmation</span>
+      </div>
 
+      <%-- ==== Account display (giữ như file trên) ==== --%>
       <c:set var="acc" value="${sessionScope.user}" />
-<c:if test="${empty acc}">
-  <c:set var="acc" value="${sessionScope.userProfile}" />
-</c:if>
-<c:if test="${empty acc}">
-  <c:set var="acc" value="${sessionScope.profile}" />
-</c:if>
-<c:if test="${empty acc}">
-  <c:set var="acc" value="${sessionScope.account}" />
-</c:if>
-<c:if test="${empty acc}">
-  <c:set var="acc" value="${sessionScope.currentUser}" />
-</c:if>
+      <c:if test="${empty acc}">
+        <c:set var="acc" value="${sessionScope.userProfile}" />
+      </c:if>
+      <c:if test="${empty acc}">
+        <c:set var="acc" value="${sessionScope.profile}" />
+      </c:if>
+      <c:if test="${empty acc}">
+        <c:set var="acc" value="${sessionScope.account}" />
+      </c:if>
+      <c:if test="${empty acc}">
+        <c:set var="acc" value="${sessionScope.currentUser}" />
+      </c:if>
 
-<c:set var="displayName" value="${acc.fullName}" />
-<c:if test="${empty displayName}">
-  <!-- fallback nếu object dùng field khác -->
-  <c:set var="displayName" value="${acc.name}" />
-</c:if>
-<c:if test="${empty displayName}">
-  <c:set var="displayName" value="Guest" />
-</c:if>
+      <c:set var="displayName" value="${acc.fullName}" />
+      <c:if test="${empty displayName}">
+        <c:set var="displayName" value="${acc.name}" />
+      </c:if>
+      <c:if test="${empty displayName}">
+        <c:set var="displayName" value="Guest" />
+      </c:if>
 
-<div class="cf-account">
-  <span class="cf-avatar">
-    ${fn:toUpperCase(fn:substring(displayName, 0, 1))}
-  </span>
-  <span class="cf-email">${displayName}</span>
-</div>
-</div>
+      <div class="cf-account">
+        <span class="cf-avatar">
+          ${fn:toUpperCase(fn:substring(displayName, 0, 1))}
+        </span>
+        <span class="cf-email">${displayName}</span>
+      </div>
+    </div>
+  </div>
 
   <div class="container cf-wrap">
     <div class="cf-hold">
-  We are holding this price for you...
-  <span class="clock" aria-hidden="true"></span>
-  <b id="cfTimer">15:00</b>
-</div>
+      We are holding this price for you...
+      <span class="clock" aria-hidden="true"></span>
+      <b id="cfTimer">15:00</b>
+    </div>
 
     <div class="cf-grid">
       <!-- LEFT -->
@@ -141,48 +142,61 @@
         <div class="cf-card cf-terms">
           <div class="cf-hd">Deposit Agreement & Booking Terms</div>
           <div class="cf-bd">
+
             <div class="cf-alert">
-  <c:choose>
-    <c:when test="${not empty paymentPolicy}">
-      <b>${paymentPolicy.name}</b>
+              <c:choose>
+                <c:when test="${not empty paymentPolicy}">
+                  <b>${paymentPolicy.name}</b>
 
-      <c:set var="lines" value="${fn:split(paymentPolicy.content, '•')}" />
-      <ul style="margin:0; padding-left:18px;">
-        <c:forEach var="line" items="${lines}">
-          <c:if test="${not empty fn:trim(line)}">
-            <li>${fn:trim(line)}</li>
-          </c:if>
-        </c:forEach>
-      </ul>
-    </c:when>
+                  <c:set var="lines" value="${fn:split(paymentPolicy.content, '•')}" />
+                  <ul style="margin:0; padding-left:18px;">
+                    <c:forEach var="line" items="${lines}">
+                      <c:if test="${not empty fn:trim(line)}">
+                        <li>${fn:trim(line)}</li>
+                      </c:if>
+                    </c:forEach>
+                  </ul>
+                </c:when>
 
-    <c:otherwise>
-      <b>Payment Policy</b>
-      Policy not available.
-    </c:otherwise>
-  </c:choose>
-</div>
+                <c:otherwise>
+                  <b>Payment Policy</b>
+                  Policy not available.
+                </c:otherwise>
+              </c:choose>
+            </div>
 
-<form method="post" action="${ctx}/booking/confirm" id="cfForm">
+            <%-- ✅ GHÉP LOGIC FILE DƯỚI:
+                 - action chuyển sang /booking/pay
+                 - thêm holdId hidden (fallback holdId từ request attribute hoặc param)
+            --%>
+            <form method="post" action="${ctx}/booking/pay" id="cfForm">
 
-  <input type="hidden" name="roomTypeId" value="${rt.roomTypeId}">
-  <input type="hidden" name="checkIn" value="${checkIn}">
-  <input type="hidden" name="checkOut" value="${checkOut}">
-  <input type="hidden" name="roomQty" value="${roomQty}">
-  <input type="hidden" name="adults" value="${adults}">
-  <input type="hidden" name="children" value="${children}">
+              <c:set var="hid" value="${holdId}" />
+              <c:if test="${empty hid}">
+                <c:set var="hid" value="${param.holdId}" />
+              </c:if>
+              <input type="hidden" name="holdId" value="${hid}"/>
 
-  <div class="cf-check">
-    <input type="checkbox" id="cfAgree" name="agree" value="1" required/>
-    <label for="cfAgree">
-      I agree to the Deposit Agreement & Booking Terms (Non-refundable policy applied)
-    </label>
-  </div>
+              <input type="hidden" name="roomTypeId" value="${rt.roomTypeId}">
+              <input type="hidden" name="checkIn" value="${checkIn}">
+              <input type="hidden" name="checkOut" value="${checkOut}">
+              <input type="hidden" name="roomQty" value="${roomQty}">
+              <input type="hidden" name="adults" value="${adults}">
+              <input type="hidden" name="children" value="${children}">
+              <input type="hidden" name="customerEmail" value="${customerEmail}"/>
 
-  <button type="submit" class="cf-btn" id="cfContinue">
-    Agree and Continue to Payment →
-  </button>
-</form>
+              <div class="cf-check">
+                <input type="checkbox" id="cfAgree" name="agree" value="1" required/>
+                <label for="cfAgree">
+                  I agree to the Deposit Agreement & Booking Terms (Non-refundable policy applied)
+                </label>
+              </div>
+
+              <button type="submit" class="cf-btn" id="cfContinue">
+                Agree and Continue to Payment →
+              </button>
+            </form>
+
           </div>
         </div>
       </div>

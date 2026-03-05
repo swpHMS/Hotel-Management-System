@@ -5,7 +5,13 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBContext {
-    public Connection connection;
+
+    protected Connection connection;
+
+    private static final String URL =
+            "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System1;encrypt=true;trustServerCertificate=true;";
+    private static final String USER = "sa";
+    private static final String PASS = "123";
 
     public DBContext() {
         try {
