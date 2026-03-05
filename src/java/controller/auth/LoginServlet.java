@@ -146,7 +146,7 @@ public class LoginServlet extends HttpServlet {
         } else if (role == 3) {
             response.sendRedirect(contextPath + "/receptionist/dashboard");
         } else if (role == 4) {
-            response.sendRedirect(contextPath + "/view/staff/dashboard.jsp");
+            response.sendRedirect(contextPath + "/staff/service-orders");
         } else {
             response.sendRedirect(contextPath + "/home");
         }
