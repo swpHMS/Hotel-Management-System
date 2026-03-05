@@ -381,30 +381,38 @@ public class ReceptBookingDAO extends DBContext {
             }
 
             if (customerId == null) {
-                String sqlInsertCustomer
-                        = "INSERT INTO dbo.customers(full_name, phone) VALUES(?,?);";
-                try (PreparedStatement ps = con.prepareStatement(sqlInsertCustomer, Statement.RETURN_GENERATED_KEYS)) {
-                    ps.setString(1, fullName);
-                    ps.setString(2, phone);
-                    ps.executeUpdate();
-                    try (ResultSet rs = ps.getGeneratedKeys()) {
-                        if (!rs.next()) {
-                            throw new SQLException("Cannot get customer_id.");
-                        }
-                        customerId = rs.getInt(1);
-                    }
-                }
-            } else {
-                // update name/phone if needed
-                String sqlUpdateCustomer
-                        = "UPDATE dbo.customers SET full_name = COALESCE(?, full_name), phone = COALESCE(?, phone) WHERE customer_id=?;";
-                try (PreparedStatement ps = con.prepareStatement(sqlUpdateCustomer)) {
-                    ps.setString(1, fullName);
-                    ps.setString(2, phone);
-                    ps.setInt(3, customerId);
-                    ps.executeUpdate();
-                }
+    // Sửa câu lệnh INSERT thêm 3 cột: email, identity, address
+    String sqlInsertCustomer
+            = "INSERT INTO dbo.customers(full_name, phone) VALUES(?,?,?,?,?);";
+            
+    try (PreparedStatement ps = con.prepareStatement(sqlInsertCustomer, Statement.RETURN_GENERATED_KEYS)) {
+        ps.setString(1, fullName);
+        ps.setString(2, phone);
+        
+        
+        ps.executeUpdate();
+        try (ResultSet rs = ps.getGeneratedKeys()) {
+            if (!rs.next()) {
+                throw new SQLException("Cannot get customer_id.");
             }
+            customerId = rs.getInt(1);
+        }
+    }
+} else {
+    // Sửa câu lệnh UPDATE thêm cập nhật cho email, identity, address
+    String sqlInsertCustomer = "INSERT INTO dbo.customers(full_name, phone) VALUES(?,?);"; 
+
+            
+    try (PreparedStatement ps = con.prepareStatement(sqlInsertCustomer)) {
+        ps.setString(1, fullName);
+        ps.setString(2, phone);
+        // Bổ sung truyền dữ liệu mới
+        
+        ps.setInt(3, customerId); // Nhớ đổi thứ tự tham số ID xuống số 6
+        
+        ps.executeUpdate();
+    }
+}
 
             // 5) Insert booking
             String sqlInsertBooking

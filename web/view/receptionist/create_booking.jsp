@@ -28,20 +28,19 @@
                     </a>
                     <div>
                         <div class="fw-bold fs-4">CREATE BOOKING</div>
-                        <div class="text-secondary">Create a future reservation for guest.</div>
                     </div>
                 </div>
 
-                        <c:if test="${not empty errors}">
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            <c:forEach var="e" items="${errors}">
-                <li>${e}</li>
-            </c:forEach>
-        </ul>
-    </div>
-</c:if>
-                        
+                <c:if test="${not empty errors}">
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            <c:forEach var="e" items="${errors}">
+                                <li>${e}</li>
+                                </c:forEach>
+                        </ul>
+                    </div>
+                </c:if>
+
                 <div class="cb-wrap">
 
                     <!-- LEFT COLUMN -->
@@ -66,15 +65,16 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label">Check-in date</label>
-                                    <input type="date" class="form-control" name="checkIn"
+                                    <input type="date" class="form-control" name="checkIn" id="checkInDate"
                                            value="<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>">
                                 </div>
 
                                 <div class="col-md-4">
                                     <label class="form-label">Check-out date</label>
-                                    <input type="date" class="form-control" name="checkOut"
+                                    <input type="date" class="form-control" name="checkOut" id="checkOutDate"
                                            value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>">
                                 </div>
+
 
                                 <!-- Room Type (dropdown) -->
                                 <div class="col-md-4">
@@ -220,9 +220,10 @@
                         </form>
 
 
-                        <div class="hint mt-2">
+                        <!-- <div class="hint mt-2">
                             Status will be set to <b>PENDING_DEPOSIT</b>; deposit required.
                         </div>
+                        -->
                     </div>
 
                 </div>
@@ -269,6 +270,43 @@
                 setActiveCard(dropdown.value);
             });
         </script>
+        <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const checkInInput = document.getElementById("checkInDate");
+    const checkOutInput = document.getElementById("checkOutDate");
+
+    if (checkInInput && checkOutInput) {
+        checkInInput.addEventListener("change", function() {
+            // Lấy ngày check-in
+            let checkInDate = new Date(this.value);
+            
+            // Ngày check-out tối thiểu phải là ngày hôm sau
+            checkInDate.setDate(checkInDate.getDate() + 1);
+            let minCheckOut = checkInDate.toISOString().split('T');
+            
+            // Set thuộc tính min cho input check-out để chặn click ngày trong quá khứ
+            checkOutInput.min = minCheckOut;
+
+            // Nếu user đã chọn check-out từ trước mà giờ trở nên không hợp lệ -> Cảnh báo
+            if (new Date(checkOutInput.value) <= new Date(this.value)) {
+                alert("Ngày Check-out không được nhỏ hơn hoặc bằng ngày Check-in!");
+                checkOutInput.value = minCheckOut; // Tự reset về ngày hợp lệ gần nhất
+            }
+        });
+        
+        // Ngăn form submit nếu cố tình nhập sai
+        const forms = document.querySelectorAll("form");
+        forms.forEach(form => {
+            form.addEventListener("submit", function(e) {
+                if (new Date(checkOutInput.value) <= new Date(checkInInput.value)) {
+                    e.preventDefault();
+                    alert("Vui lòng kiểm tra lại: Ngày Check-out phải lớn hơn ngày Check-in.");
+                }
+            });
+        });
+    }
+});
+</script>
 
     </body>
 </html>
