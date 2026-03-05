@@ -3,7 +3,8 @@ package model;
 import java.sql.Date;
 
 /**
- * @author ASUS
+ * Class đại diện cho dữ liệu hiển thị trên Dashboard và Check-in
+ * @author Minh Đức
  */
 public class BookingDashboard {
     private int bookingId;
@@ -16,14 +17,17 @@ public class BookingDashboard {
     private int numPersons;
     private int bookingStatus; 
     private int assignmentStatus; 
-    // ✅ Bổ sung thuộc tính này để hết lỗi đỏ trong BookingDAO
     private double totalAmount; 
+    // ✅ BỔ SUNG: Tiền đặt cọc để hết lỗi PropertyNotFoundException
+    private double deposit; 
 
     public BookingDashboard() {
     }
 
-    // Cập nhật Constructor (Tùy chọn)
-    public BookingDashboard(int bookingId, String guestName, String roomTypeName, Date checkInDate, Date checkOutDate, int numRooms, String roomNo, int numPersons, int bookingStatus, int assignmentStatus, double totalAmount) {
+    // Constructor đầy đủ
+    public BookingDashboard(int bookingId, String guestName, String roomTypeName, Date checkInDate, 
+                            Date checkOutDate, int numRooms, String roomNo, int numPersons, 
+                            int bookingStatus, int assignmentStatus, double totalAmount, double deposit) {
         this.bookingId = bookingId;
         this.guestName = guestName;
         this.roomTypeName = roomTypeName;
@@ -35,9 +39,18 @@ public class BookingDashboard {
         this.bookingStatus = bookingStatus;
         this.assignmentStatus = assignmentStatus;
         this.totalAmount = totalAmount;
+        this.deposit = deposit;
     }
 
-    // ✅ Bổ sung Getter và Setter cho totalAmount
+    // ✅ GETTER VÀ SETTER CHO DEPOSIT (BẮT BUỘC CÓ)
+    public double getDeposit() {
+        return deposit;
+    }
+
+    public void setDeposit(double deposit) {
+        this.deposit = deposit;
+    }
+
     public double getTotalAmount() {
         return totalAmount;
     }
@@ -46,8 +59,6 @@ public class BookingDashboard {
         this.totalAmount = totalAmount;
     }
 
-    // ... Giữ nguyên các Getter/Setter cũ của bạn ...
-    
     public int getBookingId() { return bookingId; }
     public void setBookingId(int bookingId) { this.bookingId = bookingId; }
 
