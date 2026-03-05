@@ -10,8 +10,39 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Date;
+import java.time.LocalDate;
+
 
 public class RoomTypeDAO {
+    // ===== Search by room quantity (available rooms in date range) =====
+// ===== Search by room quantity (available rooms in date range) =====
+private static final String SQL_SEARCH_QTY_WITH_RATE_TEMPLATE =
+        "SELECT TOP (%d) " +
+        "  rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, " +
+        "  rv.price AS price_today, " +
+        "  x.available_rooms " +
+        "FROM dbo.room_types rt " +
+        "JOIN ( " +
+        "   SELECT r.room_type_id, " +
+        "          COUNT(DISTINCT r.room_id) - COUNT(DISTINCT br.room_id) AS available_rooms " +
+        "   FROM dbo.rooms r " +
+        "   LEFT JOIN dbo.booking_rooms br ON br.room_id = r.room_id " +
+        "   LEFT JOIN dbo.bookings b ON b.booking_id = br.booking_id " +
+        "     AND b.status IN (1,2) " +  // TODO: sửa theo status của bạn (ví dụ CONFIRMED/CHECKED_IN)
+        "     AND NOT (b.check_out <= ? OR b.check_in >= ?) " +
+        "   GROUP BY r.room_type_id " +
+        ") x ON x.room_type_id = rt.room_type_id " +
+        "OUTER APPLY ( " +
+        "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id " +
+        "   FROM dbo.rate_versions " +
+        "   WHERE room_type_id = rt.room_type_id " +
+        "     AND ? BETWEEN valid_from AND valid_to " +
+        "   ORDER BY valid_from DESC, rate_version_id DESC " +
+        ") rv " +
+        "WHERE rt.status = 1 " +
+        "  AND x.available_rooms >= ? " +
+        "ORDER BY x.available_rooms DESC, rt.room_type_id DESC";
 
     // =====================================================
     // BOOKING SEARCH (DATE RANGE + AVAILABILITY PER NIGHT + CAPACITY BY ROOMQTY + KEYWORD)
@@ -149,6 +180,8 @@ public class RoomTypeDAO {
 
         return new ArrayList<>();
     }
+    public List<RoomType> searchByRoomQty(LocalDate checkIn, LocalDate checkOut, int roomQty, int limit) {
+    List<RoomType> withRate = new ArrayList<>();
 
     /**
      * ✅ Booking search with date range + keyword + capacity by roomQty
@@ -199,7 +232,6 @@ public class RoomTypeDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     RoomType rt = new RoomType();
-
                     rt.setRoomTypeId(rs.getInt("room_type_id"));
                     rt.setName(rs.getString("name"));
                     rt.setDescription(rs.getString("description"));

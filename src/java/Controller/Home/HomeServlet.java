@@ -10,6 +10,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import model.HotelInformation;
 
 import model.HotelInformation;
 
@@ -54,9 +55,23 @@ public class HomeServlet extends HttpServlet {
         return (s == null) ? "" : s.trim();
     }
 
+    private static final int MAX_ROOMS = 5;
+    private static final int DEFAULT_LIMIT = 8;
+
+    private int parseIntOrDefault(String s, int def){
+        try { return Integer.parseInt(s); } catch(Exception e){ return def; }
+    }
+
+    private LocalDate parseDateOrDefault(String s, LocalDate def){
+        try { return LocalDate.parse(s); } catch(Exception e){ return def; }
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+        
+        HotelInformation hotel = hotelRepo.getSingleHotel();
+        req.setAttribute("hotel", hotel);
 
         HotelInformation hotel = hotelRepo.getSingleHotel();
         req.setAttribute("hotel", hotel);
