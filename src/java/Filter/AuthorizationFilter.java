@@ -41,6 +41,13 @@ public class AuthorizationFilter implements Filter {
             return;
         }
     }
+    
+    if (uri.contains("/manager/")) {
+        if (user == null || user.getRoleId() != 2) {
+            res.sendRedirect(contextPath + "/home");
+            return;
+        }
+    }
 
     chain.doFilter(request, response);
     }
