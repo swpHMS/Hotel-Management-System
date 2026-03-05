@@ -5,18 +5,14 @@
   <div class="container rq-wrap">
     <div>
       <div class="rq-brand">
-          <div class="diamond-icons" style="display: flex; align-items: center; margin-bottom: 5px;">
-              <a href="${pageContext.request.contextPath}/home" 
-                 style="text-decoration: none; display: flex; gap: 1px; border: none; outline: none; align-items: center;">
-
-                  <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
-
-                  <span style="color: #FF0000; font-size: 18px; line-height: 1; text-shadow: 0 0 0px #FF0000, 0 0 10px rgba(255, 0, 0, 0.4);">◆</span>
-
-                  <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
-
-              </a>
-          </div>
+        <div class="rq-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 9l4 4 5-7 5 7 4-4"/>
+            <path d="M5 20h14"/>
+            <path d="M6 18h12"/>
+            <path d="M6 18l-1-7h14l-1 7"/>
+          </svg>
+        </div>
         <div>
           <h3 class="rq-brandname">
             <c:out value="${hotel != null ? hotel.name : 'Regal Quintet Hotel'}"/>

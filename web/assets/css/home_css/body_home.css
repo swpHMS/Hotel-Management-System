@@ -64,7 +64,10 @@ a{ text-decoration:none; color:inherit; }
   pointer-events:none;
   z-index:1;
 }
-
+.hero::after,
+.hero::before{
+  pointer-events: none;
+}
 .hero-content{
   position:relative;
   z-index:2;
@@ -127,7 +130,17 @@ a{ text-decoration:none; color:inherit; }
   color:rgba(255,255,255,.92);
   text-shadow:0 2px 12px rgba(0,0,0,.35);
 }
-
+.hero{
+  z-index: 0;
+}
+.suites-section{
+  position: relative;
+  z-index: 2;
+}
+.hero{
+  overflow-x: hidden;
+  overflow-y: visible;
+}
 /* =========================
    BOOKING BAR
    ========================= */
@@ -845,7 +858,7 @@ a{ text-decoration:none; color:inherit; }
   font-weight: 700;
   color: inherit;
 
-  padding: 0;               /* 👈 bỏ padding mặc định */
+  padding: 0;               
   margin: 0;
 }
 
@@ -859,11 +872,7 @@ a{ text-decoration:none; color:inherit; }
   -moz-appearance: textfield;
 }
 
-/* nếu vẫn lệch, ép input không vượt khung */
-.stepper > *{
-  flex-shrink:-1;
-  
-}
+.stepper > *{ flex-shrink: 0; }
 
 .field input[type="number"]{
   width:100%;
@@ -1254,4 +1263,41 @@ a{ text-decoration:none; color:inherit; }
 /* nếu option placeholder "Price" muốn màu nhạt hơn */
 .field-sort .sort-select option[value=""]{
   color: rgba(11,27,51,.55);
+}
+/* =========================
+   ROOMS INPUT (HOME) - CLEAN
+   ========================= */
+.field-roomqty{ min-width:0; }
+
+.field-roomqty .control{
+  height:44px;
+  padding:0 14px;
+  border:1px solid rgba(15,23,42,.12) !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  box-shadow:none !important;
+}
+
+/* input full width */
+.field-roomqty .roomqty-input{
+  width:100%;
+  height:100%;
+  border:none !important;
+  outline:none !important;
+  background:transparent !important;
+  font:inherit;
+  color:#0b1b33;
+  font-weight:600;
+}
+
+/* Nếu muốn ẨN spinner */
+.field-roomqty .roomqty-input::-webkit-outer-spin-button,
+.field-roomqty .roomqty-input::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+.field-roomqty .roomqty-input{ -moz-appearance: textfield; }
+/* Mặc định chỉ hiện 8 phòng */
+.rooms-collapsed .suites-grid .suites-card:nth-child(n+9) {
+    display: none;
 }

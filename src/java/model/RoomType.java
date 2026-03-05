@@ -12,10 +12,14 @@ public class RoomType {
     private int maxAdult;
     private int maxChildren;
     private String imageUrl;
-    private int status; 
+    private int status;
     private BigDecimal priceToday;
-    
+
+    // ✅ Amenities (đang dùng)
     private List<String> amenityNames = new ArrayList<>();
+
+    // ✅ NEW: List ảnh lấy từ bảng room_type_images
+    private List<RoomTypeImage> images = new ArrayList<>();
 
     public RoomType() {}
 
@@ -51,7 +55,34 @@ public class RoomType {
     // ✅ dùng thẳng trong JSP: data-amenities="${rt.amenityPipe}"
     public String getAmenityPipe() {
         if (amenityNames == null || amenityNames.isEmpty()) return "";
-        return String.join("||", amenityNames);
+        return String.join("|", amenityNames);
+    }
+
+    // =========================================================
+    // ✅ NEW: Images
+    // =========================================================
+    public List<RoomTypeImage> getImages() {
+        return images;
+    }
+
+    public void setImages(List<RoomTypeImage> images) {
+        this.images = (images == null) ? new ArrayList<>() : images;
+    }
+
+    /**
+     * ✅ Tiện dùng nếu bạn muốn lấy nhanh URL ảnh thumbnail:
+     * - Ưu tiên is_thumbnail = true
+     * - Nếu không có, lấy ảnh đầu tiên
+     * - Nếu không có ảnh, trả null
+     */
+    public String getThumbnailUrl() {
+        if (images == null || images.isEmpty()) return null;
+        for (RoomTypeImage img : images) {
+            if (img != null && img.isThumbnail()) {
+                return img.getImageUrl();
+            }
+        }
+        return images.get(0) != null ? images.get(0).getImageUrl() : null;
     }
 
     @Override
@@ -64,6 +95,7 @@ public class RoomType {
                 + ", status=" + status
                 + ", priceToday=" + priceToday
                 + ", amenityNames=" + amenityNames
+                + ", images=" + (images == null ? 0 : images.size())
                 + '}';
     }
 }

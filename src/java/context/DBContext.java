@@ -5,7 +5,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBContext {
-     protected Connection connection;
+
+    protected Connection connection;
+
 
     public DBContext() {
         try {
@@ -24,3 +26,4 @@ public class DBContext {
         return connection;
     }
 }
+

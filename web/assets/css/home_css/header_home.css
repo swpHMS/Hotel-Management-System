@@ -218,7 +218,7 @@ body{ padding-top:0px; } /* chỉnh theo đúng chiều cao header */
   font-weight:900;
   letter-spacing:.06em;
   color:#fff;
-  background:transparent;           /* hồng */
+  background:#e11d48;           /* hồng */
   border:2px solid var(--gold); /* viền vàng */
   box-shadow:0 6px 16px rgba(0,0,0,.22);
 }
@@ -318,4 +318,3 @@ body{ padding-top:0px; } /* chỉnh theo đúng chiều cao header */
 .btn-booknow{
   white-space:nowrap;
 }
-
