@@ -45,6 +45,13 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
         int children = clamp(parseIntOrNull(req.getParameter("children")) == null ? 0 : parseIntOrNull(req.getParameter("children")), 0, 20);
         Integer roomTypeId = parseIntOrNull(req.getParameter("roomTypeId"));
 
+        // --- THÊM ĐOẠN CODE NÀY ĐỂ QUÉT VÀ NHẢ PHÒNG TRƯỚC KHI TẢI DANH SÁCH ---
+        try {
+            dao.expireHolds();
+        } catch (Exception e) {
+            System.out.println("Lỗi khi dọn dẹp Hold hết hạn: " + e.getMessage());
+        }
+        
         List<RoomTypeCard> cards = dao.getRoomTypeCards(checkIn, checkOut, rooms);
 
         RoomTypeCard selected = null;
@@ -76,11 +83,20 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
     }
 
     // POST: NEXT -> create hold
-    @Override
+        @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("active", "create_booking");
+        
+        // 1. Kiểm tra quyền và lấy thông tin người dùng từ Session
+        HttpSession session = req.getSession();
+        model.User loggedInUser = (model.User) session.getAttribute("userAccount");
+        if (loggedInUser == null) {
+            resp.sendRedirect(req.getContextPath() + "/login"); 
+            return; // CHỐT CHẶN: Dừng code ngay lập tức nếu chưa đăng nhập
+        }
+        int userId = loggedInUser.getUserId(); // Hoặc getUserId() tuỳ theo Model User của bạn
 
-        // stay params from form
+        // 2. Lấy dữ liệu ngày tháng, số lượng từ Form gửi lên
         Date checkIn = parseSqlDateOrNull(req.getParameter("checkIn"));
         Date checkOut = parseSqlDateOrNull(req.getParameter("checkOut"));
         Integer roomsRaw = parseIntOrNull(req.getParameter("rooms"));
@@ -90,30 +106,37 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
         if (checkIn == null) checkIn = Date.valueOf(today.plusDays(1));
         if (checkOut == null) checkOut = Date.valueOf(today.plusDays(2));
         if (!checkIn.before(checkOut)) checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(1));
-
         int rooms = clamp(roomsRaw == null ? 1 : roomsRaw, 1, 10);
 
+        // 3. Kiểm tra Lễ tân đã chọn loại phòng chưa
         if (roomTypeId == null) {
             req.setAttribute("errors", java.util.List.of("Please select a room type."));
             doGet(req, resp);
-            return;
+            return; // CHỐT CHẶN: Tránh lỗi load lại trang 2 lần
         }
 
-        // userId: receptionist đang login (tuỳ hệ thống bạn lưu session)
-        // Nếu chưa có, tạm 1 cho test:
-        int userId = 1;
+        // 4. Dọn các Hold cũ quá hạn để vớt phòng trống (bạn đã thêm ở bước trước)
+        try {
+            dao.expireHolds();
+        } catch (Exception e) {
+            System.out.println("Lỗi khi dọn dẹp Hold hết hạn: " + e.getMessage());
+        }
 
+        // 5. Tiến hành giữ phòng (Hold)
         try {
             int holdId = dao.createHold(userId, roomTypeId, checkIn, checkOut, rooms, 15);
-
-            // redirect step 2 with holdId
+            
+            // Chuyển hướng sang bước 2 (Điền thông tin khách)
             resp.sendRedirect(req.getContextPath() + "/receptionist/booking/customer?holdId=" + holdId);
-
+            return; // CHỐT CHẶN CUỐI CÙNG
+            
         } catch (Exception ex) {
+            // Nếu khách khác vừa đặt mất hoặc lỗi Database
             req.setAttribute("errors", java.util.List.of(
                 "Not enough rooms available for the selected dates. Please choose another room type."
             ));
             doGet(req, resp);
+            return; 
         }
     }
 }

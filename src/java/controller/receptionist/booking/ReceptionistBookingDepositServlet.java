@@ -63,32 +63,35 @@ public class ReceptionistBookingDepositServlet extends HttpServlet {
             return;
         }
 
-        // Payment method from UI
-        String method = req.getParameter("method"); // CASH / QR
-        if (method == null || method.isBlank()) method = "CASH";
+        // Lấy Payment method từ UI
+String method = req.getParameter("method"); 
+if (method == null || method.isBlank()) method = "CASH";
 
-        // Customer info (bạn có thể truyền từ step2 sang deposit bằng hidden, hoặc load lại từ session)
-        // Tạm: lấy từ request param hidden (bạn sẽ add hidden trong step2 form redirect sang deposit)
-        String fullName = req.getParameter("fullName");
-        String phone    = req.getParameter("phone");
-        String email    = req.getParameter("email");
-        String identity = req.getParameter("identity");
-        String address  = req.getParameter("address");
+// LẤY THÔNG TIN KHÁCH HÀNG TỪ SESSION (Thay thế đoạn req.getParameter cũ)
+HttpSession session = req.getSession();
+String fullName = (String) session.getAttribute("cus_fullName");
+String phone    = (String) session.getAttribute("cus_phone");
+String email    = (String) session.getAttribute("cus_email");
+String identity = (String) session.getAttribute("cus_identity");
+String address  = (String) session.getAttribute("cus_address");
 
-        try {
-            // ✅ Demo: giả lập thanh toán luôn SUCCESS
-            int bookingId = dao.finalizeBookingFromHold(
-                    holdId,
-                    fullName, phone, email, identity, address,
-                    0.5,
-                    method,
-                    "SUCCESS"
-            );
+try {
+    // Gọi hàm hoàn tất booking của bạn
+    int bookingId = dao.finalizeBookingFromHold(
+        holdId, fullName, phone, email, identity, address, 0.5, method, "SUCCESS"
+    );
 
-            // done -> qua trang success/chi tiết booking
-            resp.sendRedirect(req.getContextPath() + "/receptionist/booking/success?bookingId=" + bookingId);
+    // Xóa rác trong session sau khi đã lưu DB thành công
+    session.removeAttribute("cus_fullName");
+    session.removeAttribute("cus_phone");
+    session.removeAttribute("cus_email");
+    session.removeAttribute("cus_identity");
+    session.removeAttribute("cus_address");
 
-        } catch (Exception ex) {
+    // Chuyển qua trang success
+    resp.sendRedirect(req.getContextPath() + "/receptionist/bookings");
+
+} catch (Exception ex) {
             req.setAttribute("errors", java.util.List.of("Payment/confirm failed: " + ex.getMessage()));
             doGet(req, resp);
         }

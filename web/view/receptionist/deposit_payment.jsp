@@ -65,6 +65,12 @@
       width:100%;
     }
     .method-btn:hover{ background: rgba(255,255,255,.06); }
+    
+    .active-method {
+    background: rgba(59,130,246,.2) !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+}
   </style>
 </head>
 
@@ -153,31 +159,34 @@
           <div class="pay-card">
             <div class="section-title mb-3">SELECT PAYMENT METHOD</div>
 
-            <form method="post" action="${pageContext.request.contextPath}/receptionist/booking/deposit">
-              <input type="hidden" name="holdId" value="${holdId}">
-              <!-- nếu muốn finalizeBookingFromHold có customer info -> add hidden từ step2 chuyển sang -->
-              <input type="hidden" name="fullName" value="${fn:escapeXml(param.fullName)}">
-              <input type="hidden" name="phone" value="${fn:escapeXml(param.phone)}">
-              <input type="hidden" name="email" value="${fn:escapeXml(param.email)}">
-              <input type="hidden" name="identity" value="${fn:escapeXml(param.identity)}">
-              <input type="hidden" name="address" value="${fn:escapeXml(param.address)}">
+            <form id="paymentForm" method="post" action="${pageContext.request.contextPath}/receptionist/booking/deposit">
+    <input type="hidden" name="holdId" value="${holdId}">
+    
+    <!-- Trường ẩn chứa phương thức thanh toán sẽ gửi lên server -->
+    <input type="hidden" name="method" id="selectedMethodInput" value="CASH">
 
-              <div class="pay-method">
-                <button class="method-btn" type="submit" name="method" value="CASH">
-                  <div class="mb-2"><i class="bi bi-credit-card-2-front" style="font-size:26px;"></i></div>
-                  <div class="fw-bold">TIỀN MẶT</div>
-                </button>
+    <div class="pay-method">
+        <!-- Nút chọn Tiền mặt (đổi type="button" để không submit ngay) -->
+        <button class="method-btn" type="button" id="btnCash" onclick="selectMethod('CASH')">
+            <div class="mb-2"><i class="bi bi-credit-card-2-front" style="font-size:26px;"></i></div>
+            <div class="fw-bold">TIỀN MẶT</div>
+        </button>
 
-                <button class="method-btn" type="submit" name="method" value="QR">
-                  <div class="mb-2"><i class="bi bi-qr-code" style="font-size:26px;"></i></div>
-                  <div class="fw-bold">MÃ QR</div>
-                </button>
-              </div>
+        <!-- Nút chọn QR -->
+        <button class="method-btn" type="button" id="btnQR" onclick="selectMethod('QR')">
+            <div class="mb-2"><i class="bi bi-qr-code" style="font-size:26px;"></i></div>
+            <div class="fw-bold">MÃ QR</div>
+        </button>
+    </div>
 
-              <div class="mt-3 small text-secondary">
-                * Demo hiện tại: bấm phương thức sẽ tự “SUCCESS” và tạo booking + chuyển held → booked.
-              </div>
-            </form>
+    <!-- Khu vực hiển thị linh hoạt (hiện QR hoặc hướng dẫn thu tiền) -->
+    <div id="dynamicPaymentArea" class="mt-4 text-center"></div>
+
+    <!-- Nút xác nhận cuối cùng (Mặc định ẩn, chỉ hiện khi chọn phương thức) -->
+    <button type="submit" class="btn btn-primary w-100 mt-4 fw-bold p-3" style="border-radius: 12px; display: none;" id="btnConfirmPayment">
+        XÁC NHẬN ĐÃ NHẬN TIỀN <i class="bi bi-check-circle ms-2"></i>
+    </button>
+</form>
           </div>
 
         </div>
@@ -188,5 +197,58 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // CẤU HÌNH TÀI KHOẢN NGÂN HÀNG KHÁCH SẠN
+    const BANK_ID = "TPB"; // Ví dụ: MB, VCB, TCB, ACB...
+    const ACCOUNT_NO = "69168259369"; // Số tài khoản
+    const ACCOUNT_NAME = "TRAN MINH DUC"; // Tên chủ tài khoản
+
+    // Lấy số tiền và mã giữ phòng từ Server gửi xuống (JSP)
+    const AMOUNT = "${deposit}"; 
+    const ADD_INFO = "Coc phong Hold ${holdId}"; // Nội dung chuyển khoản
+
+    function selectMethod(method) {
+        // Cập nhật giá trị gửi lên server
+        document.getElementById('selectedMethodInput').value = method;
+
+        // Reset màu các nút
+        document.getElementById('btnCash').classList.remove('active-method');
+        document.getElementById('btnQR').classList.remove('active-method');
+
+        const area = document.getElementById('dynamicPaymentArea');
+        const btnConfirm = document.getElementById('btnConfirmPayment');
+
+        if (method === 'CASH') {
+            document.getElementById('btnCash').classList.add('active-method');
+            area.innerHTML = 
+                '<div class="p-4 rounded-3" style="background: rgba(255,255,255,.05); border: 1px dashed rgba(255,255,255,.2);">' +
+                    '<i class="bi bi-cash-stack mb-2 d-block text-success" style="font-size: 2.5rem;"></i>' +
+                    '<p class="mb-0 text-secondary">Vui lòng thu tiền mặt từ khách hàng:</p>' +
+                    '<h3 class="fw-bold text-success mt-2"><fmt:formatNumber value="${deposit}" type="number"/> đ</h3>' +
+                '</div>';
+            btnConfirm.style.display = 'block';
+            
+        } else if (method === 'QR') {
+            document.getElementById('btnQR').classList.add('active-method');
+            
+            // ĐÃ SỬA LỖI: Dùng cộng chuỗi (+) thay cho  để không bị Tomcat báo lỗi
+            const qrUrl = "https://img.vietqr.io/image/" + BANK_ID + "-" + ACCOUNT_NO + "-compact2.png?amount=" + AMOUNT + "&addInfo=" + encodeURIComponent(ADD_INFO) + "&accountName=" + encodeURIComponent(ACCOUNT_NAME);
+            
+            area.innerHTML = 
+                '<div class="p-3 rounded-3" style="background: #fff; display: inline-block;">' +
+                    '<img src="' + qrUrl + '" alt="VietQR" style="max-width: 220px; border-radius: 8px;">' +
+                    '<p class="mt-2 mb-0 fw-bold text-dark small">Quét mã để thanh toán</p>' +
+                '</div>' +
+                '<p class="mt-3 text-secondary small"><i class="bi bi-info-circle me-1"></i>Vui lòng kiểm tra ứng dụng ngân hàng để đảm bảo đã nhận được <b class="text-white"><fmt:formatNumber value="${deposit}" type="number"/> đ</b> trước khi bấm xác nhận.</p>';
+            
+            btnConfirm.style.display = 'block';
+        }
+    }
+    // Mặc định chọn Tiền mặt khi load trang
+    document.addEventListener("DOMContentLoaded", () => {
+        selectMethod('CASH');
+    });
+</script>
 </body>
 </html>

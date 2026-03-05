@@ -59,10 +59,10 @@ public class ReceptionistBookingCustomerServlet extends HttpServlet {
         Integer holdId = parseIntOrNull(req.getParameter("holdId"));
         if (holdId == null) {
             resp.sendRedirect(req.getContextPath() + "/receptionist/booking/create");
-            return;
+            return; // CHỐT CHẶN 1
         }
 
-        // ===== customer input =====
+        // ===== 1. Lấy dữ liệu từ Form =====
         String fullName = utils.Validation.trimToNull(req.getParameter("fullName"));
         String phone    = utils.Validation.trimToNull(req.getParameter("phone"));
         String email    = utils.Validation.trimToNull(req.getParameter("email"));
@@ -71,33 +71,31 @@ public class ReceptionistBookingCustomerServlet extends HttpServlet {
 
         java.util.List<String> errors = new java.util.ArrayList<>();
 
+        // ===== 2. Kiểm tra lỗi (Validate) =====
         if (fullName == null) errors.add("Full Name is required.");
         else if (!utils.Validation.isValidFullNameNoNumber(fullName)) errors.add("Full Name is invalid (no numbers).");
 
         if (phone == null) errors.add("Phone is required.");
         else if (!utils.Validation.isPhoneVN(phone)) errors.add("Phone number is invalid (VN format: 0xxxxxxxxx).");
 
-        // Email optional, nhưng nếu có thì phải đúng format
         if (email != null && !utils.Validation.isEmail(email)) errors.add("Email is invalid.");
-
         if (identity != null && !utils.Validation.isCCCD(identity)) errors.add("Identity/CCCD must be 12 digits.");
 
         if (address == null) errors.add("Address is required.");
         else if (!utils.Validation.minLen(address, 5)) errors.add("Address is too short.");
 
+        // ===== 3. NẾU CÓ LỖI -> Hiển thị lỗi và DỪNG LẠI =====
         if (!errors.isEmpty()) {
             req.setAttribute("errors", errors);
-
-            // giữ lại dữ liệu input để fill lại
+            // Giữ lại dữ liệu cũ để lễ tân không phải nhập lại từ đầu
             req.setAttribute("fullName", fullName);
             req.setAttribute("phone", phone);
             req.setAttribute("email", email);
             req.setAttribute("identity", identity);
             req.setAttribute("address", address);
 
-            // load lại summary
             try {
-                HoldSummary s = dao.getHoldSummary(holdId);
+                model.HoldSummary s = dao.getHoldSummary(holdId);
                 if (s != null) {
                     req.setAttribute("holdId", s.holdId);
                     req.setAttribute("checkIn", s.checkIn);
@@ -112,10 +110,18 @@ public class ReceptionistBookingCustomerServlet extends HttpServlet {
             } catch (Exception ignore) {}
 
             req.getRequestDispatcher("/view/receptionist/customer_info.jsp").forward(req, resp);
-            return;
+            return; // CHỐT CHẶN 2: Bắt buộc phải có để code không chạy xuống dưới
         }
 
-        // ✅ Ở đây bạn sẽ: insert customer + booking + booking_room_types + confirmHold(holdId)
-        // Nhưng vì bạn đang muốn chuyển sang bước đặt cọc/thanh toán:
-resp.sendRedirect(req.getContextPath() + "/receptionist/booking/deposit?holdId=" + holdId);    }
+        // ===== 4. NẾU HỢP LỆ -> Lưu vào Session và chuyển sang Thanh toán =====
+        HttpSession session = req.getSession();
+        session.setAttribute("cus_fullName", fullName);
+        session.setAttribute("cus_phone", phone);
+        session.setAttribute("cus_email", email);
+        session.setAttribute("cus_identity", identity);
+        session.setAttribute("cus_address", address);
+
+        resp.sendRedirect(req.getContextPath() + "/receptionist/booking/deposit?holdId=" + holdId);
+        return; // CHỐT CHẶN CUỐI CÙNG
+    }
 }

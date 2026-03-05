@@ -32,6 +32,16 @@
                     </div>
                 </div>
 
+                        <c:if test="${not empty errors}">
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            <c:forEach var="e" items="${errors}">
+                <li>${e}</li>
+            </c:forEach>
+        </ul>
+    </div>
+</c:if>
+                        
                 <div class="cb-wrap">
 
                     <!-- LEFT COLUMN -->
@@ -124,16 +134,7 @@
                                 <c:forEach var="c" items="${cards}">
                                     <a class="rt-card ${c.roomTypeId == roomTypeId ? 'active' : ''}"
                                        data-room-id="${c.roomTypeId}"
-                                       href="${pageContext.request.contextPath}/receptionist/booking/create
-                                       ?checkIn=<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>
-                                       &checkOut=<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>
-                                       &rooms=${rooms}&adults=${adults}&children=${children}
-                                       &roomTypeId=${c.roomTypeId}
-                                       &fullName=${fn:escapeXml(param.fullName)}
-                                       &phone=${fn:escapeXml(param.phone)}
-                                       &email=${fn:escapeXml(param.email)}
-                                       &identity=${fn:escapeXml(param.identity)}
-                                       &address=${fn:escapeXml(param.address)}">
+                                       href="${pageContext.request.contextPath}/receptionist/booking/create?checkIn=<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>&checkOut=<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>&rooms=${rooms}&adults=${adults}&children=${children}&roomTypeId=${c.roomTypeId}&fullName=${fn:escapeXml(param.fullName)}&phone=${fn:escapeXml(param.phone)}&email=${fn:escapeXml(param.email)}&identity=${fn:escapeXml(param.identity)}&address=${fn:escapeXml(param.address)}">
                                         <!--
                                         <c:choose>
                                             <c:when test="${c.uiStatus=='ok'}">
@@ -206,8 +207,8 @@
 
                         <!-- POST confirm: gửi đủ data -->
                         <form method="post" action="${pageContext.request.contextPath}/receptionist/booking/create" class="mt-3">
-                            <input type="hidden" name="checkIn" value="<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>">
-                            <input type="hidden" name="checkOut" value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>">
+                            <input type="hidden" name="checkIn" value="${fn:escapeXml(param.checkIn)}">
+                            <input type="hidden" name="checkOut" value="${fn:escapeXml(param.checkOut)}">
                             <input type="hidden" name="rooms" value="${rooms}">
                             <input type="hidden" name="adults" value="${adults}">
                             <input type="hidden" name="children" value="${children}">
@@ -217,6 +218,7 @@
                                 NEXT: CUSTOMER INFO <i class="bi bi-arrow-right ms-1"></i>
                             </button>
                         </form>
+
 
                         <div class="hint mt-2">
                             Status will be set to <b>PENDING_DEPOSIT</b>; deposit required.
