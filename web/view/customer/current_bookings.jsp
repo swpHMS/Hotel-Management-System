@@ -490,9 +490,11 @@
         </c:when>
 
         <c:otherwise>
+
             <div class="cb-list">
                 <c:forEach var="b" items="${currentBookings}">
                     <div class="cb-card"
+                         data-rooms="${b.quantity}"
                          data-booking-id="${b.bookingId}"
                          data-status-text="${b.statusText}"
                          data-status-ui="${b.statusUiType}"
@@ -501,7 +503,7 @@
                          data-checkin="<fmt:formatDate value='${b.checkInDate}' pattern='dd/MM/yyyy'/>"
                          data-checkout="<fmt:formatDate value='${b.checkOutDate}' pattern='dd/MM/yyyy'/>"
                          data-occupancy="Up to ${b.maxAdult} Adults, ${b.maxChildren} Children"
-                         data-total="${b.totalAmount}"
+                         data-total="${b.displayTotalAmount}"
                          data-amenities="${b.amenitiesText}">
 
                         <!-- LEFT -->
@@ -550,8 +552,8 @@
                                     <div class="k">TOTAL</div>
                                     <div class="v">
                                         <c:choose>
-                                            <c:when test="${b.totalAmount != null && b.totalAmount > 0}">
-                                                <fmt:formatNumber value="${b.totalAmount}" type="number" minFractionDigits="2"/>
+                                            <c:when test="${b.displayTotalAmount != null && b.displayTotalAmount > 0}">
+                                                <fmt:formatNumber value="${b.displayTotalAmount}" type="number" minFractionDigits="2"/>
                                             </c:when>
                                             <c:otherwise>TBD</c:otherwise>
                                         </c:choose>
@@ -561,6 +563,11 @@
                                 <div class="cb-item">
                                     <div class="k">BOOKING ID</div>
                                     <div class="v">#${b.bookingId}</div>
+                                </div>
+
+                                <div class="cb-item">
+                                    <div class="k">ROOMS</div>
+                                    <div class="v">${b.roomQuantityText}</div>
                                 </div>
                             </div>
 
@@ -629,6 +636,10 @@
                 <div class="cbm-box">
                     <div class="cbm-k">OCCUPANCY</div>
                     <div class="cbm-v" id="cbmOcc">—</div>
+                </div>
+                <div class="cbm-box">
+                    <div class="cbm-k">ROOMS</div>
+                    <div class="cbm-v" id="cbmRooms">—</div>
                 </div>
                 <div class="cbm-box">
                     <div class="cbm-k">CHECK-IN</div>
@@ -778,4 +789,3 @@
 
     });
 </script>
-
