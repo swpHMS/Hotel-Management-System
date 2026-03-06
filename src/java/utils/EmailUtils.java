@@ -100,24 +100,43 @@ public class EmailUtils {
     }
     
     // 5. Hàm gửi tông báo confirm booking thành công 
-    public static void sendBookingEmail(String to, String templateCode, Map<String, String> replacements) {
-        // 1. Lấy Template từ DB
+     public static void sendBookingEmail(String to, String templateCode, Map<String, String> replacements) throws Exception {
+        System.out.println("[DEBUG] Chuan bi gui mail toi: " + to);
+        System.out.println("[DEBUG] Template code: " + templateCode);
+        System.out.println("[DEBUG] Replacements: " + replacements);
+
         AdminTemplateDAO dao = new AdminTemplateDAO();
         EmailTemplate template = dao.getTemplateByCode(templateCode);
 
-        if (template != null) {
-            String subject = template.getSubject();
-            String htmlContent = template.getContent();
-
-            // 2. Duyệt Map để thay thế các biến {{key}} trong HTML
-            for (Map.Entry<String, String> entry : replacements.entrySet()) {
-                htmlContent = htmlContent.replace("{{" + entry.getKey() + "}}", entry.getValue());
-            }
-
-            // 3. Gọi hàm sendEmail chung bạn đã viết để gửi đi
-            sendEmail(to, subject, htmlContent);
-        } else {
-            System.out.println("Không tìm thấy template với mã: " + templateCode);
+        if (template == null) {
+            throw new RuntimeException("Khong tim thay template voi ma: " + templateCode);
         }
+
+        if (!template.isActive()) {
+            throw new RuntimeException("Template dang bi inactive: " + templateCode);
+        }
+
+        String subject = template.getSubject();
+        String htmlContent = template.getContent();
+
+        if (htmlContent == null || htmlContent.isBlank()) {
+            throw new RuntimeException("Noi dung template rong: " + templateCode);
+        }
+
+        if (replacements != null) {
+            for (Map.Entry<String, String> entry : replacements.entrySet()) {
+                String placeholder = "{{" + entry.getKey() + "}}";
+                String value = (entry.getValue() != null) ? entry.getValue() : "";
+                htmlContent = htmlContent.replace(placeholder, value);
+                subject = subject != null ? subject.replace(placeholder, value) : "";
+            }
+        }
+
+        System.out.println("[DEBUG] Subject sau replace: " + subject);
+        System.out.println("[DEBUG] Preview content: " +
+                (htmlContent.length() > 200 ? htmlContent.substring(0, 200) : htmlContent));
+
+        sendEmail(to, subject, htmlContent);
+        System.out.println("[INFO] Gui mail thanh cong toi: " + to);
     }
 }

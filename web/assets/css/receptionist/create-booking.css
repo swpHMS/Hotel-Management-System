@@ -10,6 +10,16 @@ html{
     min-height: 100vh;
 }
 
+@media (max-width: 992px) {
+
+    .hms-main {
+        margin-left: 0;
+        width: 100%;
+        padding: 16px;
+    }
+
+}
+
 .cb-wrap{
     display: grid;
     grid-template-columns: 1.2fr 0.8fr; /* hoặc 1.2fr .9fr tuỳ bạn */

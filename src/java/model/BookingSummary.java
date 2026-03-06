@@ -10,6 +10,12 @@ public class BookingSummary {
     private Date checkOutDate;
     private String status;
     private long totalAmount;
+    private long deposit;    // Tiền cọc
+    private String roomTypeName;
+private int quantity;
+
+
+    
 
     // Getters và Setters
     public int getBookingId() { return bookingId; }
@@ -26,4 +32,30 @@ public class BookingSummary {
     public void setStatus(String status) { this.status = status; }
     public long getTotalAmount() { return totalAmount; }
     public void setTotalAmount(long totalAmount) { this.totalAmount = totalAmount; }
+    public long getDeposit() {
+        return deposit;
+    }
+
+    public void setDeposit(long deposit) {
+        this.deposit = deposit;
+    }
+    
+    public String getRoomTypeName() {
+    return roomTypeName;
+}
+
+public void setRoomTypeName(String roomTypeName) {
+    this.roomTypeName = roomTypeName;
+}
+
+public int getQuantity() {
+    return quantity;
+}
+
+public void setQuantity(int quantity) {
+    this.quantity = quantity;
+}
+
+
+
 }

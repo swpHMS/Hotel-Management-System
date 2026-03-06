@@ -7,6 +7,7 @@
 <html lang="vi">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Customer Information</title>
 
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -29,7 +30,6 @@
                     </a>
                     <div>
                         <div class="fw-bold fs-4">CUSTOMER INFORMATION</div>
-                        <div class="text-secondary">Step 2/2 – Fill guest details and confirm.</div>
                     </div>
                 </div>
                 <c:if test="${not empty errors}">
@@ -65,13 +65,13 @@
 
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Full Name *</label>
+                                    <label class="form-label">Full Name </label>
                                     <input class="form-control" name="fullName" required
                                            value="${fn:escapeXml(not empty fullName ? fullName : param.fullName)}">
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label">Phone *</label>
+                                    <label class="form-label">Phone </label>
                                     <input class="form-control" name="phone" required
                                            value="${fn:escapeXml(not empty phone ? phone : param.phone)}">
                                 </div>
@@ -89,7 +89,7 @@
                                 </div>
 
                                 <div class="col-md-12">
-                                    <label class="form-label">Address *</label>
+                                    <label class="form-label">Address </label>
                                     <input class="form-control" name="address" required
                                            value="${fn:escapeXml(not empty address ? address : param.address)}">
                                 </div>
@@ -127,9 +127,10 @@
                                 <div class="sum-total"><fmt:formatNumber value="${total}" type="number"/> đ</div>
                             </div>
 
-                            <div class="hint mt-2">
+                            <!--<div class="hint mt-2">
                                 After confirm, status will be <b>PENDING_DEPOSIT</b>.
                             </div>
+                            -->
 
                             <!-- ✅ Submit button in black box -->
                             <button class="btn btn-primary btn-confirm mt-3" type="submit">

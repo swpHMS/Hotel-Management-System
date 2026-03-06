@@ -137,7 +137,6 @@ public class ReceptBookingDAO extends DBContext {
                 st.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
             }
 
-            // 1) insert hold header
             int holdId;
             try (PreparedStatement ps = con.prepareStatement(sqlInsertHold, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setInt(1, userId);
@@ -155,7 +154,6 @@ public class ReceptBookingDAO extends DBContext {
                 }
             }
 
-            // 2) insert hold item
             try (PreparedStatement ps = con.prepareStatement(sqlInsertItem)) {
                 ps.setInt(1, holdId);
                 ps.setInt(2, roomTypeId);
@@ -163,7 +161,6 @@ public class ReceptBookingDAO extends DBContext {
                 ps.executeUpdate();
             }
 
-            // 3) loop each day [checkIn, checkOut)
             LocalDate d = checkIn.toLocalDate();
             LocalDate end = checkOut.toLocalDate();
 
@@ -262,10 +259,11 @@ public class ReceptBookingDAO extends DBContext {
             }
         }
     }
-    // ================================
-// 6) FINALIZE BOOKING FROM HOLD (held -> booked) + insert customer + booking + payment
-// ================================
 
+    // ================================
+    // 6) FINALIZE BOOKING FROM HOLD
+    // held -> booked + insert customer + booking + payment
+    // ================================
     public int finalizeBookingFromHold(
             int holdId,
             String fullName,
@@ -273,13 +271,11 @@ public class ReceptBookingDAO extends DBContext {
             String email,
             String identity,
             String address,
-            double depositRatio, // ví dụ 0.5
-            String paymentMethod, // CASH / QR / CARD / TRANSFER...
-            String paymentStatus // SUCCESS / FAILED ...
+            double depositRatio,
+            String paymentMethod,
+            String paymentStatus
     ) throws SQLException {
 
-        // Bạn chỉnh map status booking ở đây nếu DB bạn dùng INT
-        // Nếu bookings.status là VARCHAR: dùng "PENDING_DEPOSIT" / "CONFIRMED"...
         final int BOOKING_STATUS_CONFIRMED = 2;
 
         Connection con = null;
@@ -291,7 +287,6 @@ public class ReceptBookingDAO extends DBContext {
                 st.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;");
             }
 
-            // 1) Load hold summary + lock hold row
             HoldSummary hs = null;
             String sqlHold
                     = "SELECT h.hold_id, h.user_id, h.expires_at, h.check_in_date, h.check_out_date, h.status, "
@@ -332,17 +327,15 @@ public class ReceptBookingDAO extends DBContext {
                 }
             }
 
-            // 2) Check hold status + expiry
             if (hs.status != HOLD_ACTIVE) {
                 throw new SQLException("Hold is not ACTIVE.");
             }
+
             if (hs.expiresAt != null && hs.expiresAt.toInstant().isBefore(java.time.Instant.now())) {
-                // expire -> release
                 releaseHoldByIdTx(con, holdId);
                 throw new SQLException("Hold expired.");
             }
 
-            // 3) Ensure still enough held nights (lock nights rows)
             String sqlMinHeld
                     = "SELECT MIN(i.held_rooms) AS minHeld "
                     + "FROM dbo.room_type_inventory i WITH (UPDLOCK, HOLDLOCK) "
@@ -359,54 +352,110 @@ public class ReceptBookingDAO extends DBContext {
                     }
                 }
             }
+
             if (minHeld < hs.qty) {
                 throw new SQLException("Hold inventory mismatch (held_rooms < qty).");
             }
 
-            // 4) Upsert Customer (tối thiểu tạo customer)
-            // Bạn có thể đổi logic: tìm theo phone/email/identity
-            Integer customerId = null;
+            // ===== 4) UPSERT CUSTOMER =====
+            String safeFullName = (fullName == null) ? null : fullName.trim();
+String safePhone = (phone == null) ? null : phone.trim();
+String safeIdentity = (identity == null) ? null : identity.trim();
+String safeAddress = (address == null) ? null : address.trim();
 
-            String sqlFindCustomer
-                    = "SELECT TOP 1 customer_id FROM dbo.customers WHERE phone = ? ORDER BY customer_id DESC;";
-            if (phone != null) {
-                try (PreparedStatement ps = con.prepareStatement(sqlFindCustomer)) {
-                    ps.setString(1, phone);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) {
-                            customerId = rs.getInt("customer_id");
-                        }
-                    }
-                }
+if (safeFullName == null || safeFullName.isEmpty()) {
+    throw new SQLException("Customer full name is required.");
+}
+
+if (safePhone != null && safePhone.isEmpty()) safePhone = null;
+if (safeIdentity != null && safeIdentity.isEmpty()) safeIdentity = null;
+if (safeAddress != null && safeAddress.isEmpty()) safeAddress = null;
+
+Integer customerId = null;
+
+if (safePhone != null && !safePhone.isBlank()) {
+    String sqlFindCustomerByPhone =
+            "SELECT TOP 1 customer_id FROM dbo.customers WHERE phone = ? ORDER BY customer_id DESC;";
+    try (PreparedStatement ps = con.prepareStatement(sqlFindCustomerByPhone)) {
+        ps.setString(1, safePhone);
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                customerId = rs.getInt("customer_id");
             }
+        }
+    }
+}
 
-            if (customerId == null) {
-                String sqlInsertCustomer
-                        = "INSERT INTO dbo.customers(full_name, phone) VALUES(?,?);";
-                try (PreparedStatement ps = con.prepareStatement(sqlInsertCustomer, Statement.RETURN_GENERATED_KEYS)) {
-                    ps.setString(1, fullName);
-                    ps.setString(2, phone);
-                    ps.executeUpdate();
-                    try (ResultSet rs = ps.getGeneratedKeys()) {
-                        if (!rs.next()) {
-                            throw new SQLException("Cannot get customer_id.");
-                        }
-                        customerId = rs.getInt(1);
-                    }
-                }
-            } else {
-                // update name/phone if needed
-                String sqlUpdateCustomer
-                        = "UPDATE dbo.customers SET full_name = COALESCE(?, full_name), phone = COALESCE(?, phone) WHERE customer_id=?;";
-                try (PreparedStatement ps = con.prepareStatement(sqlUpdateCustomer)) {
-                    ps.setString(1, fullName);
-                    ps.setString(2, phone);
-                    ps.setInt(3, customerId);
-                    ps.executeUpdate();
-                }
+if (customerId == null && safeIdentity != null && !safeIdentity.isBlank()) {
+    String sqlFindCustomerByIdentity =
+            "SELECT TOP 1 customer_id FROM dbo.customers WHERE identity_number = ? ORDER BY customer_id DESC;";
+    try (PreparedStatement ps = con.prepareStatement(sqlFindCustomerByIdentity)) {
+        ps.setString(1, safeIdentity);
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                customerId = rs.getInt("customer_id");
             }
+        }
+    }
+}
+System.out.println("safeFullName = [" + safeFullName + "]");
+System.out.println("safePhone = [" + safePhone + "]");
+System.out.println("safeIdentity = [" + safeIdentity + "]");
+System.out.println("safeAddress = [" + safeAddress + "]");
+System.out.println("customerId = " + customerId);
+if (customerId == null) {
+    String sqlInsertCustomer =
+            "INSERT INTO dbo.customers(full_name, phone, identity_number, residence_address) "
+            + "VALUES(?, ?, ?, ?);";
 
-            // 5) Insert booking
+    try (PreparedStatement ps = con.prepareStatement(sqlInsertCustomer, Statement.RETURN_GENERATED_KEYS)) {
+        ps.setString(1, safeFullName);
+
+        if (safePhone == null) ps.setNull(2, Types.VARCHAR);
+        else ps.setString(2, safePhone);
+
+        if (safeIdentity == null) ps.setNull(3, Types.VARCHAR);
+        else ps.setString(3, safeIdentity);
+
+        if (safeAddress == null) ps.setNull(4, Types.NVARCHAR);
+        else ps.setString(4, safeAddress);
+
+        ps.executeUpdate();
+
+        try (ResultSet rs = ps.getGeneratedKeys()) {
+            if (!rs.next()) {
+                throw new SQLException("Cannot get customer_id.");
+            }
+            customerId = rs.getInt(1);
+        }
+    }
+} else {
+    String sqlUpdateCustomer =
+            "UPDATE dbo.customers "
+            + "SET full_name = ?, "
+            + "    phone = ?, "
+            + "    identity_number = ?, "
+            + "    residence_address = ? "
+            + "WHERE customer_id = ?;";
+
+    try (PreparedStatement ps = con.prepareStatement(sqlUpdateCustomer)) {
+        ps.setString(1, safeFullName);
+
+        if (safePhone == null) ps.setNull(2, Types.VARCHAR);
+        else ps.setString(2, safePhone);
+
+        if (safeIdentity == null) ps.setNull(3, Types.VARCHAR);
+        else ps.setString(3, safeIdentity);
+
+        if (safeAddress == null) ps.setNull(4, Types.NVARCHAR);
+        else ps.setString(4, safeAddress);
+
+        ps.setInt(5, customerId);
+        ps.executeUpdate();
+    }
+}
+
+            // ===== 5) INSERT BOOKING =====
             String sqlInsertBooking
                     = "INSERT INTO dbo.bookings(customer_id, status, check_in_date, check_out_date, total_amount) "
                     + "VALUES(?,?,?,?,?);";
@@ -427,7 +476,7 @@ public class ReceptBookingDAO extends DBContext {
                 }
             }
 
-            // 6) Insert booking_room_types (price_at_booking = rate lúc booking)
+            // ===== 6) INSERT BOOKING ROOM TYPES =====
             String sqlInsertBRT
                     = "INSERT INTO dbo.booking_room_types(booking_id, room_type_id, quantity, price_at_booking) "
                     + "VALUES(?,?,?,?);";
@@ -439,7 +488,7 @@ public class ReceptBookingDAO extends DBContext {
                 ps.executeUpdate();
             }
 
-            // 7) Insert payment deposit (50%)
+            // ===== 7) INSERT PAYMENT =====
             long depositAmount = Math.round(hs.total * depositRatio);
             String sqlInsertPayment
                     = "INSERT INTO dbo.payments(booking_id, amount, method, status) VALUES(?,?,?,?);";
@@ -447,21 +496,22 @@ public class ReceptBookingDAO extends DBContext {
                 ps.setInt(1, bookingId);
                 ps.setBigDecimal(2, new java.math.BigDecimal(depositAmount));
 
-                // --- BỔ SUNG: CHUYỂN ĐỔI CHỮ (VARCHAR) SANG SỐ (INT) ---
-                int methodInt = 1; // Mặc định 1 là Tiền mặt (CASH)
+                int methodInt = 1; // CASH
                 if ("QR".equalsIgnoreCase(paymentMethod)) {
-                    methodInt = 2; // 2 là Chuyển khoản (QR)
+                    methodInt = 2;
                 }
 
-                int statusInt = 1; // Mặc định 1 là SUCCESS (Thành công)
-                // -------------------------------------------------------
+                int statusInt = 1; // SUCCESS
+                if ("FAILED".equalsIgnoreCase(paymentStatus)) {
+                    statusInt = 0;
+                }
 
-                ps.setInt(3, methodInt); // Thay vì setString, ta dùng setInt
-                ps.setInt(4, statusInt); // Thay vì setString, ta dùng setInt
+                ps.setInt(3, methodInt);
+                ps.setInt(4, statusInt);
                 ps.executeUpdate();
             }
 
-            // 8) held -> booked theo từng night (dựa trên availability_hold_nights)
+            // ===== 8) HELD -> BOOKED =====
             String sqlMoveHeldToBooked
                     = "UPDATE i "
                     + "SET i.booked_rooms = i.booked_rooms + n.quantity, "
@@ -479,7 +529,7 @@ public class ReceptBookingDAO extends DBContext {
                 }
             }
 
-            // 9) Update hold status -> CONFIRMED
+            // ===== 9) HOLD -> CONFIRMED =====
             String sqlUpdateHold
                     = "UPDATE dbo.availability_holds SET status = ? WHERE hold_id = ?;";
             try (PreparedStatement ps = con.prepareStatement(sqlUpdateHold)) {
@@ -503,9 +553,9 @@ public class ReceptBookingDAO extends DBContext {
         }
     }
 
-// ================================
-// 7) RELEASE HOLD BY ID (public)
-// ================================
+    // ================================
+    // 7) RELEASE HOLD BY ID (public)
+    // ================================
     public void releaseHoldById(int holdId) throws SQLException {
         Connection con = null;
         try {
@@ -528,9 +578,8 @@ public class ReceptBookingDAO extends DBContext {
         }
     }
 
-// ===== internal tx helper =====
+    // ===== internal tx helper =====
     private void releaseHoldByIdTx(Connection con, int holdId) throws SQLException {
-        // giảm held_rooms theo nights
         String sqlDec
                 = "UPDATE i "
                 + "SET i.held_rooms = CASE WHEN i.held_rooms >= n.quantity THEN i.held_rooms - n.quantity ELSE 0 END "
@@ -544,7 +593,6 @@ public class ReceptBookingDAO extends DBContext {
             ps.executeUpdate();
         }
 
-        // update hold status -> CANCELLED (hoặc EXPIRED)
         String sqlHold
                 = "UPDATE dbo.availability_holds SET status=? WHERE hold_id=? AND status=?;";
         try (PreparedStatement ps = con.prepareStatement(sqlHold)) {
@@ -556,7 +604,7 @@ public class ReceptBookingDAO extends DBContext {
     }
 
     // ================================
-    // DỌN DẸP CÁC HOLD QUÁ HẠN (TỰ ĐỘNG NHẢ PHÒNG)
+    // DỌN DẸP CÁC HOLD QUÁ HẠN
     // ================================
     public int expireHolds() throws SQLException {
         Connection con = null;
@@ -582,11 +630,11 @@ public class ReceptBookingDAO extends DBContext {
         String select = "SELECT hold_id FROM dbo.availability_holds WHERE status = ? AND expires_at < SYSDATETIME()";
         int count = 0;
         try (PreparedStatement psSel = con.prepareStatement(select)) {
-            psSel.setInt(1, HOLD_ACTIVE); // HOLD_ACTIVE = 1
+            psSel.setInt(1, HOLD_ACTIVE);
             try (ResultSet rs = psSel.executeQuery()) {
                 while (rs.next()) {
                     int holdId = rs.getInt(1);
-                    // 1. Trừ số lượng phòng bị giam (held_rooms)
+
                     try (PreparedStatement psInv = con.prepareStatement(
                             "UPDATE inv SET inv.held_rooms = inv.held_rooms - hn.quantity "
                             + "FROM dbo.room_type_inventory inv "
@@ -596,10 +644,10 @@ public class ReceptBookingDAO extends DBContext {
                         psInv.setInt(1, holdId);
                         psInv.executeUpdate();
                     }
-                    // 2. Chuyển trạng thái Hold thành EXPIRED (3)
+
                     try (PreparedStatement psUp = con.prepareStatement(
                             "UPDATE dbo.availability_holds SET status = ? WHERE hold_id = ?")) {
-                        psUp.setInt(1, HOLD_EXPIRED); // HOLD_EXPIRED = 3
+                        psUp.setInt(1, HOLD_EXPIRED);
                         psUp.setInt(2, holdId);
                         psUp.executeUpdate();
                     }
@@ -609,5 +657,4 @@ public class ReceptBookingDAO extends DBContext {
         }
         return count;
     }
-
 }

@@ -41,7 +41,7 @@ public class BookingConfirmServlet extends HttpServlet {
 
             // (1) Thử lấy từ các object session hay dùng
             Object u = session.getAttribute("userAccount"); // ✅ QUAN TRỌNG
-if (u == null) u = session.getAttribute("user");
+            if (u == null) u = session.getAttribute("user");
             if (u == null) u = session.getAttribute("account");
             if (u == null) u = session.getAttribute("currentUser");
             if (u == null) u = session.getAttribute("profile");
