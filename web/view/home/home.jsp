@@ -372,6 +372,7 @@
         </section>
 
         <jsp:include page="footer.jsp"/>
+
         <div class="room-modal" id="roomModal" aria-hidden="true">
             <div class="room-modal__backdrop" data-close="1"></div>
 

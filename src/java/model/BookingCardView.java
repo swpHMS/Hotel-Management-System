@@ -3,6 +3,7 @@ package model;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class BookingCardView {
@@ -26,16 +27,12 @@ public class BookingCardView {
 
     private List<String> imageUrls;
 
-    // Amenities
     private String amenitiesText;
 
     public BookingCardView() {
     }
 
-    // ===== CANCEL LOGIC (CHUẨN) =====
     public boolean isCanCancel() {
-
-        // chỉ cho huỷ nếu status = PENDING (1) hoặc CONFIRMED (2)
         if (bookingStatus != 1 && bookingStatus != 2) {
             return false;
         }
@@ -48,11 +45,43 @@ public class BookingCardView {
         LocalDate checkIn = checkInDate.toLocalDate();
         LocalDate deadline = checkIn.minusDays(1);
 
-        // chỉ cho huỷ nếu hôm nay <= deadline
         return !today.isAfter(deadline);
     }
 
-    // ===== BASIC INFO =====
+    public long getNightCount() {
+        if (checkInDate == null || checkOutDate == null) {
+            return 0;
+        }
+
+        long nights = ChronoUnit.DAYS.between(
+                checkInDate.toLocalDate(),
+                checkOutDate.toLocalDate()
+        );
+
+        return Math.max(nights, 0);
+    }
+
+    public BigDecimal getDisplayTotalAmount() {
+        if (totalAmount != null && totalAmount.compareTo(BigDecimal.ZERO) > 0) {
+            return totalAmount;
+        }
+
+        if (priceAtBooking != null && quantity > 0) {
+            long nights = getNightCount();
+            if (nights > 0) {
+                return priceAtBooking
+                        .multiply(BigDecimal.valueOf(quantity))
+                        .multiply(BigDecimal.valueOf(nights));
+            }
+        }
+
+        return null;
+    }
+
+    public String getRoomQuantityText() {
+        return quantity + (quantity > 1 ? " rooms" : " room");
+    }
+
     public int getBookingId() {
         return bookingId;
     }
@@ -93,7 +122,6 @@ public class BookingCardView {
         this.totalAmount = totalAmount;
     }
 
-    // ===== ROOM INFO =====
     public int getRoomTypeId() {
         return roomTypeId;
     }
@@ -166,7 +194,6 @@ public class BookingCardView {
         this.amenitiesText = amenitiesText;
     }
 
-    // ===== STATUS TEXT =====
     public String getStatusText() {
         return switch (bookingStatus) {
             case 1 ->
