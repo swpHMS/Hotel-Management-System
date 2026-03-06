@@ -1,29 +1,37 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Manager</title>
-    <meta charset="UTF-8">
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-    <!-- Sidebar CSS -->
-    <link rel="stylesheet"
-          href="${pageContext.request.contextPath}/assets/css/sidebar-styles.css">
+        <title><%= request.getAttribute("pageTitle") != null ? request.getAttribute("pageTitle") : "Manager Panel" %></title>
 
-    <!-- Dashboard CSS -->
-    <link rel="stylesheet"
-          href="${pageContext.request.contextPath}/assets/css/dashboard-styles.css">
+        <!-- ✅ Bootstrap CSS (bạn đang dùng row/col/d-flex nên bắt buộc) -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-</head>
-<body>
+        <!-- Icons -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
-<div class="wrapper">
+        <!-- ✅ Sidebar CSS -->
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/sidebar-styles.css"/>
 
-    <jsp:include page="sidebar.jsp"/>
+        <!-- ✅ Dashboard CSS (CHÍNH là file bạn gửi) -->
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/dashboard-styles.css"/>
+    </head>
+    <body>
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/dashboard-styles.css"/>
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/sidebar-styles.css"/>
 
-    <div class="content">
-        <jsp:include page="${contentPage}"/>
-    </div>
+        <!-- Sidebar manager -->
+        <jsp:include page="/view/manager/sidebar.jsp"/>
 
-</div>
+        <!-- ✅ MAIN: class hms-main để áp margin-left 260px -->
+        <main class="hms-main">
+            <jsp:include page="<%= (String) request.getAttribute(\"contentPage\") %>"/>
+        </main>
 
-</body>
+        <!-- Bootstrap JS (optional) -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
 </html>
