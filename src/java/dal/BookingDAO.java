@@ -93,7 +93,7 @@ public class BookingDAO extends DBContext {
                 rti.imageUrls AS imageUrls,
 
                 SUM(brt.quantity)         AS quantity,
-                MIN(brt.price_at_booking) AS priceAtBooking,
+                MAX(brt.price_at_booking) AS priceAtBooking,
 
                 amen.amenitiesText AS amenitiesText
 

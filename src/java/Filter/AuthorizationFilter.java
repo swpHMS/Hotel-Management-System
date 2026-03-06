@@ -81,6 +81,13 @@ public class AuthorizationFilter implements Filter {
 
         chain.doFilter(request, response);
     }
+    
+    if (uri.contains("/manager/")) {
+        if (user == null || user.getRoleId() != 2) {
+            res.sendRedirect(contextPath + "/home");
+            return;
+        }
+    }
 
     @Override
     public void destroy() {}
