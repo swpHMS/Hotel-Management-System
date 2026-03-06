@@ -17,7 +17,8 @@ import model.User;
 public class AuthorizationFilter implements Filter {
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {}
+    public void init(FilterConfig filterConfig) throws ServletException {
+    }
 
     private boolean isStaticResource(String uri) {
         return uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".png")
@@ -63,6 +64,12 @@ public class AuthorizationFilter implements Filter {
                 return;
             }
         }
+        if (uri.contains("/manager/")) {
+            if (user == null || user.getRoleId() != 2) {
+                res.sendRedirect(contextPath + "/home");
+                return;
+            }
+        }
 
         // 3) ✅ booking / filter -> bắt login
         if (mustLogin(uri)) {
@@ -70,7 +77,9 @@ public class AuthorizationFilter implements Filter {
                 // lưu url để login xong quay lại trang đang filter/booking
                 String redirect = req.getRequestURI();
                 String qs = req.getQueryString();
-                if (qs != null) redirect += "?" + qs;
+                if (qs != null) {
+                    redirect += "?" + qs;
+                }
 
                 req.getSession(true).setAttribute("redirectAfterLogin", redirect);
 
@@ -81,14 +90,8 @@ public class AuthorizationFilter implements Filter {
 
         chain.doFilter(request, response);
     }
-    
-    if (uri.contains("/manager/")) {
-        if (user == null || user.getRoleId() != 2) {
-            res.sendRedirect(contextPath + "/home");
-            return;
-        }
-    }
 
     @Override
-    public void destroy() {}
+    public void destroy() {
+    }
 }
