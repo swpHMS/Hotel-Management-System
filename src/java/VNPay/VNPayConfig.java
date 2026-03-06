@@ -13,5 +13,5 @@ public class VNPayConfig {
 
     // ✅ ReturnUrl: trỏ về servlet xử lý kết quả
     public static final String vnp_ReturnUrl =
-            "http://localhost:9999/SWP391_HMS_GR2_booking/vnpay-return";
+            "http://localhost:9999/SWP391_HMS_GR2/vnpay-return";
 }
