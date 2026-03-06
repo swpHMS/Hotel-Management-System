@@ -20,16 +20,71 @@ public class StayRoomAssignment {
     public StayRoomAssignment() {
     }
 
-    // Getters và Setters
-    public int getAssignmentId() { return assignmentId; }
-    public void setAssignmentId(int assignmentId) { this.assignmentId = assignmentId; }
+    public StayRoomAssignment(int assignmentId, int bookingId, int roomId, String roomTypeName, int roomTypeId, int numPersons, int status) {
+        this.assignmentId = assignmentId;
+        this.bookingId = bookingId;
+        this.roomId = roomId;
+        this.roomTypeName = roomTypeName;
+        this.roomTypeId = roomTypeId;
+        this.numPersons = numPersons;
+        this.status = status;
+    }
 
-    public String getRoomTypeName() { return roomTypeName; }
-    public void setRoomTypeName(String roomTypeName) { this.roomTypeName = roomTypeName; }
+    public int getAssignmentId() {
+        return assignmentId;
+    }
 
-    public int getRoomTypeId() { return roomTypeId; }
-    public void setRoomTypeId(int roomTypeId) { this.roomTypeId = roomTypeId; }
+    public void setAssignmentId(int assignmentId) {
+        this.assignmentId = assignmentId;
+    }
 
-    public int getNumPersons() { return numPersons; }
-    public void setNumPersons(int numPersons) { this.numPersons = numPersons; }
+    public int getBookingId() {
+        return bookingId;
+    }
+
+    public void setBookingId(int bookingId) {
+        this.bookingId = bookingId;
+    }
+
+    public int getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(int roomId) {
+        this.roomId = roomId;
+    }
+
+    public String getRoomTypeName() {
+        return roomTypeName;
+    }
+
+    public void setRoomTypeName(String roomTypeName) {
+        this.roomTypeName = roomTypeName;
+    }
+
+    public int getRoomTypeId() {
+        return roomTypeId;
+    }
+
+    public void setRoomTypeId(int roomTypeId) {
+        this.roomTypeId = roomTypeId;
+    }
+
+    public int getNumPersons() {
+        return numPersons;
+    }
+
+    public void setNumPersons(int numPersons) {
+        this.numPersons = numPersons;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    
 }
