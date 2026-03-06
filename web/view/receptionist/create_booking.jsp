@@ -64,16 +64,18 @@
 
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label">Check-in date</label>
-                                    <input type="date" class="form-control" name="checkIn" id="checkInDate"
-                                           value="<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>">
-                                </div>
+    <label class="form-label">Check-in date</label>
+    <input type="date" class="form-control" name="checkIn" id="checkInDate"
+           value="<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>"
+           min="<%= java.time.LocalDate.now().toString() %>">
+</div>
 
-                                <div class="col-md-4">
-                                    <label class="form-label">Check-out date</label>
-                                    <input type="date" class="form-control" name="checkOut" id="checkOutDate"
-                                           value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>">
-                                </div>
+<div class="col-md-4">
+    <label class="form-label">Check-out date</label>
+    <input type="date" class="form-control" name="checkOut" id="checkOutDate"
+           value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>"
+           min="<%= java.time.LocalDate.now().plusDays(1).toString() %>">
+</div>
 
 
                                 <!-- Room Type (dropdown) -->
@@ -100,7 +102,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Adults</label>
                                     <select class="form-select" name="adults">
-                                        <c:forEach var="i" begin="1" end="6">
+                                        <c:forEach var="i" begin="1" end="10">
                                             <option value="${i}" ${i==adults?'selected':''}>${i} Adult</option>
                                         </c:forEach>
                                     </select>
@@ -275,36 +277,70 @@ document.addEventListener("DOMContentLoaded", function () {
     const checkInInput = document.getElementById("checkInDate");
     const checkOutInput = document.getElementById("checkOutDate");
 
-    if (checkInInput && checkOutInput) {
-        checkInInput.addEventListener("change", function() {
-            // Lấy ngày check-in
-            let checkInDate = new Date(this.value);
-            
-            // Ngày check-out tối thiểu phải là ngày hôm sau
-            checkInDate.setDate(checkInDate.getDate() + 1);
-            let minCheckOut = checkInDate.toISOString().split('T');
-            
-            // Set thuộc tính min cho input check-out để chặn click ngày trong quá khứ
-            checkOutInput.min = minCheckOut;
+    if (!checkInInput || !checkOutInput) return;
 
-            // Nếu user đã chọn check-out từ trước mà giờ trở nên không hợp lệ -> Cảnh báo
-            if (new Date(checkOutInput.value) <= new Date(this.value)) {
-                alert("Ngày Check-out không được nhỏ hơn hoặc bằng ngày Check-in!");
-                checkOutInput.value = minCheckOut; // Tự reset về ngày hợp lệ gần nhất
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+
+    // luôn chặn chọn ngày check-in trong quá khứ
+    checkInInput.min = todayStr;
+
+    function formatDate(date) {
+        return date.toISOString().split("T")[0];
+    }
+
+    function updateCheckOutMin() {
+        if (!checkInInput.value) return;
+
+        const checkInDate = new Date(checkInInput.value);
+        checkInDate.setDate(checkInDate.getDate() + 1);
+
+        const minCheckOut = formatDate(checkInDate);
+        checkOutInput.min = minCheckOut;
+
+        if (!checkOutInput.value || checkOutInput.value < minCheckOut) {
+            checkOutInput.value = minCheckOut;
+        }
+    }
+
+    // chạy ngay khi load trang
+    updateCheckOutMin();
+
+    // khi đổi check-in
+    checkInInput.addEventListener("change", function () {
+        if (checkInInput.value < todayStr) {
+            alert("Không được chọn ngày Check-in trong quá khứ!");
+            checkInInput.value = todayStr;
+        }
+
+        updateCheckOutMin();
+    });
+
+    // khi đổi check-out
+    checkOutInput.addEventListener("change", function () {
+        if (checkOutInput.value <= checkInInput.value) {
+            alert("Ngày Check-out phải lớn hơn ngày Check-in!");
+            updateCheckOutMin();
+        }
+    });
+
+    // chặn submit nếu user cố nhập sai
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", function (e) {
+            if (checkInInput.value < todayStr) {
+                e.preventDefault();
+                alert("Không được chọn ngày Check-in trong quá khứ!");
+                checkInInput.focus();
+                return;
+            }
+
+            if (checkOutInput.value <= checkInInput.value) {
+                e.preventDefault();
+                alert("Ngày Check-out phải lớn hơn ngày Check-in!");
+                checkOutInput.focus();
             }
         });
-        
-        // Ngăn form submit nếu cố tình nhập sai
-        const forms = document.querySelectorAll("form");
-        forms.forEach(form => {
-            form.addEventListener("submit", function(e) {
-                if (new Date(checkOutInput.value) <= new Date(checkInInput.value)) {
-                    e.preventDefault();
-                    alert("Vui lòng kiểm tra lại: Ngày Check-out phải lớn hơn ngày Check-in.");
-                }
-            });
-        });
-    }
+    });
 });
 </script>
 
