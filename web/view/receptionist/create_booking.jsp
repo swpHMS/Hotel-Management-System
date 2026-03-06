@@ -28,20 +28,19 @@
                     </a>
                     <div>
                         <div class="fw-bold fs-4">CREATE BOOKING</div>
-                        <div class="text-secondary">Create a future reservation for guest.</div>
                     </div>
                 </div>
 
-                        <c:if test="${not empty errors}">
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            <c:forEach var="e" items="${errors}">
-                <li>${e}</li>
-            </c:forEach>
-        </ul>
-    </div>
-</c:if>
-                        
+                <c:if test="${not empty errors}">
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            <c:forEach var="e" items="${errors}">
+                                <li>${e}</li>
+                                </c:forEach>
+                        </ul>
+                    </div>
+                </c:if>
+
                 <div class="cb-wrap">
 
                     <!-- LEFT COLUMN -->
@@ -65,16 +64,19 @@
 
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label">Check-in date</label>
-                                    <input type="date" class="form-control" name="checkIn"
-                                           value="<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>">
-                                </div>
+    <label class="form-label">Check-in date</label>
+    <input type="date" class="form-control" name="checkIn" id="checkInDate"
+           value="<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>"
+           min="<%= java.time.LocalDate.now().toString() %>">
+</div>
 
-                                <div class="col-md-4">
-                                    <label class="form-label">Check-out date</label>
-                                    <input type="date" class="form-control" name="checkOut"
-                                           value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>">
-                                </div>
+<div class="col-md-4">
+    <label class="form-label">Check-out date</label>
+    <input type="date" class="form-control" name="checkOut" id="checkOutDate"
+           value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>"
+           min="<%= java.time.LocalDate.now().plusDays(1).toString() %>">
+</div>
+
 
                                 <!-- Room Type (dropdown) -->
                                 <div class="col-md-4">
@@ -100,7 +102,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Adults</label>
                                     <select class="form-select" name="adults">
-                                        <c:forEach var="i" begin="1" end="6">
+                                        <c:forEach var="i" begin="1" end="10">
                                             <option value="${i}" ${i==adults?'selected':''}>${i} Adult</option>
                                         </c:forEach>
                                     </select>
@@ -220,9 +222,10 @@
                         </form>
 
 
-                        <div class="hint mt-2">
+                        <!-- <div class="hint mt-2">
                             Status will be set to <b>PENDING_DEPOSIT</b>; deposit required.
                         </div>
+                        -->
                     </div>
 
                 </div>
@@ -269,6 +272,77 @@
                 setActiveCard(dropdown.value);
             });
         </script>
+        <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const checkInInput = document.getElementById("checkInDate");
+    const checkOutInput = document.getElementById("checkOutDate");
+
+    if (!checkInInput || !checkOutInput) return;
+
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+
+    // luôn chặn chọn ngày check-in trong quá khứ
+    checkInInput.min = todayStr;
+
+    function formatDate(date) {
+        return date.toISOString().split("T")[0];
+    }
+
+    function updateCheckOutMin() {
+        if (!checkInInput.value) return;
+
+        const checkInDate = new Date(checkInInput.value);
+        checkInDate.setDate(checkInDate.getDate() + 1);
+
+        const minCheckOut = formatDate(checkInDate);
+        checkOutInput.min = minCheckOut;
+
+        if (!checkOutInput.value || checkOutInput.value < minCheckOut) {
+            checkOutInput.value = minCheckOut;
+        }
+    }
+
+    // chạy ngay khi load trang
+    updateCheckOutMin();
+
+    // khi đổi check-in
+    checkInInput.addEventListener("change", function () {
+        if (checkInInput.value < todayStr) {
+            alert("Không được chọn ngày Check-in trong quá khứ!");
+            checkInInput.value = todayStr;
+        }
+
+        updateCheckOutMin();
+    });
+
+    // khi đổi check-out
+    checkOutInput.addEventListener("change", function () {
+        if (checkOutInput.value <= checkInInput.value) {
+            alert("Ngày Check-out phải lớn hơn ngày Check-in!");
+            updateCheckOutMin();
+        }
+    });
+
+    // chặn submit nếu user cố nhập sai
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", function (e) {
+            if (checkInInput.value < todayStr) {
+                e.preventDefault();
+                alert("Không được chọn ngày Check-in trong quá khứ!");
+                checkInInput.focus();
+                return;
+            }
+
+            if (checkOutInput.value <= checkInInput.value) {
+                e.preventDefault();
+                alert("Ngày Check-out phải lớn hơn ngày Check-in!");
+                checkOutInput.focus();
+            }
+        });
+    });
+});
+</script>
 
     </body>
 </html>

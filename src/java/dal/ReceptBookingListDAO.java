@@ -1,61 +1,193 @@
 package dal;
 
 import context.DBContext;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import model.BookingSummary;
 
 public class ReceptBookingListDAO extends DBContext {
 
     // ================================
-    // LẤY DANH SÁCH BOOKING (Cho trang Booking List)
+    // COUNT tổng booking
     // ================================
-    public List<model.BookingSummary> getBookingList() {
-        List<model.BookingSummary> list = new ArrayList<>();
-        // Kết hợp bảng bookings và customers
-        String sql = "SELECT b.booking_id, c.full_name, c.phone, b.check_in_date, b.check_out_date, b.status, b.total_amount " +
-                     "FROM dbo.bookings b " +
-                     "JOIN dbo.customers c ON b.customer_id = c.customer_id " +
-                     "ORDER BY b.booking_id DESC"; // Xếp đơn mới nhất lên đầu
-                     
+    public int countBookings() {
+        String sql = "SELECT COUNT(*) "
+                + "FROM dbo.bookings b "
+                + "JOIN dbo.customers c ON b.customer_id = c.customer_id";
+
         try (PreparedStatement ps = connection.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    // ================================
+    // LẤY BOOKING THEO TRANG
+    // ================================
+    public List<BookingSummary> getBookingListPaging(int page, int size) {
+        List<BookingSummary> list = new ArrayList<>();
+        int offset = (page - 1) * size;
+
+        String sql = "SELECT b.booking_id, c.full_name, c.phone, "
+                + "       b.check_in_date, b.check_out_date, b.status, b.total_amount "
+                + "FROM dbo.bookings b "
+                + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
+                + "ORDER BY b.booking_id DESC "
+                + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, offset);
+            ps.setInt(2, size);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    BookingSummary b = new BookingSummary();
+                    b.setBookingId(rs.getInt("booking_id"));
+                    b.setCustomerName(rs.getString("full_name"));
+                    b.setPhone(rs.getString("phone"));
+                    b.setCheckInDate(rs.getDate("check_in_date"));
+                    b.setCheckOutDate(rs.getDate("check_out_date"));
+                    b.setStatus(String.valueOf(rs.getInt("status")));
+
+                    if (rs.getBigDecimal("total_amount") != null) {
+                        b.setTotalAmount(rs.getBigDecimal("total_amount").longValue());
+                    } else {
+                        b.setTotalAmount(0);
+                    }
+
+                    list.add(b);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    // ================================
+    // LẤY DANH SÁCH BOOKING KHÔNG PHÂN TRANG
+    // ================================
+    public List<BookingSummary> getBookingList() {
+        List<BookingSummary> list = new ArrayList<>();
+
+        String sql = "SELECT b.booking_id, c.full_name, c.phone, "
+                + "       b.check_in_date, b.check_out_date, b.status, b.total_amount "
+                + "FROM dbo.bookings b "
+                + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
+                + "ORDER BY b.booking_id DESC";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
             while (rs.next()) {
-                model.BookingSummary b = new model.BookingSummary();
+                BookingSummary b = new BookingSummary();
                 b.setBookingId(rs.getInt("booking_id"));
                 b.setCustomerName(rs.getString("full_name"));
                 b.setPhone(rs.getString("phone"));
                 b.setCheckInDate(rs.getDate("check_in_date"));
                 b.setCheckOutDate(rs.getDate("check_out_date"));
-                b.setStatus(rs.getString("status"));
-                b.setTotalAmount(rs.getBigDecimal("total_amount").longValue());
+                b.setStatus(String.valueOf(rs.getInt("status")));
+
+                if (rs.getBigDecimal("total_amount") != null) {
+                    b.setTotalAmount(rs.getBigDecimal("total_amount").longValue());
+                } else {
+                    b.setTotalAmount(0);
+                }
+
                 list.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    // ================================
+    // LẤY CHI TIẾT BOOKING THEO ID
+    // ================================
+    public BookingSummary getBookingById(int bookingId) {
+        String sql =
+                "SELECT TOP 1 "
+                + "       b.booking_id, "
+                + "       c.full_name, "
+                + "       c.phone, "
+                + "       b.check_in_date, "
+                + "       b.check_out_date, "
+                + "       b.status, "
+                + "       b.total_amount, "
+                + "       rt.name AS room_type_name, "
+                + "       ISNULL(brt.quantity, 0) AS quantity, "
+                + "       (SELECT ISNULL(SUM(p.amount), 0) "
+                + "          FROM dbo.payments p "
+                + "         WHERE p.booking_id = b.booking_id AND p.status = 1) AS deposit "
+                + "FROM dbo.bookings b "
+                + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
+                + "LEFT JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
+                + "LEFT JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id "
+                + "WHERE b.booking_id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, bookingId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    BookingSummary b = new BookingSummary();
+                    b.setBookingId(rs.getInt("booking_id"));
+                    b.setCustomerName(rs.getString("full_name"));
+                    b.setPhone(rs.getString("phone"));
+                    b.setCheckInDate(rs.getDate("check_in_date"));
+                    b.setCheckOutDate(rs.getDate("check_out_date"));
+                    b.setStatus(String.valueOf(rs.getInt("status")));
+
+                    if (rs.getBigDecimal("total_amount") != null) {
+                        b.setTotalAmount(rs.getBigDecimal("total_amount").longValue());
+                    } else {
+                        b.setTotalAmount(0);
+                    }
+
+                    b.setDeposit(rs.getLong("deposit"));
+                    b.setRoomTypeName(rs.getString("room_type_name"));
+                    b.setQuantity(rs.getInt("quantity"));
+
+                    return b;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return list;
+
+        return null;
     }
-    
+
     // ================================
     // HỦY BOOKING VÀ HOÀN TRẢ PHÒNG VỀ KHO
     // ================================
     public boolean cancelBooking(int bookingId) throws Exception {
-        java.sql.Connection con = null;
+        Connection con = null;
         try {
             con = connection;
-            con.setAutoCommit(false); // Bật Transaction an toàn
+            con.setAutoCommit(false);
 
-            // 1. CHỈ CHO PHÉP HỦY NẾU ĐƠN ĐANG Ở TRẠNG THÁI 1 (PENDING) HOẶC 2 (CONFIRMED)
-            String getInfo = "SELECT b.check_in_date, b.check_out_date, brt.room_type_id, brt.quantity " +
-                             "FROM dbo.bookings b " +
-                             "JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id " +
-                             "WHERE b.booking_id = ? AND b.status IN ('1', '2')"; 
-                             
+            String getInfo =
+                    "SELECT b.check_in_date, b.check_out_date, brt.room_type_id, brt.quantity "
+                    + "FROM dbo.bookings b "
+                    + "JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
+                    + "WHERE b.booking_id = ? AND b.status IN (1, 2)";
+
             java.sql.Date checkIn = null;
             java.sql.Date checkOut = null;
-            int roomTypeId = 0, qty = 0;
+            int roomTypeId = 0;
+            int qty = 0;
             boolean found = false;
 
             try (PreparedStatement ps = con.prepareStatement(getInfo)) {
@@ -73,20 +205,20 @@ public class ReceptBookingListDAO extends DBContext {
 
             if (!found) {
                 con.rollback();
-                return false; // Đơn không tồn tại hoặc đã bị check-in
+                return false;
             }
 
-            // 2. CHUYỂN TRẠNG THÁI THÀNH 5 (CANCELLED)
             String updateStatus = "UPDATE dbo.bookings SET status = 5 WHERE booking_id = ?";
             try (PreparedStatement ps = con.prepareStatement(updateStatus)) {
                 ps.setInt(1, bookingId);
                 ps.executeUpdate();
             }
 
-            // 3. HOÀN TRẢ PHÒNG (Trừ đi số booked_rooms trong kho)
-            String refundInv = "UPDATE dbo.room_type_inventory " +
-                               "SET booked_rooms = booked_rooms - ? " +
-                               "WHERE room_type_id = ? AND inventory_date >= ? AND inventory_date < ?";
+            String refundInv =
+                    "UPDATE dbo.room_type_inventory "
+                    + "SET booked_rooms = booked_rooms - ? "
+                    + "WHERE room_type_id = ? AND inventory_date >= ? AND inventory_date < ?";
+
             try (PreparedStatement ps = con.prepareStatement(refundInv)) {
                 ps.setInt(1, qty);
                 ps.setInt(2, roomTypeId);
@@ -99,10 +231,14 @@ public class ReceptBookingListDAO extends DBContext {
             return true;
 
         } catch (Exception e) {
-            if (con != null) con.rollback(); 
+            if (con != null) {
+                con.rollback();
+            }
             throw e;
         } finally {
-            if (con != null) con.setAutoCommit(true);
+            if (con != null) {
+                con.setAutoCommit(true);
+            }
         }
     }
 }
