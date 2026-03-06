@@ -11,6 +11,9 @@ public class BookingSummary {
     private String status;
     private long totalAmount;
     private long deposit;    // Tiền cọc
+    private String roomTypeName;
+private int quantity;
+
 
     
 
@@ -37,5 +40,22 @@ public class BookingSummary {
         this.deposit = deposit;
     }
     
-    
+    public String getRoomTypeName() {
+    return roomTypeName;
+}
+
+public void setRoomTypeName(String roomTypeName) {
+    this.roomTypeName = roomTypeName;
+}
+
+public int getQuantity() {
+    return quantity;
+}
+
+public void setQuantity(int quantity) {
+    this.quantity = quantity;
+}
+
+
+
 }
