@@ -83,7 +83,7 @@ String initials = parts.length >= 2
         </button>
 
         <div class="sb-dropdown">
-            <a href="${pageContext.request.contextPath}/admin/profile">Profile</a>
+            <a href="${pageContext.request.contextPath}/staff-profile">Profile</a>
             <a class="danger" href="${pageContext.request.contextPath}/logout">Logout</a>
         </div>
 

@@ -78,8 +78,26 @@
                 margin: 8px 0 0;
             }
 
+            .btn-new-reservation{
+                border:none;
+                background:#2c2416;
+                color:#fff;
+                border-radius:14px;
+                padding:12px 18px;
+                font-weight:800;
+                display:inline-flex;
+                align-items:center;
+                gap:8px;
+                box-shadow:0 10px 24px rgba(44,36,22,.12);
+                transition:.18s ease;
+            }
+            .btn-new-reservation:hover{
+                transform:translateY(-1px);
+                background:#201a10;
+            }
+
             /* =========================
-               STATS (FIX OVERLAP)
+               STATS
             ========================= */
             .stats-grid{
                 display: grid;
@@ -101,35 +119,8 @@
                 align-items:center;
                 gap: 14px;
                 min-height: 92px;
-                top: 10px; /* ✅ Chỉnh Badge nằm cao hơn một chút */
+                top: 10px;
                 right: 10px;
-            }
-
-            .btn-action {
-                width: 135px; /* Độ dài cố định */
-                height: 38px;
-                border-radius: 12px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center; /* Căn giữa nội dung */
-                gap: 8px;
-                font-weight: 900;
-                font-size: 12px;
-                text-transform: uppercase;
-                text-decoration: none !important; /* ✅ Xóa gạch chân xanh lam */
-                transition: all .18s ease;
-                border: 1.5px solid transparent;
-            }
-
-            .btn-checkin {
-                border-color: var(--checkin-br);
-                background: var(--checkin-bg);
-                color: var(--checkin) !important;
-            }
-            .btn-checkout {
-                border-color: var(--checkout-br);
-                background: var(--checkout-bg);
-                color: var(--checkout) !important;
             }
 
             .stat-card:hover{
@@ -137,7 +128,6 @@
                 box-shadow: 0 14px 40px rgba(44,36,22,.10);
             }
 
-            /* blob */
             .stat-card::after{
                 content:'';
                 position:absolute;
@@ -149,14 +139,13 @@
                 background: var(--card-blob, rgba(181,131,42,.07));
                 pointer-events:none;
             }
-            .stat-card.sage-card  {
+            .stat-card.sage-card{
                 --card-blob: rgba(90,122,92,.09);
             }
-            .stat-card.terra-card {
+            .stat-card.terra-card{
                 --card-blob: rgba(192,97,74,.08);
             }
 
-            /* tag badge (góc phải) */
             .stat-card::before{
                 content: attr(data-tag);
                 position:absolute;
@@ -217,7 +206,7 @@
                 flex-direction: column;
                 z-index: 1;
                 min-width: 0;
-                margin-top: 12px; /* ✅ Đẩy nội dung xuống để tránh bị Badge đè */
+                margin-top: 12px;
             }
             .stat-label{
                 display:block;
@@ -228,7 +217,7 @@
                 color: var(--ink-soft);
                 margin-bottom: 6px;
                 line-height: 1.2;
-                padding-right: 86px; /* chừa chỗ cho badge góc phải */
+                padding-right: 86px;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -265,10 +254,6 @@
 
             /* =========================
                FILTER
-            ========================= */
-            /* ===== FILTER ACTIONS (Reset / Apply) ===== */
-            /* =========================
-               FILTER - FORCE STYLE (FIX UI FALLBACK)
             ========================= */
             .filter-card{
                 background: var(--paper) !important;
@@ -309,7 +294,6 @@
                 pointer-events:none !important;
             }
 
-            /* input/select đẹp lại */
             .filter-card .f-input,
             .filter-card .f-select{
                 width: 100% !important;
@@ -337,7 +321,6 @@
                 background: var(--paper) !important;
             }
 
-            /* Buttons */
             .filter-card .filter-actions{
                 display:flex !important;
                 justify-content:flex-end !important;
@@ -406,24 +389,22 @@
             }
 
             .hms-table th,
-            .hms-table td {
+            .hms-table td{
                 text-align: center !important;
                 vertical-align: middle;
             }
 
-            /* Class riêng để căn trái cho cột Guest Name */
-            .hms-table .text-left {
+            .hms-table .text-left{
                 text-align: left !important;
             }
 
-            /* Đảm bảo nút action cũng được căn giữa trong ô của nó */
-            .action-cell {
+            .action-cell{
                 text-align: center !important;
             }
 
-            .action-btns {
+            .action-btns{
                 display: flex;
-                justify-content: center; /* Căn giữa các nút bên trong cell */
+                justify-content: center;
                 gap: 8px;
             }
 
@@ -497,26 +478,20 @@
                 flex-wrap: wrap;
             }
 
-            /* =========================
-               ACTION BUTTONS (CLEAN)
-            ========================= */
             .btn-action{
-                height: 36px;
-                padding: 0 12px;
-                border-radius: 10px;
-                border: 1.5px solid var(--border);
-                background: var(--paper);
+                width: 135px;
+                height: 38px;
+                border-radius: 12px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
                 font-weight: 900;
                 font-size: 12px;
-                letter-spacing: .08em;
                 text-transform: uppercase;
-                display:inline-flex;
-                align-items:center;
-                justify-content:center;
-                gap: 8px;
-                text-decoration:none !important;
-                transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
-                white-space: nowrap;
+                text-decoration: none !important;
+                transition: all .18s ease;
+                border: 1.5px solid transparent;
             }
 
             .btn-checkin{
@@ -615,7 +590,271 @@
                 justify-content:center;
             }
 
+            /* =========================
+               BOOKING ID BUTTON
+            ========================= */
+            .booking-id-btn{
+                border: none;
+                background: transparent;
+                padding: 0;
+                font-weight: 900;
+                color: #2f5bd3;
+                cursor: pointer;
+                text-decoration: none;
+                transition: color .18s ease, transform .18s ease;
+            }
+            .booking-id-btn:hover{
+                color: #1d4ed8;
+                transform: translateY(-1px);
+            }
 
+            /* =========================
+               DETAIL DRAWER
+            ========================= */
+            .booking-detail-overlay{
+                position: fixed;
+                inset: 0;
+                background: rgba(23, 31, 43, 0.28);
+                backdrop-filter: blur(3px);
+                z-index: 1040;
+                opacity: 0;
+                visibility: hidden;
+                transition: all .25s ease;
+            }
+
+            .booking-detail-drawer{
+                position: fixed;
+                top: 0;
+                right: 0;
+                width: 520px;
+                max-width: 100%;
+                height: 100vh;
+                background: #f8f6f2;
+                border-left: 1px solid #e4ddd2;
+                box-shadow: -18px 0 40px rgba(0,0,0,.14);
+                z-index: 1050;
+                transform: translateX(100%);
+                transition: transform .28s ease;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .booking-detail-overlay.show{
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .booking-detail-drawer.show{
+                transform: translateX(0);
+            }
+
+            .booking-detail-header{
+                padding: 28px 28px;
+                border-bottom: 1px solid #e4ddd2;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: #f8f6f2;
+                flex-shrink: 0;
+            }
+
+            .booking-detail-title{
+                margin: 0;
+                font-size: 18px;
+                font-weight: 900;
+                color: #2b3445;
+                letter-spacing: .02em;
+                text-transform: uppercase;
+            }
+
+            .booking-detail-close{
+                width: 42px;
+                height: 42px;
+                border: none;
+                background: transparent;
+                border-radius: 12px;
+                font-size: 24px;
+                color: #94a3b8;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: background .18s ease, color .18s ease;
+            }
+            .booking-detail-close:hover{
+                background: #ebe7df;
+                color: #334155;
+            }
+
+            .booking-detail-body{
+                flex: 1;
+                overflow-y: auto;
+                padding: 26px 28px 36px;
+            }
+
+            .detail-profile{
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                margin-bottom: 26px;
+            }
+
+            .detail-avatar{
+                width: 72px;
+                height: 72px;
+                border-radius: 22px;
+                background: linear-gradient(135deg, #2f5bd3, #3b82f6);
+                color: #fff;
+                font-size: 30px;
+                font-weight: 900;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .detail-profile-text{
+                min-width: 0;
+            }
+
+            .detail-guest-name{
+                font-size: 20px;
+                font-weight: 900;
+                color: #273142;
+                line-height: 1.2;
+                margin: 0 0 4px;
+            }
+
+            .detail-booking-code{
+                font-size: 14px;
+                color: #64748b;
+                font-weight: 700;
+                margin: 0;
+            }
+
+            .detail-grid{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 22px 18px;
+                margin-bottom: 30px;
+            }
+
+            .detail-item-label{
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 6px;
+                font-size: 12px;
+                font-weight: 900;
+                letter-spacing: .08em;
+                text-transform: uppercase;
+                color: #94a3b8;
+            }
+
+            .detail-item-label i{
+                font-size: 14px;
+            }
+
+            .detail-item-value{
+                font-size: 18px;
+                font-weight: 900;
+                color: #273142;
+                line-height: 1.35;
+            }
+
+            .detail-section{
+                margin-bottom: 26px;
+            }
+
+            .detail-section-title{
+                margin: 0 0 14px;
+                font-size: 13px;
+                font-weight: 900;
+                letter-spacing: .10em;
+                text-transform: uppercase;
+                color: #94a3b8;
+            }
+
+            .detail-contact-box{
+                background: #eef1f5;
+                border-radius: 18px;
+                padding: 18px 18px;
+            }
+
+            .detail-contact-row{
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                color: #334155;
+                font-size: 15px;
+                font-weight: 700;
+            }
+
+            .detail-contact-row + .detail-contact-row{
+                margin-top: 14px;
+            }
+
+            .detail-contact-row i{
+                color: #7c8aa0;
+                font-size: 18px;
+                width: 20px;
+                text-align: center;
+            }
+
+            .detail-note-box{
+                background: #f3eddc;
+                border: 1px solid #eadfb8;
+                border-radius: 18px;
+                padding: 18px 18px;
+                color: #9a5b1f;
+                font-size: 15px;
+                font-weight: 700;
+                line-height: 1.6;
+                min-height: 72px;
+            }
+
+            .detail-status-badge{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 14px;
+                border-radius: 999px;
+                font-size: 12px;
+                font-weight: 900;
+                letter-spacing: .08em;
+                text-transform: uppercase;
+            }
+
+            .status-reserved{
+                background: #fef3c7;
+                color: #b45309;
+            }
+            .status-checkin{
+                background: #dcfce7;
+                color: #15803d;
+            }
+            .status-completed{
+                background: #e2e8f0;
+                color: #475569;
+            }
+            .status-noshow{
+                background: #fee2e2;
+                color: #b91c1c;
+            }
+            .status-other{
+                background: #ede9fe;
+                color: #6d28d9;
+            }
+
+            @media (max-width: 768px){
+                .booking-detail-drawer{
+                    width: 100%;
+                }
+
+                .detail-grid{
+                    grid-template-columns: 1fr;
+                }
+            }
         </style>
     </head>
 
@@ -631,12 +870,12 @@
                         <h1 class="dashboard-title">Daily Check-in</h1>
                         <p class="dashboard-date" id="live-clock"></p>
                     </div>
+
                     <a href="${pageContext.request.contextPath}/receptionist/booking/create">
                         <button class="btn-new-reservation" type="button">
-                        <i class="bi bi-plus-lg"></i> New Reservation
-                    </button>
+                            <i class="bi bi-plus-lg"></i> New Reservation
+                        </button>
                     </a>
-                    
                 </div>
 
                 <!-- Stats -->
@@ -682,12 +921,11 @@
                     </div>
                 </div>
 
-                <!-- FILTER -->
-
+                <!-- Filter -->
                 <form class="filter-card" method="get" action="dashboard">
-                    
-                    <input type="hidden" name="index" value="1"> 
+                    <input type="hidden" name="index" value="1">
                     <input type="hidden" name="size" value="${currentSize}">
+
                     <div class="filter-row">
                         <div class="f-field">
                             <label>Search</label>
@@ -718,22 +956,16 @@
                             </select>
                         </div>
 
-                        <!-- cột trống để giữ layout, không còn checkbox -->
                         <div class="f-field"></div>
                     </div>
 
-                    <!-- Buttons -->
                     <div class="filter-actions">
-                        <!-- Reset: về lại trang không có param -->
-                        <a class="btn-filter btn-reset"
-                           href="dashboard">Reset</a>
-
-                        <!-- Apply: submit form -->
+                        <a class="btn-filter btn-reset" href="dashboard">Reset</a>
                         <button class="btn-filter btn-apply" type="submit">Apply Filter</button>
                     </div>
                 </form>
 
-                <!-- TABLE -->
+                <!-- Table -->
                 <div class="table-card">
                     <table class="hms-table">
                         <thead>
@@ -752,33 +984,55 @@
                         <tbody>
                             <c:forEach items="${listBookings}" var="b">
                                 <tr>
-                                    <td class="cell-id text-left">#${b.bookingId}</td>
+                                    <td class="cell-id text-left">
+                                        <button
+                                            type="button"
+                                            class="booking-id-btn"
+                                            data-booking-id="${b.bookingId}"
+                                            data-guest-name="${b.guestName}"
+                                            data-room-type="${b.roomTypeName}"
+                                            data-checkin="${b.checkInDate}"
+                                            data-checkout="${b.checkOutDate}"
+                                            data-num-rooms="${b.numRooms}"
+                                            data-room-no="${b.roomNo != null ? b.roomNo : '—'}"
+                                            data-num-persons="${b.numPersons > 0 ? b.numPersons : '—'}"
+                                            data-status="${b.bookingStatus}">
+                                            #${b.bookingId}
+                                        </button>
+                                    </td>
+
                                     <td class="cell-name text-left">${b.guestName}</td>
                                     <td><span class="tag-pill">${b.roomTypeName}</span></td>
                                     <td class="cell-muted">${b.checkInDate} <br> ${b.checkOutDate}</td>
                                     <td>${b.numRooms}</td>
                                     <td class="cell-muted">${b.roomNo != null ? b.roomNo : "—"}</td>
-                                    <td>${b.numPersons}</td>
+                                    <td class="cell-muted">
+                                        <c:choose>
+                                            <c:when test="${b.numPersons > 0}">
+                                                ${b.numPersons}
+                                            </c:when>
+                                            <c:otherwise>
+                                                —
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
 
                                     <td class="action-cell">
                                         <div class="action-btns">
                                             <c:choose>
-                                                <c:when test="${b.bookingStatus == 1}">
-                                                    <%-- Thêm class btn-action vào đây --%>
+                                                <c:when test="${b.bookingStatus == 2}">
                                                     <a class="btn-action btn-checkin" href="assign-room?bookingId=${b.bookingId}">
                                                         <i class="bi bi-check2-circle"></i> Check-in
                                                     </a>
                                                 </c:when>
 
-                                                <c:when test="${b.assignmentStatus == 2}">
-                                                    <%-- Thêm class btn-action vào đây --%>
+                                                <c:when test="${b.bookingStatus == 3}">
                                                     <a class="btn-action btn-checkout" href="checkout?bookingId=${b.bookingId}">
                                                         <i class="bi bi-box-arrow-right"></i> Check-out
                                                     </a>
                                                 </c:when>
 
                                                 <c:otherwise>
-                                                    <%-- Badge Completed cũng nên có width 135px cho đồng bộ --%>
                                                     <span class="badge bg-light text-dark border px-3 py-2" style="width: 135px; border-radius: 12px;">
                                                         COMPLETED
                                                     </span>
@@ -812,23 +1066,118 @@
                             entries per page
                         </div>
 
-                                <div class="pager">
-                                    <a class="btn-ghost ${tag <= 1 ? 'disabled' : ''}" 
-                                       href="dashboard?index=${tag - 1}&size=${currentSize}&txtSearch=${searchValue}&filterStatus=${statusValue}&filterSort=${sortValue}">
-                                        ← Prev
-                                    </a>
+                        <div class="pager">
+                            <a class="btn-ghost ${tag <= 1 ? 'disabled' : ''}"
+                               href="dashboard?index=${tag - 1}&size=${currentSize}&txtSearch=${searchValue}&filterStatus=${statusValue}&filterSort=${sortValue}">
+                                ← Prev
+                            </a>
 
-                                    <span class="page-pill">${tag}</span> 
+                            <span class="page-pill">${tag}</span>
 
-                                    <a class="btn-ghost ${tag >= endP ? 'disabled' : ''}" 
-                                       href="dashboard?index=${tag + 1}&size=${currentSize}&txtSearch=${searchValue}&filterStatus=${statusValue}&filterSort=${sortValue}">
-                                        Next →
-                                    </a>
-                                </div>
+                            <a class="btn-ghost ${tag >= endP ? 'disabled' : ''}"
+                               href="dashboard?index=${tag + 1}&size=${currentSize}&txtSearch=${searchValue}&filterStatus=${statusValue}&filterSort=${sortValue}">
+                                Next →
+                            </a>
+                        </div>
                     </div>
                 </div>
             </main>
         </div>
+
+        <!-- DETAIL DRAWER -->
+        <div id="bookingDetailOverlay" class="booking-detail-overlay"></div>
+
+        <aside id="bookingDetailDrawer" class="booking-detail-drawer" aria-hidden="true">
+            <div class="booking-detail-header">
+                <h3 class="booking-detail-title">Chi tiết đặt phòng</h3>
+                <button type="button" class="booking-detail-close" id="closeBookingDetail">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="booking-detail-body">
+                <div class="detail-profile">
+                    <div class="detail-avatar" id="detailAvatar">G</div>
+                    <div class="detail-profile-text">
+                        <h4 class="detail-guest-name" id="detailGuestName">Guest Name</h4>
+                        <p class="detail-booking-code" id="detailBookingCode">BK-0000</p>
+                    </div>
+                </div>
+
+                <div class="detail-section" style="margin-bottom:20px;">
+                    <span id="detailStatusBadge" class="detail-status-badge status-other">Status</span>
+                </div>
+
+                <div class="detail-grid">
+                    <div>
+                        <div class="detail-item-label">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span>Check-in</span>
+                        </div>
+                        <div class="detail-item-value" id="detailCheckin">—</div>
+                    </div>
+
+                    <div>
+                        <div class="detail-item-label">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Check-out</span>
+                        </div>
+                        <div class="detail-item-value" id="detailCheckout">—</div>
+                    </div>
+
+                    <div>
+                        <div class="detail-item-label">
+                            <i class="bi bi-building"></i>
+                            <span>Loại phòng</span>
+                        </div>
+                        <div class="detail-item-value" id="detailRoomType">—</div>
+                    </div>
+
+                    <div>
+                        <div class="detail-item-label">
+                            <i class="bi bi-people"></i>
+                            <span>Số khách</span>
+                        </div>
+                        <div class="detail-item-value" id="detailNumPersons">—</div>
+                    </div>
+
+                    <div>
+                        <div class="detail-item-label">
+                            <i class="bi bi-door-open"></i>
+                            <span>Số phòng</span>
+                        </div>
+                        <div class="detail-item-value" id="detailNumRooms">—</div>
+                    </div>
+
+                    <div>
+                        <div class="detail-item-label">
+                            <i class="bi bi-houses"></i>
+                            <span>Phòng được gán</span>
+                        </div>
+                        <div class="detail-item-value" id="detailRoomNo">—</div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h5 class="detail-section-title">Thông tin liên hệ</h5>
+                    <div class="detail-contact-box">
+                        <div class="detail-contact-row">
+                            <i class="bi bi-telephone"></i>
+                            <span id="detailPhone">Chưa có số điện thoại</span>
+                        </div>
+                        <div class="detail-contact-row">
+                            <i class="bi bi-envelope"></i>
+                            <span id="detailEmail">Chưa có email</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h5 class="detail-section-title">Ghi chú</h5>
+                    <div class="detail-note-box" id="detailNote">Không có ghi chú nào.</div>
+                </div>
+            </div>
+        </aside>
 
         <script>
             function updateTime() {
@@ -840,16 +1189,97 @@
             }
             setInterval(updateTime, 1000);
             updateTime();
-            
+
             function changePageSize() {
                 const size = document.getElementById("pageSizeSelect").value;
-                // Khi đổi số lượng hiển thị, chúng ta nên quay về trang 1
-                const url = "dashboard?index=1&size=" + size 
-                            + "&txtSearch=${searchValue}" 
-                            + "&filterStatus=${statusValue}" 
-                            + "&filterSort=${sortValue}";
+                const url = "dashboard?index=1&size=" + size
+                        + "&txtSearch=${searchValue}"
+                        + "&filterStatus=${statusValue}"
+                        + "&filterSort=${sortValue}";
                 window.location.href = url;
             }
+
+            const overlay = document.getElementById("bookingDetailOverlay");
+            const drawer = document.getElementById("bookingDetailDrawer");
+            const closeBtn = document.getElementById("closeBookingDetail");
+
+            function getInitials(name) {
+                if (!name) return "G";
+                const parts = name.trim().split(/\s+/);
+                if (parts.length === 1) {
+                    return parts[0].charAt(0).toUpperCase();
+                }
+                return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+            }
+
+            function mapStatus(status) {
+                switch (String(status)) {
+                    case "1":
+                        return {text: "Reserved", className: "detail-status-badge status-reserved"};
+                    case "2":
+                        return {text: "Checked-in", className: "detail-status-badge status-checkin"};
+                    case "3":
+                        return {text: "Completed", className: "detail-status-badge status-completed"};
+                    case "6":
+                        return {text: "No-show", className: "detail-status-badge status-noshow"};
+                    default:
+                        return {text: "Other", className: "detail-status-badge status-other"};
+                }
+            }
+
+            function openBookingDetail(btn) {
+                const bookingId = btn.dataset.bookingId || "—";
+                const guestName = btn.dataset.guestName || "—";
+                const roomType = btn.dataset.roomType || "—";
+                const checkin = btn.dataset.checkin || "—";
+                const checkout = btn.dataset.checkout || "—";
+                const numRooms = btn.dataset.numRooms || "—";
+                const roomNo = btn.dataset.roomNo || "—";
+                const numPersons = btn.dataset.numPersons || "—";
+                const status = btn.dataset.status || "";
+
+                document.getElementById("detailAvatar").textContent = getInitials(guestName);
+                document.getElementById("detailGuestName").textContent = guestName;
+                document.getElementById("detailBookingCode").textContent = "BK-" + bookingId;
+                document.getElementById("detailCheckin").textContent = checkin;
+                document.getElementById("detailCheckout").textContent = checkout;
+                document.getElementById("detailRoomType").textContent = roomType;
+                document.getElementById("detailNumPersons").textContent = numPersons;
+                document.getElementById("detailNumRooms").textContent = numRooms;
+                document.getElementById("detailRoomNo").textContent = roomNo;
+
+                const statusBadge = document.getElementById("detailStatusBadge");
+                const statusInfo = mapStatus(status);
+                statusBadge.textContent = statusInfo.text;
+                statusBadge.className = statusInfo.className;
+
+                overlay.classList.add("show");
+                drawer.classList.add("show");
+                drawer.setAttribute("aria-hidden", "false");
+                document.body.style.overflow = "hidden";
+            }
+
+            function closeBookingDetail() {
+                overlay.classList.remove("show");
+                drawer.classList.remove("show");
+                drawer.setAttribute("aria-hidden", "true");
+                document.body.style.overflow = "";
+            }
+
+            document.querySelectorAll(".booking-id-btn").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    openBookingDetail(this);
+                });
+            });
+
+            overlay.addEventListener("click", closeBookingDetail);
+            closeBtn.addEventListener("click", closeBookingDetail);
+
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") {
+                    closeBookingDetail();
+                }
+            });
         </script>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -116,7 +116,7 @@
         </button>
 
         <div class="sb-dropdown">
-            <a href="${pageContext.request.contextPath}/profile"><i class="bi bi-person me-2"></i> Profile</a>
+            <a href="${pageContext.request.contextPath}/staff-profile"><i class="bi bi-person me-2"></i> Profile</a>
             <a class="danger" href="${pageContext.request.contextPath}/logout"><i class="bi bi-box-arrow-left me-2"></i> Logout</a>
         </div>
     </div>
