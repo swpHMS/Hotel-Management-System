@@ -562,7 +562,7 @@
                                     View Details
                                 </button>
 
-                                <form action="${pageContext.request.contextPath}/book-again"
+                                <form action="${pageContext.request.contextPath}/booking"
                                       method="get">
 
                                     <input type="hidden"
