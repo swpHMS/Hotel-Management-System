@@ -75,7 +75,7 @@ public class LoginServlet extends HttpServlet {
 
         try {
             UserDAO dao = new UserDAO();
-            
+
             // 1. Kiểm tra email tồn tại
             User user = dao.getUserByEmail(email);
 
@@ -88,7 +88,7 @@ public class LoginServlet extends HttpServlet {
 
             // 2. Kiểm tra mật khẩu (Sử dụng BCrypt)
             if (user.getPasswordHash() != null && org.mindrot.jbcrypt.BCrypt.checkpw(password, user.getPasswordHash())) {
-                
+
                 // 3. Kiểm tra trạng thái verify
                 if (user.getStatus() == 0) {
                     request.setAttribute("error", "Your account is inactive!");
@@ -141,6 +141,8 @@ public class LoginServlet extends HttpServlet {
         int role = user.getRoleId();
         if (role == 1) {
             response.sendRedirect(contextPath + "/admin/dashboard");
+        } else if (role == 2) {
+            response.sendRedirect(contextPath + "/manager/dashboard");
         } else if (role == 3) {
             response.sendRedirect(contextPath + "/receptionist/dashboard");
         } else if (role == 4) {
@@ -149,4 +151,5 @@ public class LoginServlet extends HttpServlet {
             response.sendRedirect(contextPath + "/home");
         }
     }
+
 }
