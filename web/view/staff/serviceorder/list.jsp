@@ -529,7 +529,7 @@
                                 <div class="detail-head">
                                     <div>
                                         <div class="meta">Service Order</div>
-                                        <div class="so-code">Service Order ID #${selected.serviceOrderId}</div>
+                                        <div class="so-code">Order ID #${selected.serviceOrderId}</div>
                                         <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
                                             <c:choose>
                                                 <c:when test="${selected.status == 0}"><span class="badge b-draft">Draft</span></c:when>
@@ -553,12 +553,6 @@
                                 <!-- BODY -->
                                 <div class="detail-body">
                                     <div class="row">
-                                        <div class="section-title">
-                                            Service Items
-                                            <span class="badge" style="margin-left:8px; background:var(--amber-pale); border-color:#e2c080; color:var(--amber); font-size:9px;">
-                                                <c:out value="${fn:length(selected.items)}"/>
-                                            </span>
-                                        </div>
                                         <c:if test="${selected.status == 0}">
                                             <a href="${pageContext.request.contextPath}/staff/service-orders?id=${selected.serviceOrderId}&modal=addItems&type=1"
                                                class="link-primary">+ Add Items</a>
