@@ -82,7 +82,7 @@
     renderGuestText();
 
     const btn = document.getElementById("bkGuestBtn");
-    const dd  = document.getElementById("bkGuestDd");
+    const dd = document.getElementById("bkGuestDd");
     const wrap = document.querySelector(".bk-field.bk-guest");
 
     if (btn && dd) {
@@ -111,7 +111,7 @@
 
     const kind = (plus || minus).dataset.target; // "adults" | "children"
     const hidden = document.getElementById(kind === "adults" ? "bkAdults" : "bkChildren");
-    const view   = document.getElementById(kind === "adults" ? "bkAdultsView" : "bkChildrenView");
+    const view = document.getElementById(kind === "adults" ? "bkAdultsView" : "bkChildrenView");
     if (!hidden || !view) return;
 
     const min = parseInt(view.getAttribute("min") || (kind === "adults" ? "1" : "0"), 10);
@@ -125,6 +125,50 @@
     hidden.value = val;
     renderGuestText();
   });
+
+  /* =========================
+     ROOM QTY LIMIT HELPERS
+  ========================== */
+  function getRoomLimit() {
+    return parseInt(document.getElementById("roomQty")?.value || "1", 10);
+  }
+
+  function getAllQtyInputs() {
+    return Array.from(document.querySelectorAll(".bk-qty .qty-input"));
+  }
+
+  function getTotalSelectedRooms() {
+    return getAllQtyInputs().reduce((sum, input) => {
+      return sum + parseInt(input.value || "0", 10);
+    }, 0);
+  }
+
+  function refreshRoomQtyButtons() {
+    const limit = getRoomLimit();
+    const inputs = getAllQtyInputs();
+    const total = getTotalSelectedRooms();
+
+    inputs.forEach(input => {
+      const wrap = input.closest(".bk-qty");
+      if (!wrap) return;
+
+      const plusBtn = wrap.querySelector(".qty-btn.plus");
+      const minusBtn = wrap.querySelector(".qty-btn.minus");
+      const current = parseInt(input.value || "0", 10);
+      const min = parseInt(input.getAttribute("min") || "0", 10);
+      const max = parseInt(input.getAttribute("max") || "20", 10);
+
+      if (minusBtn) {
+        minusBtn.disabled = current <= min;
+      }
+
+      if (plusBtn) {
+        const reachedGlobalLimit = total >= limit;
+        const reachedLocalMax = current >= max;
+        plusBtn.disabled = reachedGlobalLimit || reachedLocalMax;
+      }
+    });
+  }
 
   /* =========================
      QTY BUTTONS (rooms per card)
@@ -143,13 +187,27 @@
     if (!input) return;
 
     const max = parseInt(input.getAttribute("max") || "20", 10);
-    const min = parseInt(input.getAttribute("min") || "1", 10);
-    let val = parseInt(input.value || "1", 10);
+    const min = parseInt(input.getAttribute("min") || "0", 10);
+    let val = parseInt(input.value || "0", 10);
 
-    if (plusBtn && val < max) val++;
-    if (minusBtn && val > min) val--;
+    if (plusBtn) {
+      const total = getTotalSelectedRooms();
+      const limit = getRoomLimit();
+
+      if (total >= limit) {
+        refreshRoomQtyButtons();
+        return;
+      }
+
+      if (val < max) val++;
+    }
+
+    if (minusBtn && val > min) {
+      val--;
+    }
 
     input.value = val;
+    refreshRoomQtyButtons();
   });
 
   /* =========================
@@ -167,7 +225,7 @@
     const rmImg = document.getElementById("rmImg");
 
     const rmSize = document.getElementById("rmSize");
-    const rmBed  = document.getElementById("rmBed");
+    const rmBed = document.getElementById("rmBed");
     const rmView = document.getElementById("rmView");
 
     // Data from link
@@ -188,11 +246,11 @@
 
     const parts = descText.split("|").map(s => s.trim()).filter(Boolean);
     const sizePart = parts.find(p => /sqm|m2|m²/i.test(p)) || "";
-    const bedPart  = parts.find(p => /bed/i.test(p)) || (parts[0] || "");
+    const bedPart = parts.find(p => /bed/i.test(p)) || (parts[0] || "");
     const viewPart = parts.find(p => /view/i.test(p)) || (parts[1] || "");
 
     if (rmSize) rmSize.textContent = sizePart || "—";
-    if (rmBed)  rmBed.textContent  = bedPart  || "—";
+    if (rmBed) rmBed.textContent = bedPart || "—";
     if (rmView) rmView.textContent = viewPart || "—";
 
     if (rmOcc) rmOcc.textContent = `${maxA} adults • ${maxC} children`;
@@ -283,10 +341,15 @@
     const checkIn = document.querySelector('input[name="checkIn"]')?.value || "";
     const checkOut = document.querySelector('input[name="checkOut"]')?.value || "";
 
-    const qty = parseInt(card.querySelector(".qty-input")?.value || "1", 10);
+    const qty = parseInt(card.querySelector(".qty-input")?.value || "0", 10);
 
     if (!checkIn || !checkOut) {
       showCardError(card, "Please select check-in and check-out dates.");
+      return;
+    }
+
+    if (qty <= 0) {
+      showCardError(card, "Please select at least 1 room before booking.");
       return;
     }
 
@@ -341,6 +404,13 @@
   document.addEventListener("DOMContentLoaded", function () {
     initSliders();
     initGuests();
+    refreshRoomQtyButtons();
+
+    const roomQtyFilter = document.getElementById("roomQty");
+    if (roomQtyFilter) {
+      roomQtyFilter.addEventListener("input", refreshRoomQtyButtons);
+      roomQtyFilter.addEventListener("change", refreshRoomQtyButtons);
+    }
   });
 
 })();

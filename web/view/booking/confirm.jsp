@@ -142,28 +142,14 @@
         <div class="cf-card cf-terms">
           <div class="cf-hd">Deposit Agreement & Booking Terms</div>
           <div class="cf-bd">
-
-            <div class="cf-alert">
-              <c:choose>
-                <c:when test="${not empty paymentPolicy}">
-                  <b>${paymentPolicy.name}</b>
-
-                  <c:set var="lines" value="${fn:split(paymentPolicy.content, '•')}" />
-                  <ul style="margin:0; padding-left:18px;">
-                    <c:forEach var="line" items="${lines}">
-                      <c:if test="${not empty fn:trim(line)}">
-                        <li>${fn:trim(line)}</li>
-                      </c:if>
-                    </c:forEach>
-                  </ul>
-                </c:when>
-
-                <c:otherwise>
-                  <b>Payment Policy</b>
-                  Policy not available.
-                </c:otherwise>
-              </c:choose>
-            </div>
+<div class="cf-alert">
+    <div class="cf-alert-title">${paymentPolicy.name}</div>
+    <div class="cf-alert-text">
+        <c:forEach var="line" items="${fn:split(formattedPaymentPolicy, '||')}">
+            <div class="cf-policy-item">${line}</div>
+        </c:forEach>
+    </div>
+</div>
 
             <%-- ✅ GHÉP LOGIC FILE DƯỚI:
                  - action chuyển sang /booking/pay
@@ -216,7 +202,7 @@
 
         <div class="cf-miniItem">
           <div class="cf-thumb">
-            <c:set var="rawImg" value="${rt.imageUrl}" />
+            <c:set var="rawImg" value="${empty rt.imageUrl ? '' : rt.imageUrl}" />
             <c:choose>
               <c:when test="${empty rawImg}">
                 <img src="https://dummyimage.com/200x200/e2e8f0/0f172a&text=ROOM" alt="room"/>
