@@ -4,11 +4,14 @@ import dal.RoomTypeDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import model.RoomType;
 import dal.PolicyRuleDAO;
 import model.PolicyRule;
-
+import dal.RoomTypeImageDAO;
+import model.RoomTypeImage;
+import java.util.List;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -172,13 +175,26 @@ if (u == null) u = session.getAttribute("user");
             return;
         }
 
-        RoomTypeDAO dao = new RoomTypeDAO();
-        RoomType rt = dao.getRoomTypeByIdWithRate(roomTypeId, checkIn);
+      RoomTypeDAO dao = new RoomTypeDAO();
+RoomType rt = dao.getRoomTypeByIdWithRate(roomTypeId, checkIn);
 
-        if (rt == null) {
-            resp.sendRedirect(req.getContextPath() + "/booking?err=notfound");
-            return;
-        }
+if (rt == null) {
+    resp.sendRedirect(req.getContextPath() + "/booking?err=notfound");
+    return;
+}
+
+// load ảnh từ bảng room type images
+try {
+    RoomTypeImageDAO imageDAO = new RoomTypeImageDAO();
+    List<RoomTypeImage> images = imageDAO.getImagesByRoomTypeId(roomTypeId);
+
+    if (images != null && !images.isEmpty()) {
+        rt.setImages(images);
+        rt.setImageUrl(images.get(0).getImageUrl());
+    }
+} catch (Exception e) {
+    e.printStackTrace();
+}
 
         int maxAdult = rt.getMaxAdult();
         int maxChildren = rt.getMaxChildren();
@@ -230,12 +246,18 @@ if (u == null) u = session.getAttribute("user");
         }
 
         try {
-            PolicyRuleDAO prDao = new PolicyRuleDAO();
-            PolicyRule paymentPolicy = prDao.getPolicyByName("PAYMENT");
-            req.setAttribute("paymentPolicy", paymentPolicy);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    PolicyRuleDAO prDao = new PolicyRuleDAO();
+    PolicyRule paymentPolicy = prDao.getPolicyByName("PAYMENT");
+    req.setAttribute("paymentPolicy", paymentPolicy);
+
+if (paymentPolicy != null && paymentPolicy.getContent() != null) {
+    String content = paymentPolicy.getContent().trim();
+    content = content.replaceAll("\\s*(\\d+\\.)\\s*", "||$1 ");
+    req.setAttribute("formattedPaymentPolicy", content.trim());
+}
+} catch (Exception e) {
+    e.printStackTrace();
+}
 
         req.getRequestDispatcher("/view/booking/confirm.jsp").forward(req, resp);
     }

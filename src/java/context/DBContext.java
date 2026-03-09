@@ -13,7 +13,7 @@ public class DBContext {
         try {
             // Edit URL , username, password to authenticate with your MS SQL Server
 
-            String url = "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System;encrypt=true;trustServerCertificate=true;";
+            String url = "jdbc:sqlserver://localhost:1433;databaseName=Hotel_Management_System1;encrypt=true;trustServerCertificate=true;";
 
             String username = "sa";
             String password = "123";
