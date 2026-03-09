@@ -7,7 +7,13 @@
        CURRENT BOOKINGS (cb-*)
        FINAL - compact, dashboard-aligned
        ========================= */
-
+.alert-success{
+    background:#ecfdf3;
+    color:#027a48;
+    padding:12px 16px;
+    border:1px solid rgba(2,122,72,.22);
+    margin-bottom:16px;
+}
     .cb-page{
         width:100%;
         max-width:1100px;
@@ -473,7 +479,12 @@
 <div class="cb-page">
     <h2 class="cb-title">Current Bookings</h2>
     <p class="cb-sub">Your upcoming stays</p>
-
+<c:if test="${not empty sessionScope.successMessage}">
+    <div class="alert-success">
+        ${sessionScope.successMessage}
+    </div>
+    <c:remove var="successMessage" scope="session"/>
+</c:if>
     <c:if test="${not empty sessionScope.errorMessage}">
         <div class="alert-error">
             ${sessionScope.errorMessage}
@@ -578,18 +589,19 @@
 
                                 <c:if test="${b.canCancel}">
                                     <form action="${pageContext.request.contextPath}/current_bookings"
-                                          method="post"
-                                          class="js-cancel-form">
+      method="post"
+      class="js-cancel-form">
 
-                                        <input type="hidden"
-                                               name="bookingId"
-                                               value="${b.bookingId}" />
+    <input type="hidden"
+           name="bookingId"
+           value="${b.bookingId}" />
 
-                                        <button type="submit"
-                                                class="cb-btn cb-btn-cancel">
-                                            Cancel
-                                        </button>
-                                    </form>
+    <button type="button"
+            class="cb-btn cb-btn-cancel js-open-cancel"
+            data-booking-id="${b.bookingId}">
+        Cancel
+    </button>
+</form>
                                 </c:if>
                             </div>
                         </div>
@@ -666,9 +678,74 @@
     </div>
 </div>
 
+<!-- Cancel Confirm Modal -->
+<div class="cbm-overlay" id="cancelOverlay">
+    <div class="cbm-modal" style="width:min(520px, calc(100vw - 40px)); height:auto; display:block; background:#fff;">
+        <div class="cbm-panel" style="padding:24px;">
+            <button type="button" class="cbm-x" id="cancelClose">✕</button>
+
+            <h3 style="margin:0 0 10px; font-size:24px; font-weight:800; color:#0f172a;">
+                Cancel booking?
+            </h3>
+
+            <p style="margin:0 0 18px; color:#64748b; line-height:1.6;">
+                Are you sure you want to cancel booking
+                <strong id="cancelBookingLabel">#—</strong>?
+            </p>
+
+            <div style="display:flex; gap:12px; justify-content:flex-end;">
+                <button type="button" class="cb-btn" id="cancelNoBtn">Keep booking</button>
+                <button type="button" class="cb-btn cb-btn-cancel" id="cancelYesBtn">Yes, cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+const cancelOverlay = document.getElementById('cancelOverlay');
+const cancelClose = document.getElementById('cancelClose');
+const cancelNoBtn = document.getElementById('cancelNoBtn');
+const cancelYesBtn = document.getElementById('cancelYesBtn');
+const cancelBookingLabel = document.getElementById('cancelBookingLabel');
 
+let pendingCancelForm = null;
+
+function openCancelModal(form, bookingId) {
+    pendingCancelForm = form;
+    cancelBookingLabel.textContent = '#' + (bookingId || '—');
+    cancelOverlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCancelModal() {
+    cancelOverlay.classList.remove('show');
+    document.body.style.overflow = '';
+    pendingCancelForm = null;
+}
+
+document.querySelectorAll('.js-open-cancel').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const form = this.closest('.js-cancel-form');
+        const bookingId = this.dataset.bookingId;
+        openCancelModal(form, bookingId);
+    });
+});
+
+cancelClose.addEventListener('click', closeCancelModal);
+cancelNoBtn.addEventListener('click', closeCancelModal);
+
+cancelOverlay.addEventListener('click', function (e) {
+    if (e.target === cancelOverlay) {
+        closeCancelModal();
+    }
+});
+
+cancelYesBtn.addEventListener('click', function () {
+    if (pendingCancelForm) {
+        pendingCancelForm.submit();
+    }
+});
         const overlay = document.getElementById('cbmOverlay');
         const closeBtn = document.getElementById('cbmClose');
         const gallery = document.getElementById('cbmGallery');
