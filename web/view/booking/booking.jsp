@@ -128,13 +128,13 @@
         </h2>
 
         <div class="bk-sort">
-          <label>SORT:</label>
-          <select id="sortSelect">
-            <option value="default">DEFAULT</option>
-            <option value="priceAsc">LOWEST PRICE</option>
-            <option value="priceDesc">HIGHEST PRICE</option>
-          </select>
-        </div>
+  <label>SORT:</label>
+  <select id="sortSelect" name="sort" onchange="applySort()">
+    <option value="default"   ${param.sort == 'default' || empty param.sort ? 'selected' : ''}>DEFAULT</option>
+    <option value="priceAsc"  ${param.sort == 'priceAsc' ? 'selected' : ''}>LOWEST PRICE</option>
+    <option value="priceDesc" ${param.sort == 'priceDesc' ? 'selected' : ''}>HIGHEST PRICE</option>
+  </select>
+</div>
       </div>
 
       <div class="bk-list" id="bkList">
@@ -328,11 +328,24 @@
       </div>
     </div>
   </div>
-
   <script src="${pageContext.request.contextPath}/assets/js/booking/booking.js"></script>
+  <script src="${pageContext.request.contextPath}/assets/js/home_js/booking_date.js"></script>
 
+  <script>
+    function applySort() {
+      const sort = document.getElementById("sortSelect").value;
+      const params = new URLSearchParams(window.location.search);
 
- <script src="${pageContext.request.contextPath}/assets/js/home_js/booking_date.js"></script>
+      if (sort && sort.trim() !== "") {
+        params.set("sort", sort);
+      } else {
+        params.delete("sort");
+      }
+
+      window.location.href = "${pageContext.request.contextPath}/booking?" + params.toString();
+    }
+  </script>
+
   <jsp:include page="/view/home/footer.jsp"/>
 </body>
 </html>
