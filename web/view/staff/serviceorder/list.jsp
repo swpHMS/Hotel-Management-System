@@ -573,9 +573,12 @@
                                                 <c:forEach var="it" items="${selected.items}">
                                                     <tr>
                                                         <td>
-                                                            <div style="font-weight:800; color:var(--text);"><c:out value="${it.serviceName}"/></div>
+                                                            <div style="font-weight:800; color:var(--text);">
+                                                                <c:out value="${it.serviceName}"/>
+                                                            </div>
                                                             <div style="font-size:11px; font-weight:600; color:var(--muted); margin-top:2px;">
-                                                                Unit: <c:out value="${it.unitPriceSnapshot}"/>
+                                                                Unit:
+                                                                <fmt:formatNumber value="${it.unitPriceSnapshot}" type="number" maxFractionDigits="0"/>
                                                             </div>
                                                         </td>
 
@@ -602,7 +605,7 @@
 
                                                         <td style="text-align:right; font-weight:800; color:var(--amber);">
                                                             <c:set var="line" value="${it.quantity * it.unitPriceSnapshot}"/>
-                                                            <c:out value="${line}"/>
+                                                            <fmt:formatNumber value="${line}" type="number" maxFractionDigits="0"/>
                                                         </td>
 
                                                         <c:if test="${selected.status == 0}">
@@ -619,7 +622,7 @@
                                                             </td>
                                                         </c:if>
                                                     </tr>
-                                                </c:forEach>
+                                                </c:forEach> 
                                             </tbody>
                                         </table>
                                     </div>
