@@ -7,13 +7,13 @@
        CURRENT BOOKINGS (cb-*)
        FINAL - compact, dashboard-aligned
        ========================= */
-.alert-success{
-    background:#ecfdf3;
-    color:#027a48;
-    padding:12px 16px;
-    border:1px solid rgba(2,122,72,.22);
-    margin-bottom:16px;
-}
+    .alert-success{
+        background:#ecfdf3;
+        color:#027a48;
+        padding:12px 16px;
+        border:1px solid rgba(2,122,72,.22);
+        margin-bottom:16px;
+    }
     .cb-page{
         width:100%;
         max-width:1100px;
@@ -474,23 +474,142 @@
     .cbm-statusWrap{
         margin-bottom:12px;
     }
+    .cb-pagination{
+        margin-top:18px;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:8px;
+        flex-wrap:wrap;
+    }
+    .cb-page-link{
+        min-width:38px;
+        height:38px;
+        padding:0 12px;
+        border:1px solid #dbe3ee;
+        background:#fff;
+        color:#334155;
+        text-decoration:none;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        font-weight:700;
+        transition:.15s ease;
+    }
+    .cb-page-link:hover{
+        background:#f8fafc;
+        border-color:#cbd5e1;
+    }
+    .cb-page-link.is-active{
+        background:#0a1b2a;
+        color:#fff;
+        border-color:#0a1b2a;
+        pointer-events:none;
+    }
+    .cb-page-link.is-disabled{
+        opacity:.45;
+        pointer-events:none;
+    }
+    .cb-toolbar{
+        display:flex;
+        justify-content:flex-end;
+        align-items:center;
+        margin-bottom:14px;
+    }
+
+    .cb-size-form{
+        display:flex;
+        align-items:center;
+        gap:8px;
+    }
+
+    .cb-size-label{
+        font-size:13px;
+        color:#64748b;
+        font-weight:600;
+    }
+
+    .cb-size-select{
+        height:38px;
+        padding:0 10px;
+        border:1px solid #dbe3ee;
+        background:#fff;
+        color:#0f172a;
+        font-weight:600;
+    }
+    .cb-bottombar{
+        margin-top:18px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:16px;
+        flex-wrap:wrap;
+    }
+
+    .cb-size-form{
+        display:flex;
+        align-items:center;
+        gap:8px;
+    }
+
+    .cb-size-label{
+        font-size:13px;
+        color:#64748b;
+        font-weight:600;
+    }
+
+    .cb-size-select{
+        height:38px;
+        padding:0 10px;
+        border:1px solid #dbe3ee;
+        background:#fff;
+        color:#0f172a;
+        font-weight:600;
+    }
+
+    .cb-pagination{
+        margin-top:0;
+        display:flex;
+        justify-content:flex-end;
+        align-items:center;
+        gap:8px;
+        flex-wrap:wrap;
+    }
+
+    @media (max-width: 768px){
+        .cb-bottombar{
+            flex-direction:column;
+            align-items:stretch;
+        }
+
+        .cb-size-form{
+            justify-content:flex-start;
+        }
+
+        .cb-pagination{
+            justify-content:flex-start;
+        }
+    }
 </style>
 
 <div class="cb-page">
     <h2 class="cb-title">Current Bookings</h2>
     <p class="cb-sub">Your upcoming stays</p>
-<c:if test="${not empty sessionScope.successMessage}">
-    <div class="alert-success">
-        ${sessionScope.successMessage}
-    </div>
-    <c:remove var="successMessage" scope="session"/>
-</c:if>
+
+    <c:if test="${not empty sessionScope.successMessage}">
+        <div class="alert-success">
+            ${sessionScope.successMessage}
+        </div>
+        <c:remove var="successMessage" scope="session"/>
+    </c:if>
+
     <c:if test="${not empty sessionScope.errorMessage}">
         <div class="alert-error">
             ${sessionScope.errorMessage}
         </div>
         <c:remove var="errorMessage" scope="session"/>
     </c:if>
+
     <c:choose>
         <c:when test="${empty currentBookings}">
             <div class="empty">
@@ -501,11 +620,10 @@
         </c:when>
 
         <c:otherwise>
-
             <div class="cb-list">
                 <c:forEach var="b" items="${currentBookings}">
                     <div class="cb-card"
-                         data-rooms="${b.quantity}"
+                         data-rooms="${b.roomQuantityText}"
                          data-booking-id="${b.bookingId}"
                          data-status-text="${b.statusText}"
                          data-status-ui="${b.statusUiType}"
@@ -536,7 +654,6 @@
                                     </c:forEach>
                                 </c:otherwise>
                             </c:choose>
-
                         </div>
 
                         <!-- RIGHT -->
@@ -589,28 +706,71 @@
 
                                 <c:if test="${b.canCancel}">
                                     <form action="${pageContext.request.contextPath}/current_bookings"
-      method="post"
-      class="js-cancel-form">
+                                          method="post"
+                                          class="js-cancel-form">
 
-    <input type="hidden"
-           name="bookingId"
-           value="${b.bookingId}" />
+                                        <input type="hidden" name="bookingId" value="${b.bookingId}" />
+                                        <input type="hidden" name="page" value="${currentPage}" />
+                                        <input type="hidden" name="pageSize" value="${pageSize}" />
 
-    <button type="button"
-            class="cb-btn cb-btn-cancel js-open-cancel"
-            data-booking-id="${b.bookingId}">
-        Cancel
-    </button>
-</form>
+                                        <button type="button"
+                                                class="cb-btn cb-btn-cancel js-open-cancel"
+                                                data-booking-id="${b.bookingId}">
+                                            Cancel
+                                        </button>
+                                    </form>
                                 </c:if>
                             </div>
                         </div>
-
                     </div>
                 </c:forEach>
             </div>
         </c:otherwise>
     </c:choose>
+
+    <div class="cb-bottombar">
+
+        <form method="get"
+              action="${pageContext.request.contextPath}/customer/dashboard"
+              class="cb-size-form">
+            <input type="hidden" name="tab" value="current"/>
+            <input type="hidden" name="currentPage" value="1"/>
+
+            <label for="pageSize" class="cb-size-label">Show</label>
+            <select id="pageSize"
+                    name="pageSize"
+                    class="cb-size-select"
+                    onchange="this.form.submit()">
+                <option value="2" ${pageSize == 2 ? 'selected' : ''}>2</option>
+                <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
+                <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
+            </select>
+            <span class="cb-size-label">per page</span>
+        </form>
+        <!-- Pagination -->
+
+        <c:if test="${totalPages > 1}">
+            <div class="cb-pagination">
+                <a class="cb-page-link ${currentPage == 1 ? 'is-disabled' : ''}"
+                   href="${pageContext.request.contextPath}/customer/dashboard?tab=current&currentPage=${currentPage - 1}&pageSize=${pageSize}">
+                    Previous
+                </a>
+
+                <c:forEach begin="1" end="${totalPages}" var="p">
+                    <a class="cb-page-link ${p == currentPage ? 'is-active' : ''}"
+                       href="${pageContext.request.contextPath}/customer/dashboard?tab=current&currentPage=${p}&pageSize=${pageSize}">
+                        ${p}
+                    </a>
+                </c:forEach>
+
+                <a class="cb-page-link ${currentPage == totalPages ? 'is-disabled' : ''}"
+                   href="${pageContext.request.contextPath}/customer/dashboard?tab=current&currentPage=${currentPage + 1}&pageSize=${pageSize}">
+                    Next
+                </a>
+            </div>
+        </c:if>
+
+    </div>
 </div>
 
 <!-- Modal -->
@@ -623,10 +783,8 @@
         </div>
 
         <div class="cbm-panel">
-
             <button type="button" class="cbm-x" id="cbmClose">✕</button>
 
-            <!-- ✅ STATUS RIÊNG -->
             <div class="cbm-statusWrap">
                 <span class="cbm-statusPill" id="cbmStatusPill">—</span>
             </div>
@@ -650,10 +808,6 @@
                     <div class="cbm-v" id="cbmOcc">—</div>
                 </div>
                 <div class="cbm-box">
-                    <div class="cbm-k">ROOMS</div>
-                    <div class="cbm-v" id="cbmRooms">—</div>
-                </div>
-                <div class="cbm-box">
                     <div class="cbm-k">CHECK-IN</div>
                     <div class="cbm-v" id="cbmCheckin">—</div>
                 </div>
@@ -661,7 +815,11 @@
                     <div class="cbm-k">CHECK-OUT</div>
                     <div class="cbm-v" id="cbmCheckout">—</div>
                 </div>
-                <div class="cbm-box" style="grid-column:1/-1;">
+                <div class="cbm-box">
+                    <div class="cbm-k">ROOMS</div>
+                    <div class="cbm-v" id="cbmRooms">—</div>
+                </div>
+                <div class="cbm-box">
                     <div class="cbm-k">TOTAL</div>
                     <div class="cbm-v" id="cbmTotal">—</div>
                 </div>
@@ -673,7 +831,6 @@
                     <span class="cbm-chip">—</span>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
@@ -703,49 +860,49 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-const cancelOverlay = document.getElementById('cancelOverlay');
-const cancelClose = document.getElementById('cancelClose');
-const cancelNoBtn = document.getElementById('cancelNoBtn');
-const cancelYesBtn = document.getElementById('cancelYesBtn');
-const cancelBookingLabel = document.getElementById('cancelBookingLabel');
+        const cancelOverlay = document.getElementById('cancelOverlay');
+        const cancelClose = document.getElementById('cancelClose');
+        const cancelNoBtn = document.getElementById('cancelNoBtn');
+        const cancelYesBtn = document.getElementById('cancelYesBtn');
+        const cancelBookingLabel = document.getElementById('cancelBookingLabel');
 
-let pendingCancelForm = null;
+        let pendingCancelForm = null;
 
-function openCancelModal(form, bookingId) {
-    pendingCancelForm = form;
-    cancelBookingLabel.textContent = '#' + (bookingId || '—');
-    cancelOverlay.classList.add('show');
-    document.body.style.overflow = 'hidden';
-}
+        function openCancelModal(form, bookingId) {
+            pendingCancelForm = form;
+            cancelBookingLabel.textContent = '#' + (bookingId || '—');
+            cancelOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
 
-function closeCancelModal() {
-    cancelOverlay.classList.remove('show');
-    document.body.style.overflow = '';
-    pendingCancelForm = null;
-}
+        function closeCancelModal() {
+            cancelOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+            pendingCancelForm = null;
+        }
 
-document.querySelectorAll('.js-open-cancel').forEach(btn => {
-    btn.addEventListener('click', function () {
-        const form = this.closest('.js-cancel-form');
-        const bookingId = this.dataset.bookingId;
-        openCancelModal(form, bookingId);
-    });
-});
+        document.querySelectorAll('.js-open-cancel').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const form = this.closest('.js-cancel-form');
+                const bookingId = this.dataset.bookingId;
+                openCancelModal(form, bookingId);
+            });
+        });
 
-cancelClose.addEventListener('click', closeCancelModal);
-cancelNoBtn.addEventListener('click', closeCancelModal);
+        cancelClose.addEventListener('click', closeCancelModal);
+        cancelNoBtn.addEventListener('click', closeCancelModal);
 
-cancelOverlay.addEventListener('click', function (e) {
-    if (e.target === cancelOverlay) {
-        closeCancelModal();
-    }
-});
+        cancelOverlay.addEventListener('click', function (e) {
+            if (e.target === cancelOverlay) {
+                closeCancelModal();
+            }
+        });
 
-cancelYesBtn.addEventListener('click', function () {
-    if (pendingCancelForm) {
-        pendingCancelForm.submit();
-    }
-});
+        cancelYesBtn.addEventListener('click', function () {
+            if (pendingCancelForm) {
+                pendingCancelForm.submit();
+            }
+        });
         const overlay = document.getElementById('cbmOverlay');
         const closeBtn = document.getElementById('cbmClose');
         const gallery = document.getElementById('cbmGallery');
@@ -808,7 +965,7 @@ cancelYesBtn.addEventListener('click', function () {
 
         function openDetail(card) {
             gallery.querySelectorAll('img').forEach(x => x.remove());
-
+            document.getElementById('cbmRooms').textContent = card.dataset.rooms || '—';
             document.getElementById('cbmRoom').textContent = card.dataset.room || '—';
             document.getElementById('cbmMeta').textContent = card.dataset.roomMeta || '—';
             document.getElementById('cbmId').textContent = '#' + (card.dataset.bookingId || '—');
