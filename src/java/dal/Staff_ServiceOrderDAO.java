@@ -329,7 +329,7 @@ public class Staff_ServiceOrderDAO {
             ps.setInt(1, serviceOrderId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
-                    con.rollback();
+                    con.rollback(); //ko đc thêm item vì đang ở POSTED
                     return false;
                 }
             }
