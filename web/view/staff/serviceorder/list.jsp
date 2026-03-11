@@ -648,7 +648,9 @@
                                     <!--  RIGHT: ACTIONS -->
                                     <div style="display:flex; gap:10px; align-items:center;">
                                         <c:if test="${selected.status == 0}">
-                                            <form method="post" action="${pageContext.request.contextPath}/staff/service-orders/status">
+                                            <form method="post"
+                                                  action="${pageContext.request.contextPath}/staff/service-orders/status"
+                                                  onsubmit="return confirm('Are you sure you want to cancel this draft order?');">
                                                 <input type="hidden" name="action"  value="cancel"/>
                                                 <input type="hidden" name="orderId" value="${selected.serviceOrderId}"/>
                                                 <button class="btn-link danger" type="submit">🗑 Cancel Draft</button>
