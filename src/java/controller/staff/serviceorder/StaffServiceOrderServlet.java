@@ -24,6 +24,7 @@ public class StaffServiceOrderServlet extends HttpServlet {
         }
     }
 
+    //tránh trường hợp: URL chọn 1 order ko nằm tập DL filter
     private boolean containsId(List<ServiceOrder> orders, Integer id) {
         if (id == null) {
             return false;

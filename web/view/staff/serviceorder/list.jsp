@@ -529,7 +529,7 @@
                                 <div class="detail-head">
                                     <div>
                                         <div class="meta">Service Order</div>
-                                        <div class="so-code">Service Order ID #${selected.serviceOrderId}</div>
+                                        <div class="so-code">Order ID #${selected.serviceOrderId}</div>
                                         <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
                                             <c:choose>
                                                 <c:when test="${selected.status == 0}"><span class="badge b-draft">Draft</span></c:when>
@@ -553,12 +553,6 @@
                                 <!-- BODY -->
                                 <div class="detail-body">
                                     <div class="row">
-                                        <div class="section-title">
-                                            Service Items
-                                            <span class="badge" style="margin-left:8px; background:var(--amber-pale); border-color:#e2c080; color:var(--amber); font-size:9px;">
-                                                <c:out value="${fn:length(selected.items)}"/>
-                                            </span>
-                                        </div>
                                         <c:if test="${selected.status == 0}">
                                             <a href="${pageContext.request.contextPath}/staff/service-orders?id=${selected.serviceOrderId}&modal=addItems&type=1"
                                                class="link-primary">+ Add Items</a>
@@ -579,9 +573,12 @@
                                                 <c:forEach var="it" items="${selected.items}">
                                                     <tr>
                                                         <td>
-                                                            <div style="font-weight:800; color:var(--text);"><c:out value="${it.serviceName}"/></div>
+                                                            <div style="font-weight:800; color:var(--text);">
+                                                                <c:out value="${it.serviceName}"/>
+                                                            </div>
                                                             <div style="font-size:11px; font-weight:600; color:var(--muted); margin-top:2px;">
-                                                                Unit: <c:out value="${it.unitPriceSnapshot}"/>
+                                                                Unit:
+                                                                <fmt:formatNumber value="${it.unitPriceSnapshot}" type="number" maxFractionDigits="0"/>
                                                             </div>
                                                         </td>
 
@@ -608,7 +605,7 @@
 
                                                         <td style="text-align:right; font-weight:800; color:var(--amber);">
                                                             <c:set var="line" value="${it.quantity * it.unitPriceSnapshot}"/>
-                                                            <c:out value="${line}"/>
+                                                            <fmt:formatNumber value="${line}" type="number" maxFractionDigits="0"/>
                                                         </td>
 
                                                         <c:if test="${selected.status == 0}">
@@ -625,7 +622,7 @@
                                                             </td>
                                                         </c:if>
                                                     </tr>
-                                                </c:forEach>
+                                                </c:forEach> 
                                             </tbody>
                                         </table>
                                     </div>
@@ -651,7 +648,9 @@
                                     <!--  RIGHT: ACTIONS -->
                                     <div style="display:flex; gap:10px; align-items:center;">
                                         <c:if test="${selected.status == 0}">
-                                            <form method="post" action="${pageContext.request.contextPath}/staff/service-orders/status">
+                                            <form method="post"
+                                                  action="${pageContext.request.contextPath}/staff/service-orders/status"
+                                                  onsubmit="return confirm('Are you sure you want to cancel this draft order?');">
                                                 <input type="hidden" name="action"  value="cancel"/>
                                                 <input type="hidden" name="orderId" value="${selected.serviceOrderId}"/>
                                                 <button class="btn-link danger" type="submit">🗑 Cancel Draft</button>

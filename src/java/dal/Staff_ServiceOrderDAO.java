@@ -302,106 +302,67 @@ public class Staff_ServiceOrderDAO {
     }
 
     // ========== ADD ITEM TO DRAFT (snapshot price) ==========
-    public boolean addItemsToDraft(int serviceOrderId, int[] serviceIds, int[] quantities) {
-        String sqlCheck = "SELECT status FROM service_orders WHERE service_order_id = ?";
-        String sqlGetPrice = "SELECT unit_price FROM services WHERE service_id = ?";
-        String sqlInsertItem
-                = "INSERT INTO service_order_items(service_order_id, service_id, quantity, unit_price_snapshot) "
-                + "VALUES(?, ?, ?, ?)";
+    public boolean addItemToDraft2(int serviceOrderId, int serviceId, int quantity) {
+    String checkDraftSql = """
+        SELECT 1
+        FROM service_orders
+        WHERE service_order_id = ? AND status = 0
+    """;
 
-        Connection con = null;
-        try {
-            con = new DBContext().getConnection();
-            con.setAutoCommit(false);
+    String updateSql = """
+        UPDATE service_order_items
+        SET quantity = quantity + ?
+        WHERE service_order_id = ? AND service_id = ?
+    """;
 
-            // 1) check draft
-            try (PreparedStatement ps = con.prepareStatement(sqlCheck)) {
-                ps.setInt(1, serviceOrderId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next() || rs.getInt(1) != 0) {
-                        con.rollback();
-                        return false;
-                    }
+    String insertSql = """
+        INSERT INTO service_order_items (service_order_id, service_id, quantity, unit_price_snapshot)
+        SELECT ?, s.service_id, ?, s.unit_price
+        FROM services s
+        WHERE s.service_id = ?
+    """;
+
+    try (Connection con = new DBContext().getConnection()) {
+        con.setAutoCommit(false);
+
+        try (PreparedStatement ps = con.prepareStatement(checkDraftSql)) {
+            ps.setInt(1, serviceOrderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    con.rollback(); //ko đc thêm item vì đang ở POSTED
+                    return false;
                 }
-            }
-
-            // 2) insert each item with snapshot price
-            for (int i = 0; i < serviceIds.length; i++) {
-                int sid = serviceIds[i];
-                int qty = quantities[i];
-
-                BigDecimal price;
-                try (PreparedStatement ps = con.prepareStatement(sqlGetPrice)) {
-                    ps.setInt(1, sid);
-                    try (ResultSet rs = ps.executeQuery()) {
-                        if (!rs.next()) {
-                            con.rollback();
-                            return false;
-                        }
-                        price = rs.getBigDecimal(1);
-                    }
-                }
-
-                try (PreparedStatement ps = con.prepareStatement(sqlInsertItem)) {
-                    ps.setInt(1, serviceOrderId);
-                    ps.setInt(2, sid);
-                    ps.setInt(3, qty);
-                    ps.setBigDecimal(4, price);
-                    ps.executeUpdate();
-                }
-            }
-
-            con.commit();
-            return true;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            try {
-                if (con != null) {
-                    con.rollback();
-                }
-            } catch (Exception ex) {
-            }
-            return false;
-
-        } finally {
-            try {
-                if (con != null) {
-                    con.setAutoCommit(true);
-                }
-            } catch (Exception ex) {
-            }
-            try {
-                if (con != null) {
-                    con.close();
-                }
-            } catch (Exception ex) {
             }
         }
-    }
 
-    public boolean addItemToDraft2(int serviceOrderId, int serviceId, int quantity) {
-        String sql
-                = "INSERT INTO service_order_items (service_order_id, service_id, quantity, unit_price_snapshot) "
-                + "SELECT ?, s.service_id, ?, s.unit_price "
-                + "FROM services s "
-                + "WHERE s.service_id = ? "
-                + "  AND EXISTS (SELECT 1 FROM service_orders so WHERE so.service_order_id = ? AND so.status = 0)";
+        try (PreparedStatement ps = con.prepareStatement(updateSql)) {
+            ps.setInt(1, quantity);
+            ps.setInt(2, serviceOrderId);
+            ps.setInt(3, serviceId);
 
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            int updated = ps.executeUpdate();
+            if (updated > 0) {
+                con.commit();
+                return true;
+            }
+        }
 
+        try (PreparedStatement ps = con.prepareStatement(insertSql)) {
             ps.setInt(1, serviceOrderId);
             ps.setInt(2, quantity);
             ps.setInt(3, serviceId);
-            ps.setInt(4, serviceOrderId);
 
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
+            int inserted = ps.executeUpdate();
+            con.commit();
+            return inserted > 0;
         }
-        return false;
-    }
 
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return false;
+}
+    
     //========lấy services theo type=========
     public List<Service> listServicesByType(int serviceType) {
         List<Service> list = new ArrayList<>();
