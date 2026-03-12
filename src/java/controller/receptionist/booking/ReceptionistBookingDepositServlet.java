@@ -71,7 +71,7 @@ public class ReceptionistBookingDepositServlet extends HttpServlet {
         String fullName = (String) session.getAttribute("cus_fullName");
         String phone    = (String) session.getAttribute("cus_phone");
         String email    = (String) session.getAttribute("cus_email");
-        String identity = (String) session.getAttribute("cus_identity");
+String identity = (String) session.getAttribute("cus_identity");
         String address  = (String) session.getAttribute("cus_address");
 
         try {

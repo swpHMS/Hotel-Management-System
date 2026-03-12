@@ -62,7 +62,7 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
 
         long nights = dao.calcNights(checkIn.toLocalDate(), checkOut.toLocalDate());
         long rate = selected != null ? selected.getRatePerNight() : 0;
-        long total = rate * nights * rooms;
+long total = rate * nights * rooms;
 
         req.setAttribute("checkIn", checkIn);
         req.setAttribute("checkOut", checkOut);
@@ -124,7 +124,7 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
 
         // 5. Tiến hành giữ phòng (Hold)
         try {
-            int holdId = dao.createHold(userId, roomTypeId, checkIn, checkOut, rooms, 15);
+int holdId = dao.createHold(userId, roomTypeId, checkIn, checkOut, rooms, 15);
             
             // Chuyển hướng sang bước 2 (Điền thông tin khách)
             resp.sendRedirect(req.getContextPath() + "/receptionist/booking/customer?holdId=" + holdId);

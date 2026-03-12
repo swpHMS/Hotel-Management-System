@@ -8,7 +8,6 @@ import java.time.LocalDate;
 public class ReceptAvailabilityHoldDAO extends DBContext {
 
     // status int (theo bạn)
-    public static final int HOLD_CANCELLED = 0;
     public static final int HOLD_ACTIVE    = 1;
     public static final int HOLD_EXPIRED   = 2;
     public static final int HOLD_CONFIRMED = 3;
@@ -86,8 +85,7 @@ public class ReceptAvailabilityHoldDAO extends DBContext {
                 con.commit();
                 return;
             }
-
-            // trừ held_rooms theo nights
+// trừ held_rooms theo nights
             String sqlUpdateInv =
                 "UPDATE inv " +
                 "SET inv.held_rooms = inv.held_rooms - hn.quantity " +
@@ -168,7 +166,7 @@ public class ReceptAvailabilityHoldDAO extends DBContext {
             ps.setInt(1, holdId);
             ps.setInt(2, roomTypeId);
             ps.setInt(3, qty);
-            ps.executeUpdate();
+ps.executeUpdate();
         }
     }
 
@@ -241,7 +239,7 @@ public class ReceptAvailabilityHoldDAO extends DBContext {
                     try (PreparedStatement psInv = con.prepareStatement(
                             "UPDATE inv SET inv.held_rooms = inv.held_rooms - hn.quantity " +
                             "FROM dbo.room_type_inventory inv " +
-                            "JOIN dbo.availability_hold_nights hn " +
+"JOIN dbo.availability_hold_nights hn " +
                             "  ON hn.room_type_id = inv.room_type_id AND hn.inventory_date = inv.inventory_date " +
                             "WHERE hn.hold_id = ?")) {
                         psInv.setInt(1, holdId);

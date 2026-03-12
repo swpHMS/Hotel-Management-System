@@ -12,7 +12,6 @@ import model.HoldSummary;
 public class ReceptBookingDAO extends DBContext {
 
     // ===== HOLD STATUS (INT) =====
-    public static final int HOLD_CANCELLED = 0;
     public static final int HOLD_ACTIVE = 1;
     public static final int HOLD_CONFIRMED = 2;
     public static final int HOLD_EXPIRED = 3;
@@ -73,7 +72,7 @@ public class ReceptBookingDAO extends DBContext {
                 while (rs.next()) {
                     RoomTypeCard c = new RoomTypeCard();
                     c.setRoomTypeId(rs.getInt("room_type_id"));
-                    c.setRoomTypeName(rs.getString("name"));
+c.setRoomTypeName(rs.getString("name"));
                     c.setRatePerNight(rs.getBigDecimal("rate_per_night").longValue());
 
                     int av = rs.getInt("available_rooms");
@@ -148,7 +147,7 @@ public class ReceptBookingDAO extends DBContext {
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (!rs.next()) {
-                        throw new SQLException("Cannot get hold_id.");
+throw new SQLException("Cannot get hold_id.");
                     }
                     holdId = rs.getInt(1);
                 }
@@ -229,7 +228,7 @@ public class ReceptBookingDAO extends DBContext {
                 + "   FROM dbo.rate_versions "
                 + "   WHERE room_type_id = i.room_type_id "
                 + "     AND h.check_in_date BETWEEN valid_from AND valid_to "
-                + "   ORDER BY valid_from DESC, rate_version_id DESC "
++ "   ORDER BY valid_from DESC, rate_version_id DESC "
                 + ") rv "
                 + "WHERE h.hold_id = ?;";
 
@@ -300,7 +299,7 @@ public class ReceptBookingDAO extends DBContext {
                     + "   FROM dbo.rate_versions "
                     + "   WHERE room_type_id = i.room_type_id "
                     + "     AND h.check_in_date BETWEEN valid_from AND valid_to "
-                    + "   ORDER BY valid_from DESC, rate_version_id DESC "
++ "   ORDER BY valid_from DESC, rate_version_id DESC "
                     + ") rv "
                     + "WHERE h.hold_id = ?;";
 
@@ -366,7 +365,6 @@ String safeAddress = (address == null) ? null : address.trim();
 if (safeFullName == null || safeFullName.isEmpty()) {
     throw new SQLException("Customer full name is required.");
 }
-
 if (safePhone != null && safePhone.isEmpty()) safePhone = null;
 if (safeIdentity != null && safeIdentity.isEmpty()) safeIdentity = null;
 if (safeAddress != null && safeAddress.isEmpty()) safeAddress = null;
@@ -445,7 +443,7 @@ if (customerId == null) {
         else ps.setString(2, safePhone);
 
         if (safeIdentity == null) ps.setNull(3, Types.VARCHAR);
-        else ps.setString(3, safeIdentity);
+else ps.setString(3, safeIdentity);
 
         if (safeAddress == null) ps.setNull(4, Types.NVARCHAR);
         else ps.setString(4, safeAddress);
@@ -517,7 +515,7 @@ if (customerId == null) {
                     + "SET i.booked_rooms = i.booked_rooms + n.quantity, "
                     + "    i.held_rooms   = i.held_rooms   - n.quantity "
                     + "FROM dbo.room_type_inventory i "
-                    + "JOIN dbo.availability_hold_nights n "
++ "JOIN dbo.availability_hold_nights n "
                     + "  ON n.room_type_id = i.room_type_id AND n.inventory_date = i.inventory_date "
                     + "WHERE n.hold_id = ?;";
 
@@ -579,82 +577,99 @@ if (customerId == null) {
     }
 
     // ===== internal tx helper =====
-    private void releaseHoldByIdTx(Connection con, int holdId) throws SQLException {
-        String sqlDec
-                = "UPDATE i "
-                + "SET i.held_rooms = CASE WHEN i.held_rooms >= n.quantity THEN i.held_rooms - n.quantity ELSE 0 END "
-                + "FROM dbo.room_type_inventory i "
-                + "JOIN dbo.availability_hold_nights n "
-                + "  ON n.room_type_id = i.room_type_id AND n.inventory_date = i.inventory_date "
-                + "WHERE n.hold_id = ?;";
+private void releaseHoldByIdTx(Connection con, int holdId) throws SQLException {
+    String sqlDec
+            = "UPDATE i "
+            + "SET i.held_rooms = CASE "
+            + "    WHEN i.held_rooms >= n.quantity THEN i.held_rooms - n.quantity "
+            + "    ELSE 0 "
+            + "END "
+            + "FROM dbo.room_type_inventory i "
+            + "JOIN dbo.availability_hold_nights n "
+            + "  ON n.room_type_id = i.room_type_id "
+            + " AND n.inventory_date = i.inventory_date "
+            + "WHERE n.hold_id = ?;";
 
-        try (PreparedStatement ps = con.prepareStatement(sqlDec)) {
-            ps.setInt(1, holdId);
-            ps.executeUpdate();
-        }
-
-        String sqlHold
-                = "UPDATE dbo.availability_holds SET status=? WHERE hold_id=? AND status=?;";
-        try (PreparedStatement ps = con.prepareStatement(sqlHold)) {
-            ps.setInt(1, HOLD_CANCELLED);
-            ps.setInt(2, holdId);
-            ps.setInt(3, HOLD_ACTIVE);
-            ps.executeUpdate();
-        }
+    try (PreparedStatement ps = con.prepareStatement(sqlDec)) {
+        ps.setInt(1, holdId);
+        ps.executeUpdate();
     }
 
-    // ================================
-    // DỌN DẸP CÁC HOLD QUÁ HẠN
-    // ================================
-    public int expireHolds() throws SQLException {
-        Connection con = null;
-        try {
-            con = connection;
-            con.setAutoCommit(false);
-            int affected = expireHoldsTx(con);
-            con.commit();
-            return affected;
-        } catch (SQLException ex) {
-            if (con != null) {
-                con.rollback();
-            }
-            throw ex;
-        } finally {
-            if (con != null) {
-                con.setAutoCommit(true);
-            }
+    String sqlHold
+            = "UPDATE dbo.availability_holds "
+            + "SET status = ? "
+            + "WHERE hold_id = ? AND status = ?;";
+
+    try (PreparedStatement ps = con.prepareStatement(sqlHold)) {
+        ps.setInt(1, HOLD_EXPIRED);
+        ps.setInt(2, holdId);
+        ps.setInt(3, HOLD_ACTIVE);
+        ps.executeUpdate();
+    }
+}
+
+// ================================
+// DỌN DẸP CÁC HOLD QUÁ HẠN
+// ================================
+public int expireHolds() throws SQLException {
+    Connection con = null;
+    try {
+        con = connection;
+        con.setAutoCommit(false);
+        int affected = expireHoldsTx(con);
+        con.commit();
+        return affected;
+    } catch (SQLException ex) {
+        if (con != null) {
+            con.rollback();
+        }
+        throw ex;
+    } finally {
+        if (con != null) {
+            con.setAutoCommit(true);
         }
     }
+}
 
-    private int expireHoldsTx(Connection con) throws SQLException {
-        String select = "SELECT hold_id FROM dbo.availability_holds WHERE status = ? AND expires_at < SYSDATETIME()";
-        int count = 0;
-        try (PreparedStatement psSel = con.prepareStatement(select)) {
-            psSel.setInt(1, HOLD_ACTIVE);
-            try (ResultSet rs = psSel.executeQuery()) {
-                while (rs.next()) {
-                    int holdId = rs.getInt(1);
+private int expireHoldsTx(Connection con) throws SQLException {
+    String select = "SELECT hold_id FROM dbo.availability_holds WHERE status = ? AND expires_at < SYSDATETIME()";
+    int count = 0;
 
-                    try (PreparedStatement psInv = con.prepareStatement(
-                            "UPDATE inv SET inv.held_rooms = inv.held_rooms - hn.quantity "
-                            + "FROM dbo.room_type_inventory inv "
-                            + "JOIN dbo.availability_hold_nights hn "
-                            + "  ON hn.room_type_id = inv.room_type_id AND hn.inventory_date = inv.inventory_date "
-                            + "WHERE hn.hold_id = ?")) {
-                        psInv.setInt(1, holdId);
-                        psInv.executeUpdate();
-                    }
+    try (PreparedStatement psSel = con.prepareStatement(select)) {
+        psSel.setInt(1, HOLD_ACTIVE);
 
-                    try (PreparedStatement psUp = con.prepareStatement(
-                            "UPDATE dbo.availability_holds SET status = ? WHERE hold_id = ?")) {
-                        psUp.setInt(1, HOLD_EXPIRED);
-                        psUp.setInt(2, holdId);
-                        psUp.executeUpdate();
-                    }
-                    count++;
+        try (ResultSet rs = psSel.executeQuery()) {
+            while (rs.next()) {
+                int holdId = rs.getInt(1);
+
+                try (PreparedStatement psInv = con.prepareStatement(
+                        "UPDATE inv "
+                        + "SET inv.held_rooms = CASE "
+                        + "    WHEN inv.held_rooms >= hn.quantity THEN inv.held_rooms - hn.quantity "
+                        + "    ELSE 0 "
+                        + "END "
+                        + "FROM dbo.room_type_inventory inv "
+                        + "JOIN dbo.availability_hold_nights hn "
+                        + "  ON hn.room_type_id = inv.room_type_id "
+                        + " AND hn.inventory_date = inv.inventory_date "
+                        + "WHERE hn.hold_id = ?")) {
+                    psInv.setInt(1, holdId);
+                    psInv.executeUpdate();
                 }
+
+                try (PreparedStatement psUp = con.prepareStatement(
+                        "UPDATE dbo.availability_holds SET status = ? WHERE hold_id = ? AND status = ?")) {
+                    psUp.setInt(1, HOLD_EXPIRED);
+                    psUp.setInt(2, holdId);
+                    psUp.setInt(3, HOLD_ACTIVE);
+                    psUp.executeUpdate();
+                }
+
+                count++;
             }
         }
-        return count;
     }
+
+    return count;
+}
 }
