@@ -578,27 +578,28 @@ else ps.setString(3, safeIdentity);
 
     // ===== internal tx helper =====
 private void releaseHoldByIdTx(Connection con, int holdId) throws SQLException {
-    String sqlDec
-            = "UPDATE i "
-            + "SET i.held_rooms = CASE "
-            + "    WHEN i.held_rooms >= n.quantity THEN i.held_rooms - n.quantity "
-            + "    ELSE 0 "
-            + "END "
-            + "FROM dbo.room_type_inventory i "
-            + "JOIN dbo.availability_hold_nights n "
-            + "  ON n.room_type_id = i.room_type_id "
-            + " AND n.inventory_date = i.inventory_date "
-            + "WHERE n.hold_id = ?;";
+
+    String sqlDec =
+            "UPDATE i " +
+            "SET i.held_rooms = CASE " +
+            "    WHEN i.held_rooms >= n.quantity THEN i.held_rooms - n.quantity " +
+            "    ELSE 0 " +
+            "END " +
+            "FROM dbo.room_type_inventory i " +
+            "JOIN dbo.availability_hold_nights n " +
+            "  ON n.room_type_id = i.room_type_id " +
+            " AND n.inventory_date = i.inventory_date " +
+            "WHERE n.hold_id = ?;";
 
     try (PreparedStatement ps = con.prepareStatement(sqlDec)) {
         ps.setInt(1, holdId);
         ps.executeUpdate();
     }
 
-    String sqlHold
-            = "UPDATE dbo.availability_holds "
-            + "SET status = ? "
-            + "WHERE hold_id = ? AND status = ?;";
+    String sqlHold =
+            "UPDATE dbo.availability_holds " +
+            "SET status = ? " +
+            "WHERE hold_id = ? AND status = ?;";
 
     try (PreparedStatement ps = con.prepareStatement(sqlHold)) {
         ps.setInt(1, HOLD_EXPIRED);
@@ -607,67 +608,98 @@ private void releaseHoldByIdTx(Connection con, int holdId) throws SQLException {
         ps.executeUpdate();
     }
 }
-
 // ================================
 // DỌN DẸP CÁC HOLD QUÁ HẠN
 // ================================
 public int expireHolds() throws SQLException {
+
     Connection con = null;
+
     try {
+
         con = connection;
         con.setAutoCommit(false);
+
         int affected = expireHoldsTx(con);
+
         con.commit();
+
         return affected;
+
     } catch (SQLException ex) {
+
         if (con != null) {
             con.rollback();
         }
+
         throw ex;
+
     } finally {
+
         if (con != null) {
             con.setAutoCommit(true);
         }
+
     }
 }
 
 private int expireHoldsTx(Connection con) throws SQLException {
-    String select = "SELECT hold_id FROM dbo.availability_holds WHERE status = ? AND expires_at < SYSDATETIME()";
+
+    String select =
+            "SELECT hold_id " +
+            "FROM dbo.availability_holds " +
+            "WHERE status = ? " +
+            "AND expires_at < SYSDATETIME()";
+
     int count = 0;
 
     try (PreparedStatement psSel = con.prepareStatement(select)) {
+
         psSel.setInt(1, HOLD_ACTIVE);
 
         try (ResultSet rs = psSel.executeQuery()) {
+
             while (rs.next()) {
-                int holdId = rs.getInt(1);
+
+                int holdId = rs.getInt("hold_id");
 
                 try (PreparedStatement psInv = con.prepareStatement(
-                        "UPDATE inv "
-                        + "SET inv.held_rooms = CASE "
-                        + "    WHEN inv.held_rooms >= hn.quantity THEN inv.held_rooms - hn.quantity "
-                        + "    ELSE 0 "
-                        + "END "
-                        + "FROM dbo.room_type_inventory inv "
-                        + "JOIN dbo.availability_hold_nights hn "
-                        + "  ON hn.room_type_id = inv.room_type_id "
-                        + " AND hn.inventory_date = inv.inventory_date "
-                        + "WHERE hn.hold_id = ?")) {
+                        "UPDATE inv " +
+                        "SET inv.held_rooms = CASE " +
+                        "    WHEN inv.held_rooms >= hn.quantity THEN inv.held_rooms - hn.quantity " +
+                        "    ELSE 0 " +
+                        "END " +
+                        "FROM dbo.room_type_inventory inv " +
+                        "JOIN dbo.availability_hold_nights hn " +
+                        "  ON hn.room_type_id = inv.room_type_id " +
+                        " AND hn.inventory_date = inv.inventory_date " +
+                        "WHERE hn.hold_id = ?"
+                )) {
+
                     psInv.setInt(1, holdId);
                     psInv.executeUpdate();
+
                 }
 
                 try (PreparedStatement psUp = con.prepareStatement(
-                        "UPDATE dbo.availability_holds SET status = ? WHERE hold_id = ? AND status = ?")) {
+                        "UPDATE dbo.availability_holds " +
+                        "SET status = ? " +
+                        "WHERE hold_id = ? AND status = ?"
+                )) {
+
                     psUp.setInt(1, HOLD_EXPIRED);
                     psUp.setInt(2, holdId);
                     psUp.setInt(3, HOLD_ACTIVE);
                     psUp.executeUpdate();
+
                 }
 
                 count++;
+
             }
+
         }
+
     }
 
     return count;
