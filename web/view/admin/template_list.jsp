@@ -1,7 +1,7 @@
 <%-- 
     Document   : template_list
     Created on : Feb 20, 2026
-    Author     : DieuBHHE191686
+    Author     : ASUS
 --%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
@@ -524,7 +524,7 @@
                                         onclick="window.location='${pageContext.request.contextPath}/admin/templates?id=${selectedTemplate.templateId}'">
                                     Discard
                                 </button>
-                                <button type="submit" class="btn primary" onclick="showToast()">
+                                <button type="submit" class="btn primary">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
                                         <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
@@ -565,6 +565,17 @@
                     }
                     cb.addEventListener('change', syncToggle);
                     syncToggle();
+                }
+            });
+            
+            // Kiểm tra tham số trên URL khi trang load xong
+            document.addEventListener('DOMContentLoaded', function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('saved') === '1') {
+                    showToast();
+                    // Xóa tham số ?saved=1 trên URL để tránh hiện lại khi F5
+                    const newUrl = window.location.pathname + "?id=" + urlParams.get('id');
+                    window.history.replaceState({}, document.title, newUrl);
                 }
             });
 

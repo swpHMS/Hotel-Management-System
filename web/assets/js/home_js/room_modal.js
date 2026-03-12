@@ -2,7 +2,31 @@
   const modal = document.getElementById("roomModal");
   if (!modal) return;
 
-  const ctx = window.__CTX__ || "";
+  function detectCtx() {
+    const body = document.querySelector("body");
+    const bodyCtx = body ? body.getAttribute("data-ctx") : "";
+    if (bodyCtx && bodyCtx.trim() !== "") return bodyCtx.trim();
+
+    if (typeof window.__CTX__ === "string" && window.__CTX__.trim() !== "") {
+      return window.__CTX__.trim();
+    }
+
+    const p = window.location.pathname || "/";
+    const parts = p.split("/").filter(Boolean);
+
+    if (parts.length > 0) {
+      const first = parts[0];
+      const reserved = new Set([
+        "booking", "home", "policy", "login", "logout",
+        "customer", "staff", "admin"
+      ]);
+      if (!reserved.has(first)) return "/" + first;
+    }
+
+    return "";
+  }
+
+  const ctx = detectCtx();
   const SEP = window.__AMEN_SEP__ || "|";
 
   // ===== elements (gallery) =====
@@ -20,8 +44,12 @@
   const rmBed = document.getElementById("rmBed");
   const rmView = document.getElementById("rmView");
   const rmPrice = document.getElementById("rmPrice");
-  const rmCheckBtn = document.getElementById("rmCheckBtn");
-  const rmDetailPageBtn = document.getElementById("rmDetailPageBtn");
+
+  const bookingBtn =
+    document.getElementById("rmBookingBtn") ||
+    document.getElementById("rmCheckBtn");
+
+  const detailPageBtn = document.getElementById("rmDetailPageBtn");
 
   // ===== state =====
   let gallery = [];
@@ -32,29 +60,34 @@
     modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
   }
+
   function closeModal() {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
   }
-  function plural(n, one, many) { n = Number(n || 0); return n === 1 ? one : many; }
+
+  function plural(n, one, many) {
+    n = Number(n || 0);
+    return n === 1 ? one : many;
+  }
 
   function setImg(i) {
     if (!gallery.length) return;
     idx = (i + gallery.length) % gallery.length;
 
     const url = gallery[idx];
-    rmMainImg.src = url;
-    rmMainImg.alt = title?.textContent || "Room";
+    if (rmMainImg) {
+      rmMainImg.src = url;
+      rmMainImg.alt = title?.textContent || "Room";
+    }
 
-    // active dot
     if (rmDots) {
       [...rmDots.querySelectorAll(".rm-dot")].forEach((d, k) => {
         d.classList.toggle("active", k === idx);
       });
     }
 
-    // ẩn/hiện nav nếu chỉ có 1 ảnh
     const showNav = gallery.length > 1;
     if (rmPrev) rmPrev.style.display = showNav ? "" : "none";
     if (rmNext) rmNext.style.display = showNav ? "" : "none";
@@ -64,7 +97,6 @@
   function buildDots() {
     if (!rmDots) return;
     rmDots.innerHTML = "";
-
     gallery.forEach((_, i) => {
       const dot = document.createElement("span");
       dot.className = "rm-dot" + (i === idx ? " active" : "");
@@ -74,13 +106,12 @@
   }
 
   function parseGallery(d) {
-    // ưu tiên data-images (danh sách), fallback data-img (1 ảnh)
     const listRaw = (d.images || "").trim();
-    const list = listRaw ? listRaw.split("|").map(s => s.trim()).filter(Boolean) : [];
-
+    const list = listRaw
+      ? listRaw.split("|").map(s => s.trim()).filter(Boolean)
+      : [];
     const single = (d.img || "").trim();
     if (list.length) return list;
-
     if (single) return [single];
     return [];
   }
@@ -94,11 +125,29 @@
       : [];
 
     rmAmenities.innerHTML = items
-      .map(x => '<div class="room-modal__amenity"><span class="ico">✓</span> ' + x + '</div>')
+      .map(x => '<div class="room-modal__amenity"><span class="ico">✓</span> ' + x + "</div>")
       .join("");
   }
 
-  // click DETAILS
+  function buildBookingHref(roomTypeId) {
+    const checkIn = document.getElementById("checkIn")?.value || "";
+    const checkOut = document.getElementById("checkOut")?.value || "";
+    const adults = document.getElementById("adultsHidden")?.value || "2";
+    const children = document.getElementById("childrenHidden")?.value || "0";
+    const roomQty = document.querySelector('input[name="roomQty"]')?.value || "1";
+
+    const qs = new URLSearchParams({
+      roomTypeId: roomTypeId || "",
+      checkIn,
+      checkOut,
+      adults,
+      children,
+      roomQty
+    });
+
+    return ctx + "/booking?" + qs.toString();
+  }
+
   document.addEventListener("click", function (e) {
     const btn = e.target.closest(".js-room-detail");
     if (!btn) return;
@@ -115,37 +164,53 @@
     const desc = d.desc || "";
 
     const adult = Number(d.adult || 0);
-    const child = (d.child && d.child !== "null" && d.child !== "") ? Number(d.child || 0) : null;
+    const child = (d.child && d.child !== "null" && d.child !== "")
+      ? Number(d.child || 0)
+      : null;
 
-    // ===== content =====
-    title.textContent = name;
-    descEl.textContent = desc || "A refined blend of comfort and modern design, curated for a restful stay.";
-    rmSize.textContent = size;
-    rmBed.textContent = bed;
-    rmView.textContent = view;
+    if (title) title.textContent = name;
+    if (descEl) {
+      descEl.textContent =
+        desc || "A refined blend of comfort and modern design, curated for a restful stay.";
+    }
+    if (rmSize) rmSize.textContent = size;
+    if (rmBed) rmBed.textContent = bed;
+    if (rmView) rmView.textContent = view;
 
     let occText = "Up to " + adult + " " + plural(adult, "Adult", "Adults");
-    if (child !== null) occText += ", " + child + " " + plural(child, "Child", "Children");
-    rmOcc.textContent = occText;
+    if (child !== null) {
+      occText += ", " + child + " " + plural(child, "Child", "Children");
+    }
+    if (rmOcc) rmOcc.textContent = occText;
 
-    rmPrice.textContent = (price && price !== "null") ? price : "CONTACT";
+    if (rmPrice) {
+      rmPrice.textContent = (price && price !== "null") ? price : "CONTACT";
+    }
 
-    rmCheckBtn.href = ctx + "/booking?roomTypeId=" + id;
-    rmDetailPageBtn.href = ctx + "/room-type/detail?id=" + id;
+    if (bookingBtn) {
+      bookingBtn.href = buildBookingHref(id);
+      console.log("[MOVE TO BOOKING] href =", bookingBtn.href);
+    }
+
+    if (detailPageBtn) {
+      detailPageBtn.href = ctx + "/room-type/detail?id=" + encodeURIComponent(id);
+    }
 
     renderAmenities(d.amenities || "");
 
-    // ===== gallery =====
     gallery = parseGallery(d);
     idx = 0;
 
-    // badge text (tuỳ bạn)
     if (rmBadge) rmBadge.textContent = (name || "ROOM") + " GALLERY";
 
     if (!gallery.length) {
-      // fallback nếu không có ảnh -> để ảnh placeholder
-      rmMainImg.src = "";
-      rmMainImg.removeAttribute("src");
+      if (rmMainImg) {
+        rmMainImg.removeAttribute("src");
+        rmMainImg.alt = name || "Room";
+      }
+      if (rmPrev) rmPrev.style.display = "none";
+      if (rmNext) rmNext.style.display = "none";
+      if (rmDots) rmDots.style.display = "none";
     } else {
       buildDots();
       setImg(0);
@@ -154,11 +219,9 @@
     openModal();
   });
 
-  // nav buttons
   if (rmPrev) rmPrev.addEventListener("click", () => setImg(idx - 1));
   if (rmNext) rmNext.addEventListener("click", () => setImg(idx + 1));
 
-  // close
   modal.addEventListener("click", function (e) {
     if (e.target.closest('[data-close="1"]')) closeModal();
   });

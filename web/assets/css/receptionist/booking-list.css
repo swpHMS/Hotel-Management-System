@@ -1,0 +1,334 @@
+/* =====================================
+   BOOKING LIST - UNIFIED DASHBOARD STYLE (BEIGE THEME)
+   ===================================== */
+
+/* ===== Layout ===== */
+body{
+  background:#f5f0e8;
+}
+
+.hms-main{
+  margin-left:260px;
+  width:calc(100% - 260px);
+  padding:30px;
+  min-height:100vh;
+}
+
+/* Responsive */
+@media (max-width:992px){
+  .hms-main{
+    margin-left:0;
+    width:100%;
+    padding:18px;
+  }
+}
+
+/* =====================================
+   PAGE HEADER
+   ===================================== */
+
+.page-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:22px;
+}
+
+/* Title giống dashboard */
+.page-title{
+  font-family:'Playfair Display',serif;
+  font-weight:700;
+  letter-spacing:.5px;
+  color:#2d1f0f;
+  margin:0;
+}
+
+.dashboard-subtitle{
+  font-size:.9rem;
+  color:#6b5f52;
+  font-weight:600;
+}
+
+/* =====================================
+   BUTTON
+   ===================================== */
+
+.btn-new-reservation{
+  background:#121826;
+  color:#fff;
+  border:none;
+  padding:10px 20px;
+  border-radius:12px;
+  font-weight:800;
+  font-size:.85rem;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  text-decoration:none;
+  transition:.2s;
+}
+
+.btn-new-reservation:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.05);
+  color:#fff;
+}
+
+/* =====================================
+   TABLE CARD
+   ===================================== */
+
+.booking-table-container{
+  background:#fbf7f1;               /* trắng ngà */
+  border-radius:22px;
+  overflow:hidden;
+  box-shadow:0 10px 24px rgba(0,0,0,.06);
+  border:1px solid #e7dfd0;         /* viền be nhạt */
+}
+
+/* Responsive scroll */
+.booking-table-container .table-responsive{
+  overflow-x:auto;
+}
+
+/* =====================================
+   TABLE STYLE
+   ===================================== */
+
+.custom-table{
+  margin:0;
+}
+
+/* Header */
+.custom-table thead th{
+  background:#f3eee5 !important;    /* be nhạt */
+  font-size:.72rem;
+  font-weight:900;
+  color:#a79d90 !important;         /* chữ mờ */
+  padding:15px 16px !important;
+  text-transform:uppercase;
+  letter-spacing:.16em;             /* giống ảnh */
+  vertical-align:middle !important;
+  white-space:nowrap;
+  border-bottom:1px solid #e7dfd0 !important;
+}
+
+/* Body */
+.custom-table tbody td{
+  padding:15px 16px !important;
+  border-bottom:1px solid #e6ddcc !important;
+  font-size:.95rem;
+  color:#2d1f0f;
+  vertical-align:middle;
+  white-space:nowrap;
+}
+
+/* Hover row */
+.custom-table.table-hover tbody tr:hover{
+  background:#f7f3eb;
+}
+
+/* Booking ID */
+.td-booking-id{
+  font-weight:900;
+  color:#2d1f0f;
+}
+
+/* =====================================
+   STATUS BADGE
+   ===================================== */
+
+.badge-pill{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:.72rem;
+  font-weight:900;
+}
+
+.badge-pending{   background:#fef9c3; color:#854d0e; }
+.badge-confirmed{ background:#dbeafe; color:#1d4ed8; }
+.badge-checkedin{ background:#e0f2fe; color:#0369a1; }
+.badge-checkedout{background:#dcfce7; color:#166534; }
+.badge-cancelled{ background:#fee2e2; color:#991b1b; }
+.badge-noshow{    background:#e2e8f0; color:#0f172a; }
+
+/* =====================================
+   ACTION BUTTON
+   ===================================== */
+
+.btn-icon{
+  border:1px solid #e7dfd0;
+  background:#fff;
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  color:#6b5f52;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:.95rem;
+  transition:.15s;
+}
+
+.btn-icon:hover{
+  background:#f7f3eb;
+  color:#2d1f0f;
+}
+
+.btn-icon-danger{
+  border-color:#fecaca;
+  color:#b91c1c;
+}
+
+.btn-icon-danger:hover{
+  background:#fef2f2;
+  color:#991b1b;
+}
+
+/* =====================================
+   PAGINATION FOOTER (LIGHT like screenshot)
+   ===================================== */
+
+.table-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+
+  margin:16px;
+  padding:16px 18px;
+
+  background:#f3eee5;              /* ✅ nhạt hơn */
+  border:1px solid #e9e3d8;        /* ✅ viền rất nhẹ */
+  border-radius:22px;
+
+  box-shadow:0 6px 18px rgba(0,0,0,.05); /* ✅ shadow nhẹ */
+}
+
+.table-footer .left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:#6b5f52;
+  font-weight: 500;
+  font-size:0.95rem;
+}
+
+.table-footer select {
+    width: 75px;
+    border-radius: 10px;
+    /* Thay viền đen bằng viền be cực nhạt */
+    border: 1px solid #e2ddd3; 
+    background: #fff;
+    /* Giảm độ đậm của chữ và đổi màu sang nâu xám */
+    color: #867b68; 
+    padding: 5px 8px;
+    font-weight: 600; /* Thay vì 800 */
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+    /* Loại bỏ độ bóng mặc định của trình duyệt nếu có */
+    box-shadow: none; 
+    transition: all 0.2s;
+}
+
+.table-footer select:hover {
+    border-color: #d1ccc0;
+    background: #fdfcfb;
+}
+.table-footer .pagination{
+  margin:0;
+  gap:10px;
+}
+
+.table-footer .page-link{
+  border:1px solid #e6dfd4;
+  background:#f7f3eb;              /* ✅ nhạt */
+  color:#2d1f0f;
+  font-weight: 600 !important;
+
+  border-radius:12px !important;
+  padding:8px 14px;
+
+  box-shadow:0 2px 10px rgba(0,0,0,.05);
+  transition:.15s;
+}
+
+.table-footer .page-link:hover{
+  filter:brightness(.99);
+  transform:translateY(-1px);
+}
+
+.table-footer .page-item.active .page-link{
+  background:#3b2f1f;              /* ✅ nâu giống ảnh */
+  border-color:#3b2f1f;
+  color:#fff;
+  box-shadow:0 10px 18px rgba(0,0,0,.14);
+}
+
+.table-footer .page-item.disabled .page-link{
+  background:#f5f1e9;
+  color:#b9b2a7;
+  border-color:#e8e1d7;
+  opacity:1;
+  cursor:not-allowed;
+  transform:none;
+}
+
+/* =====================================
+   MOBILE
+   ===================================== */
+
+@media (max-width:576px){
+  .page-head{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+  }
+
+  .page-title{
+    font-size:1.6rem;
+  }
+
+  .table-footer{
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px;
+  }
+
+  .table-footer .pagination{
+    justify-content:center;
+  }
+  
+  /* ===== FORCE PAGINATION STYLE ===== */
+
+.table-footer .pagination .page-link{
+    background:#f3eee5 !important;
+    border:1px solid #e5ddcf !important;
+    color:#9b8f7a !important;   /* chữ nhạt */
+    font-weight:600 !important;
+}
+
+/* hover */
+.table-footer .pagination .page-link:hover{
+    background:#efe8dd !important;
+    color:#7b6d55 !important;
+}
+
+/* active page */
+.table-footer .pagination .page-item.active .page-link{
+    background:#3b2f1f !important;
+    border-color:#3b2f1f !important;
+    color:#e5dccb !important;   /* chữ nhạt */
+}
+
+/* disabled */
+.table-footer .pagination .page-item.disabled .page-link{
+    background:#f5f1e8 !important;
+    color:#c2b9a8 !important;
+    border-color:#ebe4d7 !important;
+}
+}
+
