@@ -321,21 +321,36 @@
 }
 
 /* terms alert (soft wine red) */
+/* ===== payment / terms block ===== */
 .cf-alert{
-  background: #fff7f7;
-  border: 1px solid #ffd1d6;
-  border-radius: 16px;
-  padding: 16px;
-  color: #8a1f1a;
-  font-size: 14px;
-  line-height: 1.55;
+  background: linear-gradient(180deg, #fffaf6 0%, #fffdfb 100%);
+  border: 1px solid #f1d7cf;
+  border-radius: 18px;
+  padding: 18px 20px;
+  color: #5f4039;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
 }
 
-.cf-alert b{
-  display:block;
-  margin-bottom: 8px;
-  font-size: 14px;
+.cf-alert-title{
+  margin: 0 0 12px;
+  font-size: 15px;
   font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #8c2f20;
+}
+
+.cf-alert-text{
+  font-size: 15px;
+  line-height: 1.9;
+  color: #6b4b43;
+  white-space: pre-line;
+}
+
+.cf-alert-text b,
+.cf-alert-text strong{
+  color: var(--navy);
+  font-weight: 900;
 }
 
 /* checkbox + button */
@@ -523,3 +538,17 @@
   filter: brightness(1.1);
 }
 
+.cf-alert-text{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  color:#6b4b43;
+}
+
+.cf-policy-item{
+  padding:10px 12px;
+  background:#fff;
+  border:1px solid #f3e5df;
+  border-radius:12px;
+  line-height:1.7;
+}

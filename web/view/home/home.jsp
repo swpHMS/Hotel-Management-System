@@ -414,18 +414,19 @@
                         <div class="room-modal__amenities" id="rmAmenities"></div>
 
                         <div class="room-modal__actions">
-                            <a id="rmBookingBtn"
-   class="room-modal__btn room-modal__btn-primary"
-   href="${pageContext.request.contextPath}/booking">
-    MOVE TO BOOKING
-</a>
-                        </div>
+    <a id="rmBookingBtn"
+       class="room-modal__btn room-modal__btn-primary"
+       href="${moveBookingUrl}">
+        MOVE TO BOOKING
+    </a>
+</div>
                     </div>
                 </div>
             </div>
         </div>
 <script>
   window.__CTX__ = "${pageContext.request.contextPath}";
+  window.__MOVE_BOOKING_URL__ = "${moveBookingUrl}";
 </script>
         <script src="${pageContext.request.contextPath}/assets/js/home_js/header_scroll.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/home_js/room_modal.js?v=20260304_1"></script>        <script src="${pageContext.request.contextPath}/assets/js/home_js/booking_date.js"></script>

@@ -488,12 +488,12 @@
         <script>
             const editor = document.getElementById('editor');
             const charCount = document.getElementById('charCount');
-            function updateCount() {
+            function updateCount() { //hàm đếm kí tự
                 const n = editor.value.length;
                 charCount.textContent = n.toLocaleString() + ' character' + (n !== 1 ? 's' : '');
             }
             editor.addEventListener('input', updateCount);
-            updateCount();
+            updateCount(); //theo dõi khi người dùng gõ
 
             function showToast() {
                 const t = document.getElementById('toast');

@@ -1,6 +1,7 @@
 package controller.booking;
 
 import dal.AmenityDAO;
+import dal.HotelInformationDAO;
 import dal.RoomTypeDAO;
 import dal.RoomTypeImageDAO;
 import jakarta.servlet.ServletException;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import model.HotelInformation;
 
 import model.RoomType;
 import model.RoomTypeImage;
@@ -27,7 +29,7 @@ public class BookingServlet extends HttpServlet {
 
     private LocalDate parseDateOrNull(String s) {
         try {
-            return (s == null || s.isBlank()) ? null : LocalDate.parse(s); // expects yyyy-MM-dd
+            return (s == null || s.isBlank()) ? null : LocalDate.parse(s);
         } catch (Exception e) {
             return null;
         }
@@ -41,9 +43,46 @@ public class BookingServlet extends HttpServlet {
         return (s == null) ? "" : s.trim();
     }
 
+    private Integer parseIntegerOrNull(String s) {
+        try {
+            return (s == null || s.isBlank()) ? null : Integer.parseInt(s.trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void moveSelectedRoomTypeToTop(List<RoomType> roomTypes, Integer selectedRoomTypeId) {
+        if (roomTypes == null || roomTypes.isEmpty() || selectedRoomTypeId == null) {
+            return;
+        }
+
+        RoomType selected = null;
+        for (RoomType rt : roomTypes) {
+            if (rt != null && rt.getRoomTypeId() == selectedRoomTypeId) {
+                selected = rt;
+                break;
+            }
+        }
+
+        if (selected != null) {
+            roomTypes.remove(selected);
+            roomTypes.add(0, selected);
+        }
+    }
+
     private void process(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+HotelInformationDAO hotelDao = new HotelInformationDAO();
+HotelInformation hotel = hotelDao.getSingleHotel();
+request.setAttribute("hotel", hotel);
         String q = normalize(request.getParameter("q"));
+        Integer selectedRoomTypeId = parseIntegerOrNull(request.getParameter("roomTypeId"));
+
+        // THÊM SORT
+        String sort = normalize(request.getParameter("sort"));
+        if (!sort.equals("priceAsc") && !sort.equals("priceDesc")) {
+            sort = "";
+        }
 
         LocalDate today = LocalDate.now();
         LocalDate checkIn = parseDateOrNull(request.getParameter("checkIn"));
@@ -53,23 +92,38 @@ public class BookingServlet extends HttpServlet {
         int children = clamp(parseIntOrDefault(request.getParameter("children"), 0), 0, 15);
         int roomQty = clamp(parseIntOrDefault(request.getParameter("roomQty"), 1), 1, 20);
 
-        if (checkIn == null) checkIn = today;
-        if (checkOut == null) checkOut = checkIn.plusDays(1);
+        if (checkIn == null) {
+            checkIn = today;
+        }
+        if (checkOut == null) {
+            checkOut = checkIn.plusDays(1);
+        }
 
         if (!checkOut.isAfter(checkIn)) {
             checkOut = checkIn.plusDays(1);
         }
+
         RoomTypeDAO roomTypeDAO = new RoomTypeDAO();
         RoomTypeImageDAO imageDAO = new RoomTypeImageDAO();
         AmenityDAO amenityDAO = new AmenityDAO();
 
-        List<RoomType> roomTypes = roomTypeDAO.searchForBooking(checkIn, checkOut, q, adults, children, roomQty);
-        System.out.println("[BOOKING] checkIn=" + checkIn + ", checkOut=" + checkOut
-                + ", adults=" + adults + ", children=" + children + ", roomQty=" + roomQty
-                + ", q=" + q + ", results=" + (roomTypes == null ? 0 : roomTypes.size()));
+        // SỬA DÒNG NÀY: truyền sort xuống DAO
+        List<RoomType> roomTypes = roomTypeDAO.searchForBooking(
+                checkIn, checkOut, q, adults, children, roomQty, sort
+        );
+
+        System.out.println("[BOOKING] checkIn=" + checkIn
+                + ", checkOut=" + checkOut
+                + ", adults=" + adults
+                + ", children=" + children
+                + ", roomQty=" + roomQty
+                + ", q=" + q
+                + ", sort=" + sort
+                + ", roomTypeId=" + selectedRoomTypeId
+                + ", results=" + (roomTypes == null ? 0 : roomTypes.size()));
+
         if (roomTypes != null) {
             for (RoomType rt : roomTypes) {
-
                 try {
                     List<RoomTypeImage> images = imageDAO.getImagesByRoomTypeId(rt.getRoomTypeId());
                     rt.setImages(images);
@@ -83,14 +137,18 @@ public class BookingServlet extends HttpServlet {
             }
         }
 
-        // ===== 4) Set attrs for booking.jsp =====
+        // Đưa room user vừa chọn từ Home lên đầu danh sách
+       if (sort.isBlank()) {
+    moveSelectedRoomTypeToTop(roomTypes, selectedRoomTypeId);
+}
         request.setAttribute("checkIn", checkIn.toString());
         request.setAttribute("checkOut", checkOut.toString());
         request.setAttribute("adults", adults);
         request.setAttribute("children", children);
         request.setAttribute("roomQty", roomQty);
         request.setAttribute("q", q);
-
+        request.setAttribute("sort", sort); // THÊM
+        request.setAttribute("selectedRoomTypeId", selectedRoomTypeId);
         request.setAttribute("roomTypes", roomTypes);
 
         request.getRequestDispatcher("/view/booking/booking.jsp").forward(request, response);

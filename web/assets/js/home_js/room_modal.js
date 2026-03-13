@@ -3,33 +3,30 @@
   if (!modal) return;
 
   function detectCtx() {
-  // 1) ưu tiên lấy từ <body data-ctx="...">
-  const body = document.querySelector("body");
-  const bodyCtx = body ? body.getAttribute("data-ctx") : "";
-  if (bodyCtx && bodyCtx.trim() !== "") return bodyCtx.trim();
+    const body = document.querySelector("body");
+    const bodyCtx = body ? body.getAttribute("data-ctx") : "";
+    if (bodyCtx && bodyCtx.trim() !== "") return bodyCtx.trim();
 
-  // 2) window.__CTX__ nếu có set
-  if (typeof window.__CTX__ === "string" && window.__CTX__.trim() !== "") {
-    return window.__CTX__.trim();
+    if (typeof window.__CTX__ === "string" && window.__CTX__.trim() !== "") {
+      return window.__CTX__.trim();
+    }
+
+    const p = window.location.pathname || "/";
+    const parts = p.split("/").filter(Boolean);
+
+    if (parts.length > 0) {
+      const first = parts[0];
+      const reserved = new Set([
+        "booking", "home", "policy", "login", "logout",
+        "customer", "staff", "admin"
+      ]);
+      if (!reserved.has(first)) return "/" + first;
+    }
+
+    return "";
   }
 
-  // 3) fallback theo pathname: chỉ lấy segment đầu tiên nếu nó KHÔNG phải "booking/home/policy/..."
-  // Vì nếu user đang bị đưa nhầm tới /booking thì segment đầu tiên = booking -> không được coi là contextPath
-  const p = window.location.pathname || "/";
-  const parts = p.split("/").filter(Boolean);
-
-  if (parts.length > 0) {
-    const first = parts[0];
-    const reserved = new Set(["booking", "home", "policy", "login", "logout", "customer", "staff", "admin"]);
-    if (!reserved.has(first)) return "/" + first;
-  }
-
-  // 4) root
-  return "";
-}
-
-  const ctx = (window.__CTX__ || "").trim();
-  
+  const ctx = detectCtx();
   const SEP = window.__AMEN_SEP__ || "|";
 
   // ===== elements (gallery) =====
@@ -48,12 +45,10 @@
   const rmView = document.getElementById("rmView");
   const rmPrice = document.getElementById("rmPrice");
 
-  // ✅ backward-compatible: mới (rmBookingBtn) hoặc cũ (rmCheckBtn)
   const bookingBtn =
     document.getElementById("rmBookingBtn") ||
     document.getElementById("rmCheckBtn");
 
-  // ✅ nếu JS cũ còn set detail page thì cũng không crash
   const detailPageBtn = document.getElementById("rmDetailPageBtn");
 
   // ===== state =====
@@ -65,11 +60,13 @@
     modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
   }
+
   function closeModal() {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
   }
+
   function plural(n, one, many) {
     n = Number(n || 0);
     return n === 1 ? one : many;
@@ -110,7 +107,9 @@
 
   function parseGallery(d) {
     const listRaw = (d.images || "").trim();
-    const list = listRaw ? listRaw.split("|").map(s => s.trim()).filter(Boolean) : [];
+    const list = listRaw
+      ? listRaw.split("|").map(s => s.trim()).filter(Boolean)
+      : [];
     const single = (d.img || "").trim();
     if (list.length) return list;
     if (single) return [single];
@@ -126,7 +125,7 @@
       : [];
 
     rmAmenities.innerHTML = items
-      .map(x => '<div class="room-modal__amenity"><span class="ico">✓</span> ' + x + '</div>')
+      .map(x => '<div class="room-modal__amenity"><span class="ico">✓</span> ' + x + "</div>")
       .join("");
   }
 
@@ -146,7 +145,6 @@
       roomQty
     });
 
-    // ✅ FIX: luôn có ctx, không bị /booking (root)
     return ctx + "/booking?" + qs.toString();
   }
 
@@ -166,25 +164,37 @@
     const desc = d.desc || "";
 
     const adult = Number(d.adult || 0);
-    const child = (d.child && d.child !== "null" && d.child !== "") ? Number(d.child || 0) : null;
+    const child = (d.child && d.child !== "null" && d.child !== "")
+      ? Number(d.child || 0)
+      : null;
 
     if (title) title.textContent = name;
-    if (descEl) descEl.textContent = desc || "A refined blend of comfort and modern design, curated for a restful stay.";
+    if (descEl) {
+      descEl.textContent =
+        desc || "A refined blend of comfort and modern design, curated for a restful stay.";
+    }
     if (rmSize) rmSize.textContent = size;
     if (rmBed) rmBed.textContent = bed;
     if (rmView) rmView.textContent = view;
 
     let occText = "Up to " + adult + " " + plural(adult, "Adult", "Adults");
-    if (child !== null) occText += ", " + child + " " + plural(child, "Child", "Children");
+    if (child !== null) {
+      occText += ", " + child + " " + plural(child, "Child", "Children");
+    }
     if (rmOcc) rmOcc.textContent = occText;
 
-    if (rmPrice) rmPrice.textContent = (price && price !== "null") ? price : "CONTACT";
+    if (rmPrice) {
+      rmPrice.textContent = (price && price !== "null") ? price : "CONTACT";
+    }
 
-    // ✅ set href đúng contextPath
-    if (bookingBtn) bookingBtn.href = buildBookingHref(id);
-console.log("[MOVE TO BOOKING] href =", bookingBtn?.href);
-    // (optional) detail page
-    if (detailPageBtn) detailPageBtn.href = ctx + "/room-type/detail?id=" + encodeURIComponent(id);
+    if (bookingBtn) {
+      bookingBtn.href = buildBookingHref(id);
+      console.log("[MOVE TO BOOKING] href =", bookingBtn.href);
+    }
+
+    if (detailPageBtn) {
+      detailPageBtn.href = ctx + "/room-type/detail?id=" + encodeURIComponent(id);
+    }
 
     renderAmenities(d.amenities || "");
 

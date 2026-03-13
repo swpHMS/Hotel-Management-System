@@ -27,19 +27,20 @@ public class RoomTypeDAO {
     // - This approach does NOT count "holds" (availability_holds).
     // - It counts existing bookings in DB to decide availability.
     //
-    private static final String SQL_SEARCH_BOOKING_TEMPLATE =
+
+    private static final String SQL_SEARCH_BOOKING_BASE =
             "WITH booked AS ( " +
             "   SELECT brt.room_type_id, SUM(brt.quantity) AS booked_qty " +
             "   FROM dbo.bookings b " +
             "   JOIN dbo.booking_room_types brt ON brt.booking_id = b.booking_id " +
-            "   WHERE b.status IN (2,3) " + // ✅ CONFIRMED / CHECKED_IN (bạn có thể thêm 1 nếu muốn)
-            "     AND b.check_in_date < ? " +  // checkOut
-            "     AND b.check_out_date > ? " + // checkIn
+            "   WHERE b.status IN (2,3) " +
+            "     AND b.check_in_date < ? " +
+            "     AND b.check_out_date > ? " +
             "   GROUP BY brt.room_type_id " +
             "), total_rooms AS ( " +
             "   SELECT room_type_id, COUNT(*) AS total_rooms " +
             "   FROM dbo.rooms " +
-            "   WHERE status IN (1) " +        // ✅ AVAILABLE rooms only (tuỳ nghiệp vụ, có thể bỏ filter status)
+            "   WHERE status IN (1) " +
             "   GROUP BY room_type_id " +
             ") " +
             "SELECT TOP (%d) " +
@@ -57,11 +58,10 @@ public class RoomTypeDAO {
             "   ORDER BY valid_from DESC, rate_version_id DESC " +
             ") rv " +
             "WHERE rt.status=1 " +
-            "  AND (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) >= ? " + // >= roomQty
+            "  AND (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) >= ? " +
             "  AND ( ? = '' OR rt.name LIKE '%%' + ? + '%%' OR rt.description LIKE '%%' + ? + '%%' ) " +
-            "  AND ( ? <= rt.max_adult * ? ) " +        // adults <= max_adult * roomQty
-            "  AND ( ? <= rt.max_children * ? ) " +     // children <= max_children * roomQty
-            "ORDER BY (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) DESC, rt.room_type_id DESC";
+            "  AND ( ? <= rt.max_adult * ? ) " +
+            "  AND ( ? <= rt.max_children * ? ) ";
 
     // =====================================================
     // NORMAL HOME LOAD (NO DATE FILTER)
@@ -118,21 +118,30 @@ public class RoomTypeDAO {
     }
 
     /**
-     * ✅ Booking search with date range + keyword + capacity by roomQty
-     * Used by HomeServlet + BookingServlet
+     * Booking search with date range + keyword + capacity by roomQty + sort
      */
     public List<RoomType> searchForBooking(LocalDate checkIn,
-                                          LocalDate checkOut,
-                                          String q,
-                                          int adults,
-                                          int children,
-                                          int roomQty,
-                                          int limit) {
+                                           LocalDate checkOut,
+                                           String q,
+                                           int adults,
+                                           int children,
+                                           int roomQty,
+                                           int limit,
+                                           String sort) {
 
         List<RoomType> list = new ArrayList<>();
         DBContext db = new DBContext();
 
-        String sql = String.format(SQL_SEARCH_BOOKING_TEMPLATE, limit);
+        String orderBy;
+        if ("priceAsc".equalsIgnoreCase(sort)) {
+            orderBy = " ORDER BY CASE WHEN rv.price IS NULL THEN 1 ELSE 0 END, rv.price ASC, rt.room_type_id DESC";
+        } else if ("priceDesc".equalsIgnoreCase(sort)) {
+            orderBy = " ORDER BY CASE WHEN rv.price IS NULL THEN 1 ELSE 0 END, rv.price DESC, rt.room_type_id DESC";
+        } else {
+            orderBy = " ORDER BY (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) DESC, rt.room_type_id DESC";
+        }
+
+        String sql = String.format(SQL_SEARCH_BOOKING_BASE, limit) + orderBy;
         String keyword = (q == null) ? "" : q.trim();
 
         try (Connection con = db.getConnection();
@@ -141,8 +150,8 @@ public class RoomTypeDAO {
             int idx = 1;
 
             // booked CTE overlap params
-            ps.setDate(idx++, Date.valueOf(checkOut)); // b.check_in < checkOut
-            ps.setDate(idx++, Date.valueOf(checkIn));  // b.check_out > checkIn
+            ps.setDate(idx++, Date.valueOf(checkOut));
+            ps.setDate(idx++, Date.valueOf(checkIn));
 
             // rate at checkIn
             ps.setDate(idx++, Date.valueOf(checkIn));
@@ -173,13 +182,7 @@ public class RoomTypeDAO {
                     rt.setMaxChildren(rs.getInt("max_children"));
                     rt.setImageUrl(rs.getString("image_url"));
                     rt.setStatus(rs.getInt("status"));
-
-                    // price can be null if no rate
                     rt.setPriceToday(rs.getBigDecimal("price_today"));
-
-                    // available_rooms column exists; ignore if your model doesn't have field
-                    // rt.setAvailableRooms(rs.getInt("available_rooms"));
-
                     list.add(rt);
                 }
             }
@@ -191,14 +194,42 @@ public class RoomTypeDAO {
         return list;
     }
 
-    // Convenience overload (limit default)
+    /**
+     * Overload có sort, limit mặc định = 200
+     */
     public List<RoomType> searchForBooking(LocalDate checkIn,
-                                          LocalDate checkOut,
-                                          String q,
-                                          int adults,
-                                          int children,
-                                          int roomQty) {
-        return searchForBooking(checkIn, checkOut, q, adults, children, roomQty, 200);
+                                           LocalDate checkOut,
+                                           String q,
+                                           int adults,
+                                           int children,
+                                           int roomQty,
+                                           String sort) {
+        return searchForBooking(checkIn, checkOut, q, adults, children, roomQty, 200, sort);
+    }
+
+    /**
+     * Method cũ giữ lại để không vỡ code cũ
+     */
+    public List<RoomType> searchForBooking(LocalDate checkIn,
+                                           LocalDate checkOut,
+                                           String q,
+                                           int adults,
+                                           int children,
+                                           int roomQty,
+                                           int limit) {
+        return searchForBooking(checkIn, checkOut, q, adults, children, roomQty, limit, "");
+    }
+
+    /**
+     * Convenience overload cũ
+     */
+    public List<RoomType> searchForBooking(LocalDate checkIn,
+                                           LocalDate checkOut,
+                                           String q,
+                                           int adults,
+                                           int children,
+                                           int roomQty) {
+        return searchForBooking(checkIn, checkOut, q, adults, children, roomQty, 200, "");
     }
 
     public int countActiveRoomTypes() throws Exception {
