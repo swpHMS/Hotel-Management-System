@@ -574,15 +574,27 @@ public List<BookingCardView> getPastStaysByCustomerIdPaging(int customerId, int 
     }
 
 // 1. Lấy danh sách hoạt động trong ngày (Dashboard List) - Sửa đếm số người thực tế
-// 1. Lấy danh sách hoạt động trong ngày (Dashboard List) - BẢN SỬA LỖI ĐẾM NGƯỜI THEO PHÒNG
-    public List<BookingDashboard> getTodayOperations(String targetDate, String search, String status, String sort, int index, int pageSize) {
-        List<BookingDashboard> list = new ArrayList<>();
-        StringBuilder sql = new StringBuilder(
-                "SELECT b.booking_id, c.full_name, rt.name AS room_type_name, "
-                + "b.check_in_date, b.check_out_date, b.status AS booking_status, "
-                + "sra.status AS assignment_status, r.room_no, brt.quantity, "
-                + "sra.assignment_id, " // Lấy thêm assignment_id để đồng bộ dữ liệu
-
+// 1. Lấy danh sách hoạt động trong ngày (Dashboard List) - BẢN SỬA LỖI ĐẾM NGƯỜI THEO PHÒNG  
+public List<BookingDashboard> getTodayOperations(String targetDate, String search, String status, String sort, int index, int pageSize) {
+    List<BookingDashboard> list = new ArrayList<>();
+    StringBuilder sql = new StringBuilder(
+        "SELECT b.booking_id, c.full_name, rt.name AS room_type_name, "
+        + "b.check_in_date, b.check_out_date, b.status AS booking_status, "
+        + "sra.status AS assignment_status, r.room_no, brt.quantity, "
+        + "sra.assignment_id, " // Lấy thêm assignment_id để đồng bộ dữ liệu
+        
+        // --- ĐOẠN SỬA CHUẨN: Đếm số người của RIÊNG từng phòng dựa trên assignment_id ---
+        + "(SELECT COUNT(*) FROM dbo.stay_room_guests srg "
+        + " WHERE srg.assignment_id = sra.assignment_id) AS num_person "
+        // ---------------------------------------------------------------------------
+        
+        + "FROM dbo.bookings b "
+        + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
+        + "LEFT JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
+        + "LEFT JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id "
+        + "LEFT JOIN dbo.stay_room_assignments sra ON b.booking_id = sra.booking_id "
+        + "LEFT JOIN dbo.rooms r ON sra.room_id = r.room_id "
+        + "WHERE b.status IN (2, 3, 4) " 
                 // --- ĐOẠN SỬA CHUẨN: Đếm số người của RIÊNG từng phòng dựa trên assignment_id ---
                 + "(SELECT COUNT(*) FROM dbo.stay_room_guests srg "
                 + " WHERE srg.assignment_id = sra.assignment_id) AS num_person "
