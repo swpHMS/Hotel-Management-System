@@ -595,8 +595,6 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
         + "LEFT JOIN dbo.stay_room_assignments sra ON b.booking_id = sra.booking_id "
         + "LEFT JOIN dbo.rooms r ON sra.room_id = r.room_id "
         + "WHERE b.status IN (2, 3, 4) " 
-    );
-
                 // --- ĐOẠN SỬA CHUẨN: Đếm số người của RIÊNG từng phòng dựa trên assignment_id ---
                 + "(SELECT COUNT(*) FROM dbo.stay_room_guests srg "
                 + " WHERE srg.assignment_id = sra.assignment_id) AS num_person "

@@ -16,7 +16,7 @@ import model.PolicyRule;
 @WebServlet(name = "AdminPolicyServlet", urlPatterns = {"/admin/policies"})
 public class AdminPolicyServlet extends HttpServlet {
 
-    private Map<String, String> sidebarMap() {
+    private Map<String, String> sidebarMap() { //tạo danh sách menu
         Map<String, String> m = new LinkedHashMap<>();
         m.put("BOOKING", "Booking and Reservation");
         m.put("PAYMENT", "Payment and Fees");
@@ -30,6 +30,7 @@ public class AdminPolicyServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        //mặc định khi mở lên là phần của "BOOking"
         String key = request.getParameter("key");
         if (key == null || key.isBlank()) key = "BOOKING";
 
