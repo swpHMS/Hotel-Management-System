@@ -107,7 +107,7 @@
             <i class="bi bi-building"></i><span>Suite Types</span>
         </a>
 
-        <a class="sb-item <%= "roomRegistry".equals(active)?"active":"" %>" href="#">
+        <a class="sb-item <%= "roomRegistry".equals(active)?"active":"" %>" href="${pageContext.request.contextPath}/manager/room-registry">
             <i class="bi bi-card-list"></i><span>Room Registry</span>
         </a>
 

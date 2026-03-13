@@ -378,7 +378,7 @@ public class BookingDAO extends DBContext {
     
    
 // 1. Lấy danh sách hoạt động trong ngày (Dashboard List) - Sửa đếm số người thực tế
-// 1. Lấy danh sách hoạt động trong ngày (Dashboard List) - BẢN SỬA LỖI ĐẾM NGƯỜI THEO PHÒNG
+// 1. Lấy danh sách hoạt động trong ngày (Dashboard List) - BẢN SỬA LỖI ĐẾM NGƯỜI THEO PHÒNG  
 public List<BookingDashboard> getTodayOperations(String targetDate, String search, String status, String sort, int index, int pageSize) {
     List<BookingDashboard> list = new ArrayList<>();
     StringBuilder sql = new StringBuilder(

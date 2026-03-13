@@ -867,7 +867,7 @@
                 <!-- Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h1 class="dashboard-title">Daily Check-in</h1>
+                        <h1 class="dashboard-title">Today Operation</h1>
                         <p class="dashboard-date" id="live-clock"></p>
                     </div>
 
@@ -1163,7 +1163,7 @@
                     <div class="detail-contact-box">
                         <div class="detail-contact-row">
                             <i class="bi bi-telephone"></i>
-                            <span id="detailPhone">Chưa có số điện thoại</span>
+                            <span id="detailPhone"></span>
                         </div>
                         <div class="detail-contact-row">
                             <i class="bi bi-envelope"></i>

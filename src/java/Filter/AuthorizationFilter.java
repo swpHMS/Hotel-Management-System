@@ -28,7 +28,6 @@ public class AuthorizationFilter implements Filter {
     }
 
     private boolean mustLogin(String uri) {
-        // ✅ CHỈNH Ở ĐÂY: các url mà khách muốn filter/booking thì phải login
         return uri.contains("/booking")
                 || uri.contains("/search")
                 || uri.contains("/rooms/filter")
@@ -38,58 +37,93 @@ public class AuthorizationFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+        throws IOException, ServletException {
 
-        HttpServletRequest req = (HttpServletRequest) request;
-        HttpServletResponse res = (HttpServletResponse) response;
+    HttpServletRequest req = (HttpServletRequest) request;
+    HttpServletResponse res = (HttpServletResponse) response;
 
-        String uri = req.getRequestURI();
-        String contextPath = req.getContextPath();
+    String uri = req.getRequestURI();
+    String contextPath = req.getContextPath();
 
-        // lấy user từ session (đúng key bạn đang dùng)
-        HttpSession session = req.getSession(false);
-        User user = (session == null) ? null : (User) session.getAttribute("userAccount");
+    if (isStaticResource(uri)) {
+        chain.doFilter(request, response);
+        return;
+    }
+    
+    HttpSession session = req.getSession(false);
+    User user = (session == null) ? null : (User) session.getAttribute("userAccount");
 
-        // 1) static files -> cho qua
-        if (isStaticResource(uri)) {
-            chain.doFilter(request, response);
+    
+    if (mustLogin(uri)) {
+        if (user == null) {
+            res.sendRedirect(req.getContextPath() + "/login");
             return;
         }
+        chain.doFilter(request, response);
+        return;
+    }
 
-        // 2) admin -> chỉ role admin (roleId = 1)
-        if (uri.contains("/admin/")) {
-            if (user == null || user.getRoleId() != 1) {
-                res.sendRedirect(contextPath + "/home");
-                return;
-            }
-        }
-        if (uri.contains("/manager/")) {
-            if (user == null || user.getRoleId() != 2) {
-                res.sendRedirect(contextPath + "/home");
-                return;
-            }
-        }
-
-        // 3) ✅ booking / filter -> bắt login
-        if (mustLogin(uri)) {
-            if (user == null) {
-                // lưu url để login xong quay lại trang đang filter/booking
-                String redirect = req.getRequestURI();
-                String qs = req.getQueryString();
-                if (qs != null) {
-                    redirect += "?" + qs;
-                }
-
-                req.getSession(true).setAttribute("redirectAfterLogin", redirect);
-
-                res.sendRedirect(contextPath + "/login"); // hoặc /register nếu bạn muốn
-                return;
-            }
-        }
+    if (uri.contains("/login") || uri.contains("/logout")
+            || uri.contains("/register") || uri.contains("/reset-password")
+            || uri.contains("/verify") || uri.contains("/home")
+            || uri.contains("/policy") || uri.contains("view/auth")) {
 
         chain.doFilter(request, response);
+        return;
     }
+    
+    if (user == null) {
+        res.sendRedirect(contextPath + "/login");
+        return;
+    }
+    
+    
+    if(user.getRoleId()==1){
+        chain.doFilter(request, response);
+        return;
+    }
+    
+    if(user.getRoleId()==2){
+        if(uri.contains("/manager")  || uri.contains("view/staff/profile.jsp") || uri.contains("staff-profile")
+                ){
+            chain.doFilter(request, response);
+            return;
+        }else{
+            res.sendRedirect(req.getContextPath()+"/manager/dashboard");
+            return;
+        }
+    }
+    
+    if(user.getRoleId()==3  ){
+        if(uri.contains("/receptionist") || uri.contains("view/staff/profile.jsp") || uri.contains("staff-profile")
+                ){
+            chain.doFilter(request, response);
+            return;
+        }else{
+            res.sendRedirect(req.getContextPath()+"/receptionist/dashboard");
+            return;
+        }
+    }
+    
+    if(user.getRoleId()==4){
+        if(uri.contains("/staff")  || uri.contains("view/staff/profile.jsp") || uri.contains("staff-profile")){
+            chain.doFilter(request, response);
+            return;
+        }else{
+            res.sendRedirect(req.getContextPath()+"/staff");
+            return;
+        }
+    }
+    
+    if(user.getRoleId()==5){
+        chain.doFilter(request, response);
+        return;
+    }
+    
+    
+    chain.doFilter(request, response);
+}
 
     @Override
     public void destroy() {
