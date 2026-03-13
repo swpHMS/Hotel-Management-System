@@ -237,7 +237,7 @@
 
     <div class="sb-userwrap" id="sbUserWrap">
         <div class="sb-dropdown" id="sbDropdown">
-            <a href="${pageContext.request.contextPath}/profile">
+            <a href="${pageContext.request.contextPath}/staff-profile">
                 <i class="bi bi-person"></i>
                 <span>Profile</span>
             </a>

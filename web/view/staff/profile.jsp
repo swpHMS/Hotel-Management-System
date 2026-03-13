@@ -60,8 +60,14 @@
         
         <jsp:include page="../admin_layout/sidebar.jsp" />
     </c:when>
+    <c:when test="${sessionScope.userAccount.roleId == 2}">
+        <jsp:include page="../manager/sidebar.jsp" />
+    </c:when>
     <c:when test="${sessionScope.userAccount.roleId == 3}">
         <jsp:include page="../receptionist/sidebar.jsp" />
+    </c:when>
+    <c:when test="${sessionScope.userAccount.roleId == 4}">
+        <jsp:include page="sidebar_staff/sidebar_staff.jsp" />
     </c:when>
 </c:choose>
     

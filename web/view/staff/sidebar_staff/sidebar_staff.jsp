@@ -67,7 +67,7 @@
 
         <!-- Dropdown menu -->
         <div id="profileMenu" class="profile-menu">
-            <a href="${pageContext.request.contextPath}/staff/profile">Profile</a>
+            <a href="${pageContext.request.contextPath}/staff-profile">Profile</a>
             <a href="${pageContext.request.contextPath}/logout">Logout</a>
         </div>
     </div>
