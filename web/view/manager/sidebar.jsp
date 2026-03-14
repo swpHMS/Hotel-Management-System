@@ -230,9 +230,10 @@
             <i class="bi bi-bar-chart-fill"></i><span>Finance</span>
         </a>
 
-        <a class="sb-item <%= "propertyInfo".equals(active) ? "active" : "" %>" href="#">
-            <i class="bi bi-crown-fill"></i><span>Property Info</span>
-        </a>
+        <a class="sb-item <%= "propertyInfo".equals(active) ? "active" : "" %>"
+   href="${pageContext.request.contextPath}/manager/property-info">
+    <i class="bi bi-crown-fill"></i><span>Property Info</span>
+</a>
     </nav>
 
     <div class="sb-userwrap" id="sbUserWrap">
