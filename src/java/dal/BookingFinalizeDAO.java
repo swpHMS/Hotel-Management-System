@@ -130,13 +130,14 @@ public class BookingFinalizeDAO {
                 // 1) Insert bookings (status=2 CONFIRMED)
                 int bookingId;
                 try (PreparedStatement ps = conn.prepareStatement("""
-                    INSERT INTO dbo.bookings(customer_id, status, check_in_date, check_out_date, total_amount)
-                    VALUES(?, 2, ?, ?, ?)
+                    INSERT INTO bookings(customer_id, hold_id, status, check_in_date, check_out_date, total_amount)
+                    VALUES (?, ?, 2, ?, ?, ?)
                 """, Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt(1, customerId);
-                    ps.setDate(2, Date.valueOf(hold.checkIn));
-                    ps.setDate(3, Date.valueOf(hold.checkOut));
-                    ps.setBigDecimal(4, totalAmount);
+ps.setInt(2, holdId);
+ps.setDate(3, Date.valueOf(hold.checkIn));
+ps.setDate(4, Date.valueOf(hold.checkOut));
+ps.setBigDecimal(5, totalAmount);
                     ps.executeUpdate();
 
                     try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -171,14 +172,14 @@ public class BookingFinalizeDAO {
                 }
 
                 // 4) Update hold -> CONFIRMED
-                try (PreparedStatement ps = conn.prepareStatement("""
-                    UPDATE dbo.availability_holds
-                    SET status = 2
-                    WHERE hold_id = ?
-                """)) {
-                    ps.setInt(1, holdId);
-                    ps.executeUpdate();
-                }
+//try (PreparedStatement ps = conn.prepareStatement("""
+//    UPDATE dbo.availability_holds
+//    SET status = 3
+//    WHERE hold_id = ?
+//""")) {
+//                    ps.setInt(1, holdId);
+//                    ps.executeUpdate();
+//                }
 
                 conn.commit();
 

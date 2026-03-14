@@ -117,7 +117,12 @@
       Max allowed: ${param.maxA} adults, ${param.maxC} children (based on number of rooms).
     </div>
   </c:if>
-
+<!-- guest-room mismatch -->
+<c:if test="${param.err == 'guest_room_mismatch'}">
+  <div style="margin:12px 0; padding:12px 14px; border-radius:12px; background:#fff1f2; border:1px solid #ffe4e6; color:#991b1b; font-weight:700;">
+    Number of guests cannot be less than number of rooms.
+  </div>
+</c:if>
   <!-- RESULTS -->
   <section class="bk-wrap">
     <div class="container">
@@ -239,10 +244,16 @@
 
                 <div class="bk-cta">
                   <div class="bk-qty">
-                    <button type="button" class="qty-btn minus">−</button>
-                    <input type="number" class="qty-input" value="${rq}" min="1" max="20">
-                    <button type="button" class="qty-btn plus">+</button>
-                  </div>
+  <button type="button" class="qty-btn minus">−</button>
+  <input
+      type="text"
+      class="qty-input"
+      value="${rq}"
+      data-min="1"
+      data-max="20"
+      readonly>
+  <button type="button" class="qty-btn plus">+</button>
+</div>
 
                   <a class="bk-book js-book-now"
                      href="#"
@@ -331,20 +342,6 @@
   <script src="${pageContext.request.contextPath}/assets/js/booking/booking.js"></script>
   <script src="${pageContext.request.contextPath}/assets/js/home_js/booking_date.js"></script>
 
-  <script>
-    function applySort() {
-      const sort = document.getElementById("sortSelect").value;
-      const params = new URLSearchParams(window.location.search);
-
-      if (sort && sort.trim() !== "") {
-        params.set("sort", sort);
-      } else {
-        params.delete("sort");
-      }
-
-      window.location.href = "${pageContext.request.contextPath}/booking?" + params.toString();
-    }
-  </script>
 
   <jsp:include page="/view/home/footer.jsp"/>
 </body>

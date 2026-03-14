@@ -152,15 +152,17 @@ public model.BookingEmailDTO getEmailDataByHoldId(int holdId) {
             ISNULL(c.full_name, N'Quý khách') AS full_name,
             u.email,
             ISNULL(c.phone, 'N/A') AS phone,
-            h.hold_id,
+            b.booking_id,
             h.check_in_date,
             h.check_out_date,
             STRING_AGG(
                 CONCAT(CAST(hi.quantity AS VARCHAR(10)), 'x ', rt.name),
                 ', '
             ) AS room_name,
-            SUM(ISNULL(price_pick.price, 0) * ISNULL(hi.quantity, 0)) AS total_price
+            b.total_amount AS total_price
         FROM availability_holds h
+        JOIN bookings b
+            ON b.hold_id = h.hold_id
         LEFT JOIN users u
             ON h.user_id = u.user_id
         LEFT JOIN customers c
@@ -169,17 +171,10 @@ public model.BookingEmailDTO getEmailDataByHoldId(int holdId) {
             ON h.hold_id = hi.hold_id
         JOIN room_types rt
             ON hi.room_type_id = rt.room_type_id
-        OUTER APPLY (
-            SELECT TOP 1 rv.price
-            FROM rate_versions rv
-            WHERE rv.room_type_id = hi.room_type_id
-              AND h.check_in_date BETWEEN rv.valid_from AND rv.valid_to
-            ORDER BY rv.valid_from DESC, rv.rate_version_id DESC
-        ) price_pick
         WHERE h.hold_id = ?
         GROUP BY
             c.full_name, u.email, c.phone,
-            h.hold_id, h.check_in_date, h.check_out_date
+            b.booking_id, h.check_in_date, h.check_out_date, b.total_amount
     """;
 
     try (Connection con = new context.DBContext().getConnection();
@@ -194,7 +189,7 @@ public model.BookingEmailDTO getEmailDataByHoldId(int holdId) {
                 dto.setFullName(rs.getString("full_name"));
                 dto.setEmail(rs.getString("email"));
                 dto.setPhone(rs.getString("phone"));
-                dto.setBookingId("BK-" + rs.getInt("hold_id"));
+                dto.setBookingId(String.valueOf(rs.getInt("booking_id")));
 
                 Date checkIn = rs.getDate("check_in_date");
                 Date checkOut = rs.getDate("check_out_date");
@@ -205,8 +200,6 @@ public model.BookingEmailDTO getEmailDataByHoldId(int holdId) {
 
                 double total = rs.getDouble("total_price");
                 dto.setTotalAmount(total);
-
-                // nghiệp vụ cọc 50%
                 dto.setDepositAmount(total * 0.5);
 
                 return dto;
@@ -219,6 +212,4 @@ public model.BookingEmailDTO getEmailDataByHoldId(int holdId) {
 
     return null;
 }
-
-
 }

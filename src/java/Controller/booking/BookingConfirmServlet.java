@@ -4,8 +4,6 @@ import dal.RoomTypeDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import model.RoomType;
 import dal.PolicyRuleDAO;
 import model.PolicyRule;
@@ -18,6 +16,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import dal.ReceptAvailabilityHoldDAO;
+import java.sql.Date;
 
 @WebServlet(name = "BookingConfirmServlet", urlPatterns = {"/booking/confirm"})
 public class BookingConfirmServlet extends HttpServlet {
@@ -168,33 +168,37 @@ public class BookingConfirmServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/booking?err=invalid");
             return;
         }
-
+int totalGuests = adults + children;
+if (totalGuests < roomQty) {
+    resp.sendRedirect(req.getContextPath() + "/booking?err=guest_room_mismatch");
+    return;
+}
         long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
         if (nights <= 0) {
             resp.sendRedirect(req.getContextPath() + "/booking?err=invalid_date");
             return;
         }
 
-      RoomTypeDAO dao = new RoomTypeDAO();
-RoomType rt = dao.getRoomTypeByIdWithRate(roomTypeId, checkIn);
+        RoomTypeDAO dao = new RoomTypeDAO();
+        RoomType rt = dao.getRoomTypeByIdWithRate(roomTypeId, checkIn);
 
-if (rt == null) {
-    resp.sendRedirect(req.getContextPath() + "/booking?err=notfound");
-    return;
-}
+        if (rt == null) {
+            resp.sendRedirect(req.getContextPath() + "/booking?err=notfound");
+            return;
+        }
 
-// load ảnh từ bảng room type images
-try {
-    RoomTypeImageDAO imageDAO = new RoomTypeImageDAO();
-    List<RoomTypeImage> images = imageDAO.getImagesByRoomTypeId(roomTypeId);
+        // load ảnh từ bảng room type images
+        try {
+            RoomTypeImageDAO imageDAO = new RoomTypeImageDAO();
+            List<RoomTypeImage> images = imageDAO.getImagesByRoomTypeId(roomTypeId);
 
-    if (images != null && !images.isEmpty()) {
-        rt.setImages(images);
-        rt.setImageUrl(images.get(0).getImageUrl());
-    }
-} catch (Exception e) {
-    e.printStackTrace();
-}
+            if (images != null && !images.isEmpty()) {
+                rt.setImages(images);
+                rt.setImageUrl(images.get(0).getImageUrl());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         int maxAdult = rt.getMaxAdult();
         int maxChildren = rt.getMaxChildren();
@@ -231,7 +235,7 @@ try {
         req.setAttribute("total", total);
         req.setAttribute("deposit", deposit);
 
-        req.setAttribute("holdMs", 15 * 60 * 1000);
+        req.setAttribute("holdMs", 60 * 60 * 1000);
 
         // ✅ FIX: set customerEmail cho confirm.jsp + lưu tạm vào session để doPost dùng nếu form không submit email
         String resolved = resolveCustomerEmail(req);
@@ -246,18 +250,18 @@ try {
         }
 
         try {
-    PolicyRuleDAO prDao = new PolicyRuleDAO();
-    PolicyRule paymentPolicy = prDao.getPolicyByName("PAYMENT");
-    req.setAttribute("paymentPolicy", paymentPolicy);
+            PolicyRuleDAO prDao = new PolicyRuleDAO();
+            PolicyRule paymentPolicy = prDao.getPolicyByName("PAYMENT");
+            req.setAttribute("paymentPolicy", paymentPolicy);
 
-if (paymentPolicy != null && paymentPolicy.getContent() != null) {
-    String content = paymentPolicy.getContent().trim();
-    content = content.replaceAll("\\s*(\\d+\\.)\\s*", "||$1 ");
-    req.setAttribute("formattedPaymentPolicy", content.trim());
-}
-} catch (Exception e) {
-    e.printStackTrace();
-}
+            if (paymentPolicy != null && paymentPolicy.getContent() != null) {
+                String content = paymentPolicy.getContent().trim();
+                content = content.replaceAll("\\s*(\\d+\\.)\\s*", "||$1 ");
+                req.setAttribute("formattedPaymentPolicy", content.trim());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         req.getRequestDispatcher("/view/booking/confirm.jsp").forward(req, resp);
     }
@@ -278,9 +282,6 @@ if (paymentPolicy != null && paymentPolicy.getContent() != null) {
             return;
         }
 
-        // ✅ tạo holdId (demo). Sau này thay bằng DB identity của availability_holds
-        int holdId = (int) (System.currentTimeMillis() % 100000);
-
         HttpSession session = req.getSession();
 
         // ✅ lưu lại các param cần để quay lại confirm / đối chiếu khi return
@@ -290,13 +291,6 @@ if (paymentPolicy != null && paymentPolicy.getContent() != null) {
         String roomQtyS    = req.getParameter("roomQty");
         String adultsS     = req.getParameter("adults");
         String childrenS   = req.getParameter("children");
-
-        session.setAttribute("HOLD_" + holdId + "_roomTypeId", roomTypeIdS);
-        session.setAttribute("HOLD_" + holdId + "_checkIn", checkInS);
-        session.setAttribute("HOLD_" + holdId + "_checkOut", checkOutS);
-        session.setAttribute("HOLD_" + holdId + "_roomQty", roomQtyS);
-        session.setAttribute("HOLD_" + holdId + "_adults", adultsS);
-        session.setAttribute("HOLD_" + holdId + "_children", childrenS);
 
         // ✅ FIX EMAIL (CHẮC CHẮN): ưu tiên param, fallback resolve, fallback session TMP
         String customerEmail = req.getParameter("customerEmail");
@@ -316,30 +310,23 @@ if (paymentPolicy != null && paymentPolicy.getContent() != null) {
 
         if (customerEmail != null) customerEmail = customerEmail.trim();
 
-        if (customerEmail != null && !customerEmail.isBlank() && customerEmail.contains("@")) {
-            session.setAttribute("HOLD_" + holdId + "_email", customerEmail);
-        }
-
-        // debug cực quan trọng
-        System.out.println("HOLD_ID=" + holdId + " | SAVE_EMAIL=" + customerEmail);
-
-        // ✅ đánh dấu đã qua step confirm
-        session.setAttribute("CHECKOUT_OK_" + holdId, true);
-
-        // =====================================================
-        // ✅ TÍNH TIỀN THẬT (deposit 50%) để đưa sang VNPay
-        // =====================================================
         int roomTypeId = parseInt(roomTypeIdS, -1);
         int roomQty = parseInt(roomQtyS, 1);
-
+int adults = parseInt(adultsS, 2);
+int children = parseInt(childrenS, 0);
         LocalDate checkIn = parseDate(checkInS);
         LocalDate checkOut = parseDate(checkOutS);
 
-        if (roomTypeId <= 0 || roomQty <= 0 || checkIn == null || checkOut == null || !checkOut.isAfter(checkIn)) {
-            resp.sendRedirect(req.getContextPath() + "/booking?err=invalid");
-            return;
-        }
-
+       if (roomTypeId <= 0 || roomQty <= 0 || adults <= 0 || children < 0
+        || checkIn == null || checkOut == null || !checkOut.isAfter(checkIn)) {
+    resp.sendRedirect(req.getContextPath() + "/booking?err=invalid");
+    return;
+}
+       int totalGuests = adults + children;
+if (totalGuests < roomQty) {
+    resp.sendRedirect(req.getContextPath() + "/booking?err=guest_room_mismatch");
+    return;
+}
         long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
         if (nights <= 0) {
             resp.sendRedirect(req.getContextPath() + "/booking?err=invalid_date");
@@ -363,6 +350,77 @@ if (paymentPolicy != null && paymentPolicy.getContent() != null) {
         BigDecimal deposit = total.multiply(new BigDecimal("0.50"))
                 .setScale(0, RoundingMode.HALF_UP);
 
+        // ✅ TẠO HOLD THẬT TRONG DB thay cho holdId demo
+        int holdId;
+        try {
+            ReceptAvailabilityHoldDAO holdDAO = new ReceptAvailabilityHoldDAO();
+System.out.println("========== BOOKING CONFIRM DEBUG ==========");
+System.out.println("DAO_CLASS = " + holdDAO.getClass().getName());
+System.out.println("DAO_LOCATION = " 
+        + holdDAO.getClass().getProtectionDomain().getCodeSource().getLocation());
+System.out.println("roomTypeIdS = " + roomTypeIdS);
+System.out.println("roomTypeId = " + roomTypeId);
+System.out.println("checkInS = " + checkInS);
+System.out.println("checkOutS = " + checkOutS);
+System.out.println("checkIn = " + checkIn);
+System.out.println("checkOut = " + checkOut);
+System.out.println("roomQtyS = " + roomQtyS);
+System.out.println("roomQty = " + roomQty);
+System.out.println("customerEmail = " + customerEmail);
+            int userIdOrZero = 0; // guest mặc định
+
+            Object u = session.getAttribute("userAccount");
+            if (u == null) u = session.getAttribute("user");
+            if (u == null) u = session.getAttribute("account");
+            if (u == null) u = session.getAttribute("currentUser");
+            if (u == null) u = session.getAttribute("profile");
+
+            // ✅ Nếu model.User có getUserId() thì lấy
+            if (u instanceof model.User) {
+                userIdOrZero = ((model.User) u).getUserId();
+            }
+System.out.println("BEFORE createHold()");
+          Date sqlCheckIn = Date.valueOf(checkIn);
+Date sqlCheckOut = Date.valueOf(checkOut);
+
+holdId = holdDAO.createHold(
+        userIdOrZero,
+        roomTypeId,
+        roomQty,
+        sqlCheckIn,
+        sqlCheckOut,
+        60
+);
+
+
+System.out.println("CREATE HOLD SUCCESS holdId=" + holdId);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            resp.sendRedirect(req.getContextPath() + "/booking?err=no_inventory");
+            return;
+        }
+
+        session.setAttribute("HOLD_" + holdId + "_roomTypeId", roomTypeIdS);
+        session.setAttribute("HOLD_" + holdId + "_checkIn", checkInS);
+        session.setAttribute("HOLD_" + holdId + "_checkOut", checkOutS);
+        session.setAttribute("HOLD_" + holdId + "_roomQty", roomQtyS);
+        session.setAttribute("HOLD_" + holdId + "_adults", adultsS);
+        session.setAttribute("HOLD_" + holdId + "_children", childrenS);
+
+        if (customerEmail != null && !customerEmail.isBlank() && customerEmail.contains("@")) {
+            session.setAttribute("HOLD_" + holdId + "_email", customerEmail);
+        }
+
+        // debug cực quan trọng
+        System.out.println("HOLD_ID=" + holdId + " | SAVE_EMAIL=" + customerEmail);
+
+        // ✅ đánh dấu đã qua step confirm
+        session.setAttribute("CHECKOUT_OK_" + holdId, true);
+
+        // =====================================================
+        // ✅ TÍNH TIỀN THẬT (deposit 50%) để đưa sang VNPay
+        // =====================================================
         session.setAttribute("HOLD_" + holdId + "_total", total.toPlainString());
         session.setAttribute("HOLD_" + holdId + "_deposit", deposit.toPlainString());
 
