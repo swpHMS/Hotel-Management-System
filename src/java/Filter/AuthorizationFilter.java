@@ -20,21 +20,32 @@ public class AuthorizationFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
     }
 
-    private boolean isStaticResource(String uri) {
-        return uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".png")
-                || uri.endsWith(".jpg") || uri.endsWith(".jpeg") || uri.endsWith(".gif")
-                || uri.endsWith(".svg") || uri.endsWith(".woff") || uri.endsWith(".woff2")
-                || uri.endsWith(".ttf") || uri.endsWith(".ico");
+    private boolean isStaticResource(String path) {
+        return path.endsWith(".css") || path.endsWith(".js") || path.endsWith(".png")
+                || path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".gif")
+                || path.endsWith(".svg") || path.endsWith(".woff") || path.endsWith(".woff2")
+                || path.endsWith(".ttf") || path.endsWith(".ico");
     }
 
-    private boolean mustLogin(String uri) {
-        // ✅ CHỈNH Ở ĐÂY: các url mà khách muốn filter/booking thì phải login
-        return uri.contains("/booking")
-                || uri.contains("/search")
-                || uri.contains("/rooms/filter")
-                || uri.contains("/room/filter")
-                || uri.contains("/room/search")
-                || uri.contains("/rooms/search");
+    private boolean mustLogin(String path) {
+        return path.contains("/booking")
+                || path.contains("/search")
+                || path.contains("/rooms/filter")
+                || path.contains("/room/filter")
+                || path.contains("/room/search")
+                || path.contains("/rooms/search");
+    }
+
+    private boolean isPublicPath(String path) {
+        return path.startsWith("/login")
+                || path.startsWith("/logout")
+                || path.startsWith("/register")
+                || path.startsWith("/reset-password")
+                || path.startsWith("/verify")
+                || path.startsWith("/home")
+                || path.startsWith("/policy")
+                || path.contains("view/auth");
+                
     }
 
     @Override
@@ -46,46 +57,93 @@ public class AuthorizationFilter implements Filter {
 
         String uri = req.getRequestURI();
         String contextPath = req.getContextPath();
+        String path = uri.substring(contextPath.length());
 
-        // lấy user từ session (đúng key bạn đang dùng)
-        HttpSession session = req.getSession(false);
-        User user = (session == null) ? null : (User) session.getAttribute("userAccount");
-
-        // 1) static files -> cho qua
-        if (isStaticResource(uri)) {
+        if (isStaticResource(path)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // 2) admin -> chỉ role admin (roleId = 1)
-        if (uri.contains("/admin/")) {
-            if (user == null || user.getRoleId() != 1) {
-                res.sendRedirect(contextPath + "/home");
-                return;
-            }
-        }
-        if (uri.contains("/manager/")) {
-            if (user == null || user.getRoleId() != 2) {
-                res.sendRedirect(contextPath + "/home");
-                return;
-            }
-        }
+        HttpSession session = req.getSession(false);
+        User user = (session == null) ? null : (User) session.getAttribute("userAccount");
 
-        // 3) ✅ booking / filter -> bắt login
-        if (mustLogin(uri)) {
+        
+        if (mustLogin(path)) {
             if (user == null) {
-                // lưu url để login xong quay lại trang đang filter/booking
-                String redirect = req.getRequestURI();
-                String qs = req.getQueryString();
-                if (qs != null) {
-                    redirect += "?" + qs;
-                }
-
-                req.getSession(true).setAttribute("redirectAfterLogin", redirect);
-
-                res.sendRedirect(contextPath + "/login"); // hoặc /register nếu bạn muốn
+                res.sendRedirect(contextPath + "/login");
                 return;
             }
+            chain.doFilter(request, response);
+            return;
+        }
+
+        
+        if (isPublicPath(path)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        
+        if (user == null) {
+            res.sendRedirect(contextPath + "/login");
+            return;
+        }
+
+        int roleId = user.getRoleId();
+
+        // Admin
+        if (roleId == 1) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // Manager
+        if (roleId == 2) {
+            if (path.startsWith("/manager")
+                    || path.contains("view/staff/profile.jsp")
+                    || path.contains("staff-profile")) {
+                chain.doFilter(request, response);
+            } else {
+                res.sendRedirect(contextPath + "/manager/dashboard");
+            }
+            return;
+        }
+
+        // Receptionist
+        if (roleId == 3) {
+            if (path.startsWith("/receptionist")
+                    || path.contains("view/staff/profile.jsp")
+                    || path.contains("staff-profile")) {
+                chain.doFilter(request, response);
+            } else {
+                res.sendRedirect(contextPath + "/receptionist/dashboard");
+            }
+            return;
+        }
+
+        // Staff
+        if (roleId == 4) {
+            if (path.startsWith("/staff")
+                    || path.contains("view/staff/profile.jsp")
+                    || path.contains("staff-profile")) {
+                chain.doFilter(request, response);
+            } else {
+                res.sendRedirect(contextPath + "/staff");
+            }
+            return;
+        }
+
+        // Customer
+        if (roleId == 5) {
+            boolean customerAllowed = isPublicPath(path)
+                    || mustLogin(path);
+
+            if (customerAllowed) {
+                chain.doFilter(request, response);
+            } else {
+                res.sendRedirect(contextPath + "/home");
+            }
+            return;
         }
 
         chain.doFilter(request, response);

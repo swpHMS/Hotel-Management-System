@@ -8,14 +8,21 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
-<c:set var="page" value="serviceorder" />
+<c:set var="currentPage" value="serviceorder" scope="request" />
 <!doctype html>
 <html lang="vi">
     <head>
         <meta charset="utf-8"/>
         <title>Staff | Service Orders</title>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/staff/app.css"/>
+        <link rel="stylesheet"
+      href="${pageContext.request.contextPath}/assets/css/staff/app.css">
+
+<link rel="stylesheet"
+      href="${pageContext.request.contextPath}/assets/css/admin/sidebar-styles.css"/>
+
+<link rel="stylesheet"
+      href="${pageContext.request.contextPath}/assets/css/staff/dashboard-styles.css">
 
         <style>
             :root {

@@ -102,7 +102,7 @@ public class BookingSuccessServlet extends HttpServlet {
         req.setAttribute("email", email);
 
         req.setAttribute("holdId", holdId);
-        req.setAttribute("bookingCode", "#" + bookingData.getBookingId());
+        req.setAttribute("bookingCode", "#BK-" + bookingData.getBookingId());
         req.setAttribute("customerEmail", email);
         req.setAttribute("roomName", bookingData.getRoomName());
         req.setAttribute("checkInDate", bookingData.getCheckInDate());

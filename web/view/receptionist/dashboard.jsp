@@ -29,13 +29,28 @@
                 --ink:#2c2416;
                 --ink-mid:#5a4e3c;
                 --ink-soft:#9c8e7a;
+
                 --gold:#b5832a;
                 --gold-lt:#f0ddb8;
                 --gold-bg:rgba(181,131,42,.09);
-                --terra:#c0614a;
-                --terra-lt:#f5d8d2;
+
+                --blue:#3b5ccc;
+                --blue-lt:#dfe7ff;
+                --blue-bg:rgba(59,92,204,.10);
+
                 --sage:#5a7a5c;
                 --sage-lt:#d4e6d4;
+
+                --orange:#c26a1b;
+                --orange-lt:#ffe5c7;
+                --orange-bg:rgba(194,106,27,.10);
+
+                --purple:#7c4cc9;
+                --purple-lt:#eadfff;
+                --purple-bg:rgba(124,76,201,.10);
+
+                --terra:#c0614a;
+                --terra-lt:#f5d8d2;
 
                 --checkin:#16a34a;
                 --checkin-bg:#dcfce7;
@@ -139,11 +154,21 @@
                 background: var(--card-blob, rgba(181,131,42,.07));
                 pointer-events:none;
             }
-            .stat-card.sage-card{
+
+            .stat-card.gold-card{
+                --card-blob: rgba(181,131,42,.08);
+            }
+            .stat-card.blue-card{
+                --card-blob: rgba(59,92,204,.08);
+            }
+            .stat-card.green-card{
                 --card-blob: rgba(90,122,92,.09);
             }
-            .stat-card.terra-card{
-                --card-blob: rgba(192,97,74,.08);
+            .stat-card.orange-card{
+                --card-blob: rgba(194,106,27,.08);
+            }
+            .stat-card.purple-card{
+                --card-blob: rgba(124,76,201,.08);
             }
 
             .stat-card::before{
@@ -162,13 +187,26 @@
                 line-height: 1.1;
                 z-index: 2;
             }
-            .stat-card.sage-card::before{
+
+            .stat-card.gold-card::before{
+                background: var(--gold-bg);
+                color: var(--gold);
+            }
+            .stat-card.blue-card::before{
+                background: var(--blue-bg);
+                color: var(--blue);
+            }
+            .stat-card.green-card::before{
                 background: rgba(90,122,92,.10);
                 color: var(--sage);
             }
-            .stat-card.terra-card::before{
-                background: rgba(192,97,74,.10);
-                color: var(--terra);
+            .stat-card.orange-card::before{
+                background: var(--orange-bg);
+                color: var(--orange);
+            }
+            .stat-card.purple-card::before{
+                background: var(--purple-bg);
+                color: var(--purple);
             }
 
             .stat-icon-wrapper{
@@ -184,21 +222,25 @@
                 z-index: 1;
             }
 
-            .bg-blue-soft, .bg-indigo-soft{
+            .bg-guests-icon{
                 background: var(--gold-lt);
                 color: var(--gold);
             }
-            .bg-red-soft{
-                background: var(--terra-lt);
-                color: var(--terra);
+            .bg-pending-icon{
+                background: var(--blue-lt);
+                color: var(--blue);
             }
             .bg-checkin-icon{
                 background: var(--sage-lt);
                 color: var(--sage);
             }
             .bg-checkout-icon{
-                background: #ffedd5;
-                color: #9a3412;
+                background: var(--orange-lt);
+                color: var(--orange);
+            }
+            .bg-arrival-icon{
+                background: var(--purple-lt);
+                color: var(--purple);
             }
 
             .stat-data{
@@ -867,7 +909,7 @@
                 <!-- Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h1 class="dashboard-title">Daily Check-in</h1>
+                        <h1 class="dashboard-title">Today Operation</h1>
                         <p class="dashboard-date" id="live-clock"></p>
                     </div>
 
@@ -880,43 +922,53 @@
 
                 <!-- Stats -->
                 <div class="stats-grid mb-4">
-                    <div class="stat-card" data-tag="Guests">
-                        <div class="stat-icon-wrapper bg-blue-soft"><i class="bi bi-people-fill"></i></div>
+                    <div class="stat-card gold-card" data-tag="Guests">
+                        <div class="stat-icon-wrapper bg-guests-icon">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
                         <div class="stat-data">
                             <span class="stat-label">TOTAL GUESTS</span>
                             <span class="stat-value">${stats.totalGuests}</span>
                         </div>
                     </div>
 
-                    <div class="stat-card sage-card" data-tag="Booked">
-                        <div class="stat-icon-wrapper bg-checkin-icon"><i class="bi bi-door-open-fill"></i></div>
+                    <div class="stat-card blue-card" data-tag="Pending">
+                        <div class="stat-icon-wrapper bg-pending-icon">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
                         <div class="stat-data">
-                            <span class="stat-label">ROOMS BOOKED</span>
-                            <span class="stat-value">${stats.roomsBooked}</span>
+                            <span class="stat-label">PENDING CHECK-IN</span>
+                            <span class="stat-value">${stats.pendingCheckIn}</span>
                         </div>
                     </div>
 
-                    <div class="stat-card sage-card" data-tag="Checked">
-                        <div class="stat-icon-wrapper bg-checkin-icon"><i class="bi bi-arrow-down-left"></i></div>
+                    <div class="stat-card green-card" data-tag="Checked">
+                        <div class="stat-icon-wrapper bg-checkin-icon">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                        </div>
                         <div class="stat-data">
                             <span class="stat-label">CHECK-IN</span>
                             <span class="stat-value">${stats.checkInToday}</span>
                         </div>
                     </div>
 
-                    <div class="stat-card" data-tag="Unchecked">
-                        <div class="stat-icon-wrapper bg-checkout-icon"><i class="bi bi-arrow-up-right"></i></div>
+                    <div class="stat-card orange-card" data-tag="Departure">
+                        <div class="stat-icon-wrapper bg-checkout-icon">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </div>
                         <div class="stat-data">
                             <span class="stat-label">CHECK-OUT</span>
                             <span class="stat-value">${stats.checkOutToday}</span>
                         </div>
                     </div>
 
-                    <div class="stat-card terra-card" data-tag="No-show">
-                        <div class="stat-icon-wrapper bg-red-soft"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    <div class="stat-card purple-card" data-tag="Arrival">
+                        <div class="stat-icon-wrapper bg-arrival-icon">
+                            <i class="bi bi-calendar-event-fill"></i>
+                        </div>
                         <div class="stat-data">
-                            <span class="stat-label">NO-SHOW</span>
-                            <span class="stat-value">${stats.noShowToday}</span>
+                            <span class="stat-label">ARRIVAL TODAY</span>
+                            <span class="stat-value">${stats.arrivalToday}</span>
                         </div>
                     </div>
                 </div>
@@ -932,7 +984,7 @@
                             <div class="search-wrap">
                                 <i class="bi bi-search"></i>
                                 <input class="f-input" type="text"
-                                       placeholder="Search by booking_id, guest name, or phone..."
+                                       placeholder="Search by booking_id, guest name"
                                        name="txtSearch"
                                        value="${searchValue}">
                             </div>
@@ -972,11 +1024,11 @@
                             <tr>
                                 <th style="width:120px">Booking ID</th>
                                 <th class="text-left">Guest Name</th>
-                                <th style="width:160px">Room Type</th>
+                                <th style="width:160px">Booked Type</th>
                                 <th style="width:180px">Time Stay</th>
                                 <th style="width:110px">Number Room</th>
                                 <th style="width:110px">Room Assign</th>
-                                <th style="width:110px">Number Person</th>
+                                <th style="width:130px">Status</th>
                                 <th style="width:200px; text-align:right">Action</th>
                             </tr>
                         </thead>
@@ -1006,13 +1058,19 @@
                                     <td class="cell-muted">${b.checkInDate} <br> ${b.checkOutDate}</td>
                                     <td>${b.numRooms}</td>
                                     <td class="cell-muted">${b.roomNo != null ? b.roomNo : "—"}</td>
-                                    <td class="cell-muted">
+                                    <td>
                                         <c:choose>
-                                            <c:when test="${b.numPersons > 0}">
-                                                ${b.numPersons}
+                                            <c:when test="${b.bookingStatus == 2}">
+                                                <span class="tag-pill status-reserved">Reserved</span>
+                                            </c:when>
+                                            <c:when test="${b.bookingStatus == 3}">
+                                                <span class="tag-pill status-checkin">Checked-in</span>
+                                            </c:when>
+                                            <c:when test="${b.bookingStatus == 4}">
+                                                <span class="tag-pill status-completed">Completed</span>
                                             </c:when>
                                             <c:otherwise>
-                                                —
+                                                <span class="tag-pill">—</span>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
@@ -1163,7 +1221,7 @@
                     <div class="detail-contact-box">
                         <div class="detail-contact-row">
                             <i class="bi bi-telephone"></i>
-                            <span id="detailPhone">Chưa có số điện thoại</span>
+                            <span id="detailPhone"></span>
                         </div>
                         <div class="detail-contact-row">
                             <i class="bi bi-envelope"></i>
@@ -1214,11 +1272,11 @@
 
             function mapStatus(status) {
                 switch (String(status)) {
-                    case "1":
-                        return {text: "Reserved", className: "detail-status-badge status-reserved"};
                     case "2":
-                        return {text: "Checked-in", className: "detail-status-badge status-checkin"};
+                        return {text: "Reserved", className: "detail-status-badge status-reserved"};
                     case "3":
+                        return {text: "Checked-in", className: "detail-status-badge status-checkin"};
+                    case "4":
                         return {text: "Completed", className: "detail-status-badge status-completed"};
                     case "6":
                         return {text: "No-show", className: "detail-status-badge status-noshow"};

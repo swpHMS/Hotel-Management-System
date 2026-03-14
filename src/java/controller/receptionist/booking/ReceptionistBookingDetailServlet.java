@@ -15,6 +15,8 @@ public class ReceptionistBookingDetailServlet extends HttpServlet {
         // Giữ active sidebar ở mục booking_list
         req.setAttribute("active", "booking_list"); 
         
+       
+        
         try {
             int id = Integer.parseInt(req.getParameter("id"));
             ReceptBookingListDAO dao = new ReceptBookingListDAO();

@@ -86,6 +86,26 @@ public class Room {
         this.roomTypeName = roomTypeName;
     }
 
+    public String getStatusClass() {
+        if (status == 1) return "available";
+        if (status == 2) return "occupied";
+        if (status == 3) return "maintenance";
+        if (status == 4) return "dirty";
+        return "available";
+    }
+
+    public String getStatusText() {
+        if (status == 1) return "Available";
+        if (status == 2) return "Occupied";
+        if (status == 3) return "Maintenance";
+        if (status == 4) return "Dirty";
+        return "Available";
+    }
+
+    public String getFormattedPrice() {
+        java.text.DecimalFormat df = new java.text.DecimalFormat("#,###");
+        return df.format(price) + " VND";
+    }
     
     
 }
