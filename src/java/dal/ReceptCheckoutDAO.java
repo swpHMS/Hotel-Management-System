@@ -16,16 +16,18 @@ public class ReceptCheckoutDAO extends DBContext {
     public CheckoutBill getCheckoutBill(int bookingId) {
         CheckoutBill bill = new CheckoutBill();
         
-        // Query 1: Lấy thông tin Booking, Customer, Tiền phòng và Tiền Cọc
+        // Query 1: Lấy thông tin (Đã bỏ c.email vì bảng customers không có cột này)
         String sqlBooking = 
-            "SELECT b.booking_id, c.full_name, c.phone, c.email, " +
+            "SELECT b.booking_id, c.full_name, c.phone, " +
             "       b.check_in_date, b.check_out_date, b.total_amount AS room_charges, " +
-            "       (SELECT ISNULL(SUM(amount), 0) FROM dbo.payments WHERE booking_id = b.booking_id AND status = 1) AS deposit_paid " +
+            "       (SELECT ISNULL(SUM(amount), 0) FROM dbo.payments WHERE booking_id = b.booking_id AND status = 1) AS deposit_paid, " +
+            "       (SELECT TOP 1 rt.name FROM dbo.booking_room_types brt JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id WHERE brt.booking_id = b.booking_id) AS room_type_name, " +
+            "       (SELECT ISNULL(SUM(quantity), 1) FROM dbo.booking_room_types WHERE booking_id = b.booking_id) AS room_quantity " +
             "FROM dbo.bookings b " +
             "JOIN dbo.customers c ON b.customer_id = c.customer_id " +
             "WHERE b.booking_id = ?";
 
-        // Query 2: Lấy các dịch vụ đã chốt (POSTED - status = 1) do Staff đẩy lên
+        // Query 2: Lấy các dịch vụ đã chốt (POSTED - status = 1)
         String sqlServices = 
             "SELECT s.name AS service_name, soi.quantity, soi.unit_price_snapshot, " +
             "       (soi.quantity * soi.unit_price_snapshot) AS total_price " +
@@ -43,14 +45,17 @@ public class ReceptCheckoutDAO extends DBContext {
                         bill.setBookingId(rs.getInt("booking_id"));
                         bill.setCustomerName(rs.getString("full_name"));
                         bill.setPhone(rs.getString("phone"));
-                        bill.setEmail(rs.getString("email"));
+                        // bill.setEmail(...) -> Đã loại bỏ
+                        
                         bill.setCheckInDate(rs.getDate("check_in_date"));
                         bill.setCheckOutDate(rs.getDate("check_out_date"));
                         
                         long roomCharges = rs.getBigDecimal("room_charges").longValue();
                         long depositPaid = rs.getBigDecimal("deposit_paid").longValue();
                         
-                        // Tính số đêm (Công thức đơn giản, bạn có thể dùng ChronoUnit như trong ReceptBookingDAO)
+                        bill.setRoomTypeName(rs.getString("room_type_name"));
+                        bill.setRoomQuantity(rs.getInt("room_quantity"));
+                        
                         long diff = bill.getCheckOutDate().getTime() - bill.getCheckInDate().getTime();
                         long nights = Math.max(1, diff / (1000 * 60 * 60 * 24));
                         
@@ -58,7 +63,7 @@ public class ReceptCheckoutDAO extends DBContext {
                         bill.setRoomCharges(roomCharges);
                         bill.setDepositPaid(depositPaid);
                     } else {
-                        return null; // Không tìm thấy booking
+                        return null; 
                     }
                 }
             }
@@ -88,16 +93,11 @@ public class ReceptCheckoutDAO extends DBContext {
             bill.setTotalAmount(bill.getRoomCharges() + totalServiceCharges);
             bill.setBalanceDue(bill.getTotalAmount() - bill.getDepositPaid());
 
-            // Tạm thời lấy tên Room Type của phòng đầu tiên (nếu cần hiển thị)
-            bill.setRoomTypeName("Theo đơn đặt phòng"); 
-            bill.setRoomQuantity(1);
-
         } catch (SQLException e) {
-            e.printStackTrace();
+            e.printStackTrace(); // Nếu còn lỗi khác, nó sẽ in đỏ ở log của NetBeans
         }
         return bill;
     }
-
     // ==========================================
     // 2. TRANSACTION CHECK-OUT VÀ LƯU THANH TOÁN
     // ==========================================
