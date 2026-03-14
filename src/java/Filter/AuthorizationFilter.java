@@ -36,17 +36,18 @@ public class AuthorizationFilter implements Filter {
                 || path.contains("/rooms/search");
     }
 
-    private boolean isPublicPath(String path) {
-        return path.startsWith("/login")
-                || path.startsWith("/logout")
-                || path.startsWith("/register")
-                || path.startsWith("/reset-password")
-                || path.startsWith("/verify")
-                || path.startsWith("/home")
-                || path.startsWith("/policy")
-                || path.contains("view/auth");
-                
-    }
+private boolean isPublicPath(String path) {
+    return path.startsWith("/login")
+            || path.startsWith("/logout")
+            || path.startsWith("/register")
+            || path.startsWith("/reset-password")
+            || path.startsWith("/verify")
+            || path.startsWith("/home")
+            || path.startsWith("/policy")
+            || path.startsWith("/vnpay-create")
+            || path.startsWith("/vnpay-return")
+            || path.contains("view/auth");
+}
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)

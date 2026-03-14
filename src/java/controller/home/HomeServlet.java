@@ -128,23 +128,35 @@ public class HomeServlet extends HttpServlet {
         Map<Integer, List<String>> imagesMap = new HashMap<>();
 
         if (roomTypes != null) {
-            for (var rt : roomTypes) {
+    for (var rt : roomTypes) {
 
-                rt.setAmenityNames(
-                        amenityRepo.getAmenityNamesByRoomType(rt.getRoomTypeId())
-                );
+        rt.setAmenityNames(
+                amenityRepo.getAmenityNamesByRoomType(rt.getRoomTypeId())
+        );
 
-                try {
-                    imagesMap.put(
-                            rt.getRoomTypeId(),
-                            roomTypeImageRepo.getImageUrlsByRoomTypeId(rt.getRoomTypeId())
-                    );
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    imagesMap.put(rt.getRoomTypeId(), new ArrayList<>());
+        try {
+            List<String> urls = roomTypeImageRepo.getImageUrlsByRoomTypeId(rt.getRoomTypeId());
+
+            imagesMap.put(rt.getRoomTypeId(), urls);
+
+            System.out.println("=== HOME DEBUG ===");
+            System.out.println("ROOM TYPE ID = " + rt.getRoomTypeId());
+            System.out.println("ROOM TYPE NAME = " + rt.getName());
+
+            if (urls == null || urls.isEmpty()) {
+                System.out.println("NO IMAGES");
+            } else {
+                for (int i = 0; i < urls.size(); i++) {
+                    System.out.println("IMG[" + i + "] = " + urls.get(i));
                 }
             }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            imagesMap.put(rt.getRoomTypeId(), new ArrayList<>());
         }
+    }
+}
 
         req.setAttribute("roomTypes", roomTypes);
         req.setAttribute("imagesMap", imagesMap);
