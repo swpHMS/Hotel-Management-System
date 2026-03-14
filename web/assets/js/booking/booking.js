@@ -1,5 +1,8 @@
 (function () {
 
+  let modalImages = [];
+  let modalIndex = 0;
+
   /* =========================
      SLIDER
   ========================== */
@@ -127,26 +130,14 @@
   });
 
   /* =========================
-     ROOM QTY LIMIT HELPERS
+     ROOM QTY HELPERS
   ========================== */
-  function getRoomLimit() {
-    return parseInt(document.getElementById("roomQty")?.value || "1", 10);
-  }
-
   function getAllQtyInputs() {
     return Array.from(document.querySelectorAll(".bk-qty .qty-input"));
   }
 
-  function getTotalSelectedRooms() {
-    return getAllQtyInputs().reduce((sum, input) => {
-      return sum + parseInt(input.value || "0", 10);
-    }, 0);
-  }
-
   function refreshRoomQtyButtons() {
-    const limit = getRoomLimit();
     const inputs = getAllQtyInputs();
-    const total = getTotalSelectedRooms();
 
     inputs.forEach(input => {
       const wrap = input.closest(".bk-qty");
@@ -163,9 +154,7 @@
       }
 
       if (plusBtn) {
-        const reachedGlobalLimit = total >= limit;
-        const reachedLocalMax = current >= max;
-        plusBtn.disabled = reachedGlobalLimit || reachedLocalMax;
+        plusBtn.disabled = current >= max;
       }
     });
   }
@@ -191,14 +180,6 @@
     let val = parseInt(input.value || "0", 10);
 
     if (plusBtn) {
-      const total = getTotalSelectedRooms();
-      const limit = getRoomLimit();
-
-      if (total >= limit) {
-        refreshRoomQtyButtons();
-        return;
-      }
-
       if (val < max) val++;
     }
 
@@ -213,6 +194,12 @@
   /* =========================
      ROOM DETAIL MODAL
   ========================== */
+  function renderModalImage() {
+    const rmImg = document.getElementById("rmImg");
+    if (!rmImg || modalImages.length === 0) return;
+    rmImg.src = modalImages[modalIndex];
+  }
+
   function openRoomModalFromLink(a) {
     const modal = document.getElementById("rmModal");
     if (!modal) return;
@@ -284,11 +271,18 @@
       }
     }
 
-    // Pick image from current card slider
-    const active = cardEl?.querySelector(".bk-gallery .bk-slide.is-active");
-    const first = cardEl?.querySelector(".bk-gallery .bk-slide");
-    const src = active?.getAttribute("src") || first?.getAttribute("src") || "";
-    if (rmImg && src) rmImg.src = src;
+    // Lấy toàn bộ ảnh từ card hiện tại
+    const slides = Array.from(cardEl?.querySelectorAll(".bk-gallery .bk-slide") || []);
+    modalImages = slides.map(img => img.getAttribute("src")).filter(Boolean);
+
+    const activeIndex = slides.findIndex(img => img.classList.contains("is-active"));
+    modalIndex = activeIndex >= 0 ? activeIndex : 0;
+
+    if (rmImg && modalImages.length > 0) {
+      rmImg.src = modalImages[modalIndex];
+    } else if (rmImg) {
+      rmImg.removeAttribute("src");
+    }
 
     // Open modal
     modal.classList.add("is-open");
@@ -310,6 +304,29 @@
     e.preventDefault();
     e.stopPropagation();
     openRoomModalFromLink(a);
+  });
+
+  // Prev / Next trong modal
+  document.addEventListener("click", function (e) {
+    const prevBtn = e.target.closest(".rm-prev");
+    const nextBtn = e.target.closest(".rm-next");
+
+    if (!prevBtn && !nextBtn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!modalImages.length) return;
+
+    if (prevBtn) {
+      modalIndex = (modalIndex - 1 + modalImages.length) % modalImages.length;
+    }
+
+    if (nextBtn) {
+      modalIndex = (modalIndex + 1) % modalImages.length;
+    }
+
+    renderModalImage();
   });
 
   document.addEventListener("click", function (e) {
@@ -350,6 +367,12 @@
 
     if (qty <= 0) {
       showCardError(card, "Please select at least 1 room before booking.");
+      return;
+    }
+
+    const totalGuests = adults + children;
+    if (totalGuests < qty) {
+      showCardError(card, "Number of guests cannot be less than number of rooms.");
       return;
     }
 

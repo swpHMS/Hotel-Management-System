@@ -2,6 +2,7 @@ package controller.payment;
 
 import dal.BookingFinalizeDAO;
 import dal.RoomTypeDAO;
+import dal.ReceptAvailabilityHoldDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -228,14 +229,16 @@ public class VNPayReturnServlet extends HttpServlet {
                     fullName = customerEmail;
                 }
 
-                BookingFinalizeDAO fdao = new BookingFinalizeDAO();
-                fr = fdao.finalizeAfterVnpaySuccess(holdId, userId, fullName, total, paid);
+               BookingFinalizeDAO fdao = new BookingFinalizeDAO();
+fr = fdao.finalizeAfterVnpaySuccess(holdId, userId, fullName, total, paid);
+
 
                 if (fr != null && fr.bookingCode != null && !fr.bookingCode.isBlank()) {
                     session.setAttribute("HOLD_" + holdId + "_bookingCode", "#" + fr.bookingCode);
                 }
 
                 System.out.println("FINALIZE_OK bookingId=" + fr.bookingId + " code=" + fr.bookingCode);
+                System.out.println("CONFIRM_HOLD_OK holdId=" + holdId);
 
                 // ✅ QUAN TRỌNG: redirect sang servlet gửi email
                 response.sendRedirect(request.getContextPath() + "/booking/success?holdId=" + holdId);
@@ -283,4 +286,5 @@ public class VNPayReturnServlet extends HttpServlet {
         request.getRequestDispatcher("/view/booking/success.jsp")
                 .forward(request, response);
     }
+
 }
