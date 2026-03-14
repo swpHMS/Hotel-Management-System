@@ -27,6 +27,7 @@ public class RoomTypeManagementView {
 
     private List<Integer> amenityIds = new ArrayList<>();
     private List<String> amenityNames = new ArrayList<>();
+    private List<RoomTypeImage> images = new ArrayList<>();
 
     public String getStatusText() {
         return status == 1 ? "ACTIVE" : "INACTIVE";
@@ -158,5 +159,39 @@ public class RoomTypeManagementView {
 
     public void setAmenityNames(List<String> amenityNames) {
         this.amenityNames = amenityNames;
+    }
+
+    public List<RoomTypeImage> getImages() {
+        return images;
+    }
+
+    public void setImages(List<RoomTypeImage> images) {
+        this.images = images == null ? new ArrayList<>() : images;
+    }
+
+    public RoomTypeImage getThumbnailImage() {
+        if (images == null || images.isEmpty()) {
+            return null;
+        }
+        for (RoomTypeImage image : images) {
+            if (image != null && image.isThumbnail()) {
+                return image;
+            }
+        }
+        return images.get(0);
+    }
+
+    public List<RoomTypeImage> getGalleryImages() {
+        List<RoomTypeImage> gallery = new ArrayList<>();
+        if (images == null) {
+            return gallery;
+        }
+        RoomTypeImage thumbnail = getThumbnailImage();
+        for (RoomTypeImage image : images) {
+            if (image != null && !image.isThumbnail() && (thumbnail == null || image.getImageId() != thumbnail.getImageId())) {
+                gallery.add(image);
+            }
+        }
+        return gallery;
     }
 }

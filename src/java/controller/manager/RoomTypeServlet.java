@@ -34,11 +34,13 @@ public class RoomTypeServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String action = trim(req.getParameter("action"));
+        if ("deleteImage".equals(action)) {
+            handleDeleteImage(req, resp);
+            return;
+        }
         loadViewData(req);
-        req.setAttribute("active", "roomTypes");
-        req.setAttribute("pageTitle", "Room Types");
-        req.setAttribute("contentPage", "/view/manager/room-types.jsp");
-        req.getRequestDispatcher("/view/manager/layout.jsp").forward(req, resp);
+        renderPage(req, resp);
     }
 
     @Override
@@ -46,19 +48,30 @@ public class RoomTypeServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
 
         String action = trim(req.getParameter("action"));
+        if ("deleteImage".equals(action)) {
+            handleDeleteImage(req, resp);
+            return;
+        }
+
         RoomTypeForm form = parseForm(req);
         List<String> errors = form.validate("create".equals(action));
 
-        String imageUrl = null;
-        boolean hasNewImage = false;
+        String thumbnailImageUrl = null;
+        boolean hasNewThumbnail = false;
+        List<String> galleryImageUrls = new ArrayList<>();
         try {
             Part thumbnailPart = req.getPart("thumbnailImage");
             if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
-                imageUrl = saveImage(thumbnailPart, req);
-                hasNewImage = true;
+                thumbnailImageUrl = saveImage(thumbnailPart, req);
+                hasNewThumbnail = true;
             }
         } catch (Exception ex) {
             errors.add("Thumbnail upload failed: " + ex.getMessage());
+        }
+        try {
+            galleryImageUrls = saveImages(req.getParts(), "galleryImages", req);
+        } catch (Exception ex) {
+            errors.add("Gallery upload failed: " + ex.getMessage());
         }
 
         if (!errors.isEmpty()) {
@@ -71,10 +84,7 @@ public class RoomTypeServlet extends HttpServlet {
             }
             req.setAttribute("formValue", form);
             loadViewData(req);
-            req.setAttribute("active", "roomTypes");
-            req.setAttribute("pageTitle", "Room Types");
-            req.setAttribute("contentPage", "/view/manager/room-types.jsp");
-            req.getRequestDispatcher("/view/manager/layout.jsp").forward(req, resp);
+            renderPage(req, resp);
             return;
         }
 
@@ -85,20 +95,33 @@ public class RoomTypeServlet extends HttpServlet {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?error=Invalid+room+type+id");
                 return;
             }
-            ok = roomTypeDAO.updateRoomType(roomTypeId, form, imageUrl, hasNewImage);
+            ok = roomTypeDAO.updateRoomType(roomTypeId, form, thumbnailImageUrl, hasNewThumbnail, galleryImageUrls);
             if (ok) {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?success=updated");
             } else {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?error=Update+failed");
             }
         } else {
-            ok = roomTypeDAO.createRoomType(form, imageUrl);
+            ok = roomTypeDAO.createRoomType(form, thumbnailImageUrl, galleryImageUrls);
             if (ok) {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?success=created");
             } else {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?error=Create+failed");
             }
         }
+    }
+
+    private void handleDeleteImage(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        Integer roomTypeId = toInt(req.getParameter("roomTypeId"), null);
+        Integer imageId = toInt(req.getParameter("imageId"), null);
+        if (roomTypeId == null || imageId == null || roomTypeId <= 0 || imageId <= 0) {
+            resp.sendRedirect(req.getContextPath() + "/manager/room-types?error=Invalid+image+request");
+            return;
+        }
+
+        boolean ok = roomTypeDAO.deleteGalleryImage(roomTypeId, imageId);
+        String status = ok ? "imageDeleted" : "imageDeleteFailed";
+        resp.sendRedirect(req.getContextPath() + "/manager/room-types?editId=" + roomTypeId + "&success=" + status);
     }
 
     private void loadViewData(HttpServletRequest req) {
@@ -172,6 +195,28 @@ public class RoomTypeServlet extends HttpServlet {
             }
         }
         return ids;
+    }
+
+    private List<String> saveImages(java.util.Collection<Part> parts, String fieldName, HttpServletRequest req) throws IOException {
+        List<String> urls = new ArrayList<>();
+        if (parts == null) {
+            return urls;
+        }
+
+        for (Part part : parts) {
+            if (part == null || !fieldName.equals(part.getName()) || part.getSize() <= 0) {
+                continue;
+            }
+            urls.add(saveImage(part, req));
+        }
+        return urls;
+    }
+
+    private void renderPage(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.setAttribute("active", "roomTypes");
+        req.setAttribute("pageTitle", "Room Types");
+        req.setAttribute("contentPage", "/view/manager/room-types.jsp");
+        req.getRequestDispatcher("/view/manager/layout.jsp").forward(req, resp);
     }
 
     private String saveImage(Part part, HttpServletRequest req) throws IOException {

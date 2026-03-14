@@ -5,6 +5,7 @@ import model.RoomTypeForm;
 import model.RoomTypeManagementView;
 import context.DBContext;
 import model.Amenity;
+import model.RoomTypeImage;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -387,6 +388,7 @@ public class RoomTypeDAO {
 
                     fillMetadata(v, rs.getString("description"));
                     hydrateAmenities(con, v);
+                    hydrateImages(con, v);
                     list.add(v);
                 }
             }
@@ -433,6 +435,10 @@ public class RoomTypeDAO {
     }
 
     public boolean createRoomType(RoomTypeForm form, String imageUrl) {
+        return createRoomType(form, imageUrl, new ArrayList<>());
+    }
+
+    public boolean createRoomType(RoomTypeForm form, String imageUrl, List<String> galleryImageUrls) {
         String insertRoomType = "INSERT INTO dbo.room_types(name, description, max_adult, max_children, image_url, status) VALUES (?, ?, ?, ?, ?, ?)";
         String insertAmenity = "INSERT INTO dbo.room_type_amenities(room_type_id, amenity_id) VALUES (?, ?)";
         String insertRate = "INSERT INTO dbo.rate_versions(room_type_id, price, valid_from, valid_to) VALUES (?, ?, ?, ?)";
@@ -464,6 +470,8 @@ public class RoomTypeDAO {
                 upsertThumbnailImage(con, roomTypeId, imageUrl);
             }
 
+            insertGalleryImages(con, roomTypeId, galleryImageUrls);
+
             if (form.getAmenityIds() != null && !form.getAmenityIds().isEmpty()) {
                 try (PreparedStatement psAmenity = con.prepareStatement(insertAmenity)) {
                     for (Integer amenityId : uniqueAmenityIds(form.getAmenityIds())) {
@@ -494,6 +502,10 @@ public class RoomTypeDAO {
     }
 
     public boolean updateRoomType(int roomTypeId, RoomTypeForm form, String imageUrl, boolean replaceImage) {
+        return updateRoomType(roomTypeId, form, imageUrl, replaceImage, new ArrayList<>());
+    }
+
+    public boolean updateRoomType(int roomTypeId, RoomTypeForm form, String imageUrl, boolean replaceImage, List<String> galleryImageUrls) {
         String updateRoomType = "UPDATE dbo.room_types SET name=?, description=?, max_adult=?, max_children=?, status=?, image_url = CASE WHEN ? = 1 THEN ? ELSE image_url END WHERE room_type_id=?";
         String deleteAmenity = "DELETE FROM dbo.room_type_amenities WHERE room_type_id = ?";
         String insertAmenity = "INSERT INTO dbo.room_type_amenities(room_type_id, amenity_id) VALUES (?, ?)";
@@ -518,6 +530,8 @@ public class RoomTypeDAO {
             if (replaceImage && imageUrl != null && !imageUrl.isBlank()) {
                 upsertThumbnailImage(con, roomTypeId, imageUrl);
             }
+
+            insertGalleryImages(con, roomTypeId, galleryImageUrls);
 
             try (PreparedStatement psDeleteAmenity = con.prepareStatement(deleteAmenity)) {
                 psDeleteAmenity.setInt(1, roomTypeId);
@@ -581,6 +595,53 @@ public class RoomTypeDAO {
         view.setAmenityNames(amenityNames);
     }
 
+    private void hydrateImages(Connection con, RoomTypeManagementView view) {
+        String sql = """
+                SELECT image_id, room_type_id, image_url, is_thumbnail, sort_order, created_at
+                FROM dbo.room_type_images
+                WHERE room_type_id = ?
+                ORDER BY is_thumbnail DESC, sort_order ASC, image_id ASC
+                """;
+
+        List<RoomTypeImage> images = new ArrayList<>();
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, view.getRoomTypeId());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    RoomTypeImage image = new RoomTypeImage();
+                    image.setImageId(rs.getInt("image_id"));
+                    image.setRoomTypeId(rs.getInt("room_type_id"));
+                    image.setImageUrl(rs.getString("image_url"));
+                    image.setThumbnail(rs.getBoolean("is_thumbnail"));
+                    image.setSortOrder(rs.getInt("sort_order"));
+                    image.setCreatedAt(rs.getTimestamp("created_at"));
+                    images.add(image);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        view.setImages(images);
+    }
+
+    public boolean deleteGalleryImage(int roomTypeId, int imageId) {
+        String sql = """
+                DELETE FROM dbo.room_type_images
+                WHERE room_type_id = ? AND image_id = ? AND ISNULL(is_thumbnail, 0) = 0
+                """;
+
+        DBContext db = new DBContext();
+        try (Connection con = db.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, roomTypeId);
+            ps.setInt(2, imageId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private Set<Integer> uniqueAmenityIds(List<Integer> amenityIds) {
         Set<Integer> set = new LinkedHashSet<>();
         for (Integer id : amenityIds) {
@@ -626,6 +687,41 @@ public class RoomTypeDAO {
                 psInsert.setString(2, imageUrl);
                 psInsert.executeUpdate();
             }
+        }
+    }
+
+    private void insertGalleryImages(Connection con, int roomTypeId, List<String> imageUrls) throws SQLException {
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            return;
+        }
+
+        String nextOrderSql = "SELECT COALESCE(MAX(sort_order), 0) FROM dbo.room_type_images WHERE room_type_id = ?";
+        String insertSql = """
+                INSERT INTO dbo.room_type_images(room_type_id, image_url, is_thumbnail, sort_order, created_at)
+                VALUES (?, ?, 0, ?, GETDATE())
+                """;
+
+        int nextSortOrder = 1;
+        try (PreparedStatement psOrder = con.prepareStatement(nextOrderSql)) {
+            psOrder.setInt(1, roomTypeId);
+            try (ResultSet rs = psOrder.executeQuery()) {
+                if (rs.next()) {
+                    nextSortOrder = rs.getInt(1) + 1;
+                }
+            }
+        }
+
+        try (PreparedStatement psInsert = con.prepareStatement(insertSql)) {
+            for (String imageUrl : imageUrls) {
+                if (imageUrl == null || imageUrl.isBlank()) {
+                    continue;
+                }
+                psInsert.setInt(1, roomTypeId);
+                psInsert.setString(2, imageUrl);
+                psInsert.setInt(3, nextSortOrder++);
+                psInsert.addBatch();
+            }
+            psInsert.executeBatch();
         }
     }
 

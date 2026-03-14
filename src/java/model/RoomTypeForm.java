@@ -71,10 +71,6 @@ public class RoomTypeForm {
             amenityIds = new ArrayList<>();
         }
 
-        if (creating && (description != null && description.length() > 3900)) {
-            errors.add("Description is too long.");
-        }
-
         return errors;
     }
 
@@ -83,9 +79,6 @@ public class RoomTypeForm {
         sb.append("[BED:").append(nullToEmpty(bedType)).append("]");
         sb.append("[VIEW:").append(nullToEmpty(viewType)).append("]");
         sb.append("[SIZE:").append(roomSize == null ? "" : roomSize).append("]");
-        if (description != null && !description.trim().isEmpty()) {
-            sb.append(" ").append(description.trim());
-        }
         return sb.toString();
     }
 
