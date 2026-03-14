@@ -9,24 +9,24 @@ package model;
  * @author ASUS
  */
 public class DashboardStats {
-    private int totalGuests;    // Tổng số khách (Người lớn + Trẻ em) đang/sẽ ở
-    private int roomsBooked;    // Số phòng có trạng thái Reserved (Status 1)
-    private int checkInToday;   // Số khách thực tế đã làm thủ tục vào phòng (Status 2, 3)
-    private int checkOutToday;  // Số khách cần/đã trả phòng trong ngày (Status 2, 3)
-    private int noShowToday;    // Số đơn đặt phòng bị quá hạn không đến (Status 4)
+
+    private int totalGuests;      // Tổng số khách đang ở
+    private int pendingCheckIn;   // Số booking hôm nay chưa check-in
+    private int checkInToday;     // Số phòng đã check-in hôm nay
+    private int checkOutToday;    // Số booking/phòng checkout hôm nay
+    private int arrivalToday;     // Tổng số booking có ngày check-in là hôm nay
 
     public DashboardStats() {
     }
 
-    public DashboardStats(int totalGuests, int roomsBooked, int checkInToday, int checkOutToday, int noShowToday) {
+    public DashboardStats(int totalGuests, int pendingCheckIn, int checkInToday, int checkOutToday, int arrivalToday) {
         this.totalGuests = totalGuests;
-        this.roomsBooked = roomsBooked;
+        this.pendingCheckIn = pendingCheckIn;
         this.checkInToday = checkInToday;
         this.checkOutToday = checkOutToday;
-        this.noShowToday = noShowToday;
+        this.arrivalToday = arrivalToday;
     }
 
-    // Getters and Setters
     public int getTotalGuests() {
         return totalGuests;
     }
@@ -35,12 +35,12 @@ public class DashboardStats {
         this.totalGuests = totalGuests;
     }
 
-    public int getRoomsBooked() {
-        return roomsBooked;
+    public int getPendingCheckIn() {
+        return pendingCheckIn;
     }
 
-    public void setRoomsBooked(int roomsBooked) {
-        this.roomsBooked = roomsBooked;
+    public void setPendingCheckIn(int pendingCheckIn) {
+        this.pendingCheckIn = pendingCheckIn;
     }
 
     public int getCheckInToday() {
@@ -59,18 +59,22 @@ public class DashboardStats {
         this.checkOutToday = checkOutToday;
     }
 
-    public int getNoShowToday() {
-        return noShowToday;
+    public int getArrivalToday() {
+        return arrivalToday;
     }
 
-    public void setNoShowToday(int noShowToday) {
-        this.noShowToday = noShowToday;
+    public void setArrivalToday(int arrivalToday) {
+        this.arrivalToday = arrivalToday;
     }
 
     @Override
     public String toString() {
-        return "DashboardStats{" + "totalGuests=" + totalGuests + ", roomsBooked=" + roomsBooked + 
-               ", checkInToday=" + checkInToday + ", checkOutToday=" + checkOutToday + 
-               ", noShowToday=" + noShowToday + '}';
+        return "DashboardStats{"
+                + "totalGuests=" + totalGuests
+                + ", pendingCheckIn=" + pendingCheckIn
+                + ", checkInToday=" + checkInToday
+                + ", checkOutToday=" + checkOutToday
+                + ", arrivalToday=" + arrivalToday
+                + '}';
     }
 }
