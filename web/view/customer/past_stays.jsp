@@ -463,6 +463,79 @@
     .cbm-statusWrap{
         margin-bottom:12px;
     }
+    .cb-pagination{
+        margin-top:18px;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:8px;
+        flex-wrap:wrap;
+    }
+    .cb-page-link{
+        min-width:38px;
+        height:38px;
+        padding:0 12px;
+        border:1px solid #dbe3ee;
+        background:#fff;
+        color:#334155;
+        text-decoration:none;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        font-weight:700;
+        transition:.15s ease;
+    }
+    .cb-page-link:hover{
+        background:#f8fafc;
+        border-color:#cbd5e1;
+    }
+    .cb-page-link.is-active{
+        background:#0a1b2a;
+        color:#fff;
+        border-color:#0a1b2a;
+        pointer-events:none;
+    }
+    .cb-page-link.is-disabled{
+        opacity:.45;
+        pointer-events:none;
+    }
+    .cb-bottombar{
+        margin-top:18px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:16px;
+        flex-wrap:wrap;
+    }
+
+    .cb-size-form{
+        display:flex;
+        align-items:center;
+        gap:8px;
+    }
+
+    .cb-size-label{
+        font-size:13px;
+        color:#64748b;
+        font-weight:600;
+    }
+
+    .cb-size-select{
+        height:38px;
+        padding:0 10px;
+        border:1px solid #dbe3ee;
+        background:#fff;
+        color:#0f172a;
+        font-weight:600;
+    }
+
+    .cb-pagination{
+        margin-top:0;
+        display:flex;
+        justify-content:flex-end;
+        align-items:center;
+        gap:8px;
+    }
 </style>
 
 <div class="cb-page">
@@ -483,6 +556,7 @@
                 <c:forEach var="b" items="${pastStays}">
 
                     <div class="cb-card"
+                         data-rooms="${b.roomQuantityText}"
                          data-booking-id="${b.bookingId}"
                          data-status-text="${b.statusText}"
                          data-status-ui="${b.statusUiType}"
@@ -553,9 +627,13 @@
                                     <div class="k">BOOKING ID</div>
                                     <div class="v">#${b.bookingId}</div>
                                 </div>
+
+                                <div class="cb-item">
+                                    <div class="k">ROOMS</div>
+                                    <div class="v">${b.roomQuantityText}</div>
+                                </div>
                             </div>
 
-                            <!-- ✅ BOOK AGAIN thay cho CANCEL -->
                             <div class="cb-actions">
                                 <button type="button"
                                         class="cb-btn cb-btn-primary js-view-detail">
@@ -564,7 +642,6 @@
 
                                 <form action="${pageContext.request.contextPath}/booking"
                                       method="get">
-
                                     <input type="hidden"
                                            name="bookingId"
                                            value="${b.bookingId}" />
@@ -584,6 +661,58 @@
             </div>
         </c:otherwise>
     </c:choose>
+
+    <div class="cb-bottombar">
+
+        <!-- LEFT: page size -->
+        <form method="get"
+              action="${pageContext.request.contextPath}/customer/dashboard"
+              class="cb-size-form">
+
+            <input type="hidden" name="tab" value="past"/>
+            <input type="hidden" name="pastPage" value="1"/>
+
+            <label class="cb-size-label">Show</label>
+
+            <select name="pageSize"
+                    class="cb-size-select"
+                    onchange="this.form.submit()">
+
+                <option value="2" ${pageSize == 2 ? 'selected' : ''}>2</option>
+                <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
+                <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
+
+            </select>
+
+            <span class="cb-size-label">per page</span>
+        </form>
+
+
+        <!-- RIGHT: pagination -->
+        <c:if test="${pastTotalPages > 1}">
+            <div class="cb-pagination">
+
+                <a class="cb-page-link ${pastCurrentPage == 1 ? 'is-disabled' : ''}"
+                   href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${pastCurrentPage - 1}&pageSize=${pageSize}">
+                    Previous
+                </a>
+
+                <c:forEach begin="1" end="${pastTotalPages}" var="p">
+                    <a class="cb-page-link ${p == pastCurrentPage ? 'is-active' : ''}"
+                       href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${p}&pageSize=${pageSize}">
+                        ${p}
+                    </a>
+                </c:forEach>
+
+                <a class="cb-page-link ${pastCurrentPage == pastTotalPages ? 'is-disabled' : ''}"
+                   href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${pastCurrentPage + 1}&pageSize=${pageSize}">
+                    Next
+                </a>
+
+            </div>
+        </c:if>
+
+    </div>
 </div>
 
 <!-- Modal (same as current) -->
@@ -629,7 +758,11 @@
                     <div class="cbm-k">CHECK-OUT</div>
                     <div class="cbm-v" id="cbmCheckout">—</div>
                 </div>
-                <div class="cbm-box" style="grid-column:1/-1;">
+                <div class="cbm-box">
+                    <div class="cbm-k">ROOMS</div>
+                    <div class="cbm-v" id="cbmRooms">—</div>
+                </div>
+                <div class="cbm-box">
                     <div class="cbm-k">TOTAL</div>
                     <div class="cbm-v" id="cbmTotal">—</div>
                 </div>
@@ -645,96 +778,99 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function () {
 
-    const overlay = document.getElementById('cbmOverlay');
-    const closeBtn = document.getElementById('cbmClose');
-    const gallery = document.getElementById('cbmGallery');
-    const gPrev = document.getElementById('cbmPrev');
-    const gNext = document.getElementById('cbmNext');
+        const overlay = document.getElementById('cbmOverlay');
+        const closeBtn = document.getElementById('cbmClose');
+        const gallery = document.getElementById('cbmGallery');
+        const gPrev = document.getElementById('cbmPrev');
+        const gNext = document.getElementById('cbmNext');
 
-    let gIdx = 0;
-    let gImgs = [];
+        let gIdx = 0;
+        let gImgs = [];
 
-    function renderGallery() {
-        gallery.querySelectorAll("img").forEach(x => x.remove());
+        function renderGallery() {
+            gallery.querySelectorAll("img").forEach(x => x.remove());
 
-        gImgs.forEach((src, i) => {
-            const img = document.createElement("img");
-            img.src = src;
-            if (i === gIdx) img.classList.add("is-active");
-            gallery.appendChild(img);
+            gImgs.forEach((src, i) => {
+                const img = document.createElement("img");
+                img.src = src;
+                if (i === gIdx)
+                    img.classList.add("is-active");
+                gallery.appendChild(img);
+            });
+
+            const multi = gImgs.length > 1;
+            gPrev.style.display = multi ? "flex" : "none";
+            gNext.style.display = multi ? "flex" : "none";
+        }
+
+        function openDetail(card) {
+
+            document.getElementById("cbmRoom").textContent = card.dataset.room;
+            document.getElementById("cbmMeta").textContent = card.dataset.roomMeta;
+            document.getElementById("cbmId").textContent = "#" + card.dataset.bookingId;
+            document.getElementById("cbmCheckin").textContent = card.dataset.checkin;
+            document.getElementById("cbmCheckout").textContent = card.dataset.checkout;
+            document.getElementById("cbmOcc").textContent = card.dataset.occupancy;
+            document.getElementById("cbmRooms").textContent = card.dataset.rooms || "—";
+
+            const total = Number(card.dataset.total);
+            document.getElementById("cbmTotal").textContent =
+                    new Intl.NumberFormat('vi-VN', {minimumFractionDigits: 2}).format(total);
+
+            const pill = document.getElementById("cbmStatusPill");
+            pill.textContent = card.dataset.statusText;
+            pill.className = "cbm-statusPill cbm-statusPill--" + card.dataset.statusUi;
+
+            const amenWrap = document.getElementById("cbmAmenities");
+            amenWrap.innerHTML = "";
+            (card.dataset.amenities || "").split(",").forEach(a => {
+                if (a.trim()) {
+                    const chip = document.createElement("span");
+                    chip.className = "cbm-chip";
+                    chip.textContent = a.trim();
+                    amenWrap.appendChild(chip);
+                }
+            });
+
+            gImgs = Array.from(card.querySelectorAll(".cb-slide"))
+                    .map(img => img.getAttribute("src"));
+
+            gIdx = 0;
+            renderGallery();
+
+            overlay.classList.add("show");
+            document.body.style.overflow = "hidden";
+        }
+
+        function closeDetail() {
+            overlay.classList.remove("show");
+            document.body.style.overflow = "";
+        }
+
+        document.querySelectorAll(".js-view-detail").forEach(btn => {
+            btn.addEventListener("click", e => {
+                const card = e.target.closest(".cb-card");
+                openDetail(card);
+            });
         });
 
-        const multi = gImgs.length > 1;
-        gPrev.style.display = multi ? "flex" : "none";
-        gNext.style.display = multi ? "flex" : "none";
-    }
-
-    function openDetail(card) {
-
-        document.getElementById("cbmRoom").textContent = card.dataset.room;
-        document.getElementById("cbmMeta").textContent = card.dataset.roomMeta;
-        document.getElementById("cbmId").textContent = "#" + card.dataset.bookingId;
-        document.getElementById("cbmCheckin").textContent = card.dataset.checkin;
-        document.getElementById("cbmCheckout").textContent = card.dataset.checkout;
-        document.getElementById("cbmOcc").textContent = card.dataset.occupancy;
-
-        const total = Number(card.dataset.total);
-        document.getElementById("cbmTotal").textContent =
-            new Intl.NumberFormat('vi-VN', {minimumFractionDigits:2}).format(total);
-
-        const pill = document.getElementById("cbmStatusPill");
-        pill.textContent = card.dataset.statusText;
-        pill.className = "cbm-statusPill cbm-statusPill--" + card.dataset.statusUi;
-
-        const amenWrap = document.getElementById("cbmAmenities");
-        amenWrap.innerHTML = "";
-        (card.dataset.amenities || "").split(",").forEach(a => {
-            if (a.trim()) {
-                const chip = document.createElement("span");
-                chip.className = "cbm-chip";
-                chip.textContent = a.trim();
-                amenWrap.appendChild(chip);
-            }
+        gPrev.addEventListener("click", () => {
+            gIdx = (gIdx - 1 + gImgs.length) % gImgs.length;
+            renderGallery();
         });
 
-        gImgs = Array.from(card.querySelectorAll(".cb-slide"))
-                     .map(img => img.getAttribute("src"));
-
-        gIdx = 0;
-        renderGallery();
-
-        overlay.classList.add("show");
-        document.body.style.overflow = "hidden";
-    }
-
-    function closeDetail() {
-        overlay.classList.remove("show");
-        document.body.style.overflow = "";
-    }
-
-    document.querySelectorAll(".js-view-detail").forEach(btn => {
-        btn.addEventListener("click", e => {
-            const card = e.target.closest(".cb-card");
-            openDetail(card);
+        gNext.addEventListener("click", () => {
+            gIdx = (gIdx + 1) % gImgs.length;
+            renderGallery();
         });
-    });
 
-    gPrev.addEventListener("click", () => {
-        gIdx = (gIdx - 1 + gImgs.length) % gImgs.length;
-        renderGallery();
-    });
+        closeBtn.addEventListener("click", closeDetail);
+        overlay.addEventListener("click", e => {
+            if (e.target === overlay)
+                closeDetail();
+        });
 
-    gNext.addEventListener("click", () => {
-        gIdx = (gIdx + 1) % gImgs.length;
-        renderGallery();
     });
-
-    closeBtn.addEventListener("click", closeDetail);
-    overlay.addEventListener("click", e => {
-        if (e.target === overlay) closeDetail();
-    });
-
-});
 </script>

@@ -19,6 +19,26 @@ public class CustomerDashboardServlet extends HttpServlet {
     private final CustomerProfileDAO profileDAO = new CustomerProfileDAO();
     private final BookingDAO bookingDAO = new BookingDAO();
 
+    private int parsePage(String pageParam) {
+        try {
+            int page = Integer.parseInt(pageParam);
+            return Math.max(page, 1);
+        } catch (Exception e) {
+            return 1;
+        }
+    }
+
+    private int parsePageSize(String raw) {
+        try {
+            int size = Integer.parseInt(raw);
+            if (size == 2 || size == 5 || size == 10) {
+                return size;
+            }
+        } catch (Exception e) {
+        }
+        return 2;
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -56,6 +76,7 @@ public class CustomerDashboardServlet extends HttpServlet {
             request.setAttribute("form_dob", session.getAttribute("form_dob"));
             request.setAttribute("form_phone", session.getAttribute("form_phone"));
             request.setAttribute("form_address", session.getAttribute("form_address"));
+
             session.removeAttribute("form_fullName");
             session.removeAttribute("form_gender");
             session.removeAttribute("form_dob");
@@ -65,48 +86,100 @@ public class CustomerDashboardServlet extends HttpServlet {
 
         // ===== Tab =====
         String tab = request.getParameter("tab");
-        if (tab == null || tab.isBlank()) tab = "current";
+        if (tab == null || tab.isBlank()) {
+            tab = "current";
+        }
 
-        // ===== Resolve customerId (robust) =====
+        // ===== Resolve customerId =====
         Integer customerId = null;
-
-        // ưu tiên lấy từ profile nếu hợp lệ
         if (profile != null && profile.getCustomerId() > 0) {
             customerId = profile.getCustomerId();
         } else {
-            // fallback: query thẳng theo user_id
             customerId = bookingDAO.getCustomerIdByUserId(userId);
         }
 
-        // ===== Load data for each tab + pick content page =====
         String contentPage;
+        final int pageSize = parsePageSize(request.getParameter("pageSize"));
+        request.setAttribute("pageSize", pageSize);
+
         switch (tab) {
             case "current" -> {
                 contentPage = "/view/customer/current_bookings.jsp";
+
                 if (customerId != null) {
-                    List<BookingCardView> currentBookings =
-                            bookingDAO.getCurrentBookingsByCustomerId(customerId);
+                    int currentPage = parsePage(request.getParameter("currentPage"));
+                    int totalItems = bookingDAO.countCurrentBookingsByCustomerId(customerId);
+                    int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+
+                    if (totalPages <= 0) {
+                        totalPages = 0;
+                        currentPage = 1;
+                    } else if (currentPage > totalPages) {
+                        currentPage = totalPages;
+                    }
+
+                    List<BookingCardView> currentBookings
+                            = bookingDAO.getCurrentBookingsByCustomerIdPaging(customerId, currentPage, pageSize);
+
                     request.setAttribute("currentBookings", currentBookings);
+                    request.setAttribute("currentPage", currentPage);
+                    request.setAttribute("totalPages", totalPages);
                 }
             }
+
             case "past" -> {
                 contentPage = "/view/customer/past_stays.jsp";
+
                 if (customerId != null) {
-                    List<BookingCardView> pastStays =
-                            bookingDAO.getPastStaysByCustomerId(customerId);
+                    int pastPage = parsePage(request.getParameter("pastPage"));
+                    int totalItems = bookingDAO.countPastStaysByCustomerId(customerId);
+                    int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+
+                    if (totalPages <= 0) {
+                        totalPages = 0;
+                        pastPage = 1;
+                    } else if (pastPage > totalPages) {
+                        pastPage = totalPages;
+                    }
+
+                    List<BookingCardView> pastStays
+                            = bookingDAO.getPastStaysByCustomerIdPaging(customerId, pastPage, pageSize);
+
                     request.setAttribute("pastStays", pastStays);
+                    request.setAttribute("pastCurrentPage", pastPage);
+                    request.setAttribute("pastTotalPages", totalPages);
                 }
             }
-            case "viewProfile" -> contentPage = "/view/customer/view_profile.jsp";
-            case "editProfile" -> contentPage = "/view/customer/edit_profile.jsp";
-            case "changePassword" -> contentPage = "/view/customer/change_password.jsp";
+
+            case "viewProfile" ->
+                contentPage = "/view/customer/view_profile.jsp";
+            case "editProfile" ->
+                contentPage = "/view/customer/edit_profile.jsp";
+            case "changePassword" ->
+                contentPage = "/view/customer/change_password.jsp";
+
             default -> {
                 tab = "current";
                 contentPage = "/view/customer/current_bookings.jsp";
+
                 if (customerId != null) {
-                    List<BookingCardView> currentBookings =
-                            bookingDAO.getCurrentBookingsByCustomerId(customerId);
+                    int currentPage = parsePage(request.getParameter("currentPage"));
+                    int totalItems = bookingDAO.countCurrentBookingsByCustomerId(customerId);
+                    int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+
+                    if (totalPages <= 0) {
+                        totalPages = 0;
+                        currentPage = 1;
+                    } else if (currentPage > totalPages) {
+                        currentPage = totalPages;
+                    }
+
+                    List<BookingCardView> currentBookings
+                            = bookingDAO.getCurrentBookingsByCustomerIdPaging(customerId, currentPage, pageSize);
+
                     request.setAttribute("currentBookings", currentBookings);
+                    request.setAttribute("currentPage", currentPage);
+                    request.setAttribute("totalPages", totalPages);
                 }
             }
         }

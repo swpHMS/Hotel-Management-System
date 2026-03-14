@@ -196,12 +196,9 @@
             <div class="aim-step-name">Service Type</div>
           </div>
           <div class="aim-tabs">
-            <a class="aim-tab ${type==1?'active':''}"
-               href="${pageContext.request.contextPath}/staff/service-orders?id=${selected.serviceOrderId}&modal=addItems&type=1">MINIBAR</a>
-            <a class="aim-tab ${type==2?'active':''}"
-               href="${pageContext.request.contextPath}/staff/service-orders?id=${selected.serviceOrderId}&modal=addItems&type=2">LAUNDRY</a>
-            <a class="aim-tab ${type==3?'active':''}"
-               href="${pageContext.request.contextPath}/staff/service-orders?id=${selected.serviceOrderId}&modal=addItems&type=3">CLEANING</a>
+            <button type="button" class="aim-tab active" id="tab-1" onclick="switchType(1)">MINIBAR</button>
+            <button type="button" class="aim-tab" id="tab-2" onclick="switchType(2)">LAUNDRY</button>
+            <button type="button" class="aim-tab" id="tab-3" onclick="switchType(3)">CLEANING</button>
           </div>
         </div>
 
@@ -217,29 +214,7 @@
                 <div class="aim-field-label">Service Name</div>
                 <select id="serviceSelect" class="aim-select">
                   <option value="">Select a service...</option>
-                  <c:choose>
-                    <c:when test="${type==1}">
-                      <c:forEach var="s" items="${svMinibar}">
-                        <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}">
-                          <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" minFractionDigits="2"/>)
-                        </option>
-                      </c:forEach>
-                    </c:when>
-                    <c:when test="${type==2}">
-                      <c:forEach var="s" items="${svLaundry}">
-                        <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}">
-                          <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" minFractionDigits="2"/>)
-                        </option>
-                      </c:forEach>
-                    </c:when>
-                    <c:when test="${type==3}">
-                      <c:forEach var="s" items="${svCleaning}">
-                        <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}">
-                          <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" minFractionDigits="2"/>)
-                        </option>
-                      </c:forEach>
-                    </c:when>
-                  </c:choose>
+                  
                 </select>
               </div>
               <div>
@@ -297,7 +272,71 @@
   document.body.style.overflow = 'hidden';
   window.addEventListener('beforeunload', () => document.body.style.overflow = '');
 
+  const servicesByType = {
+    1: [
+      <c:forEach var="s" items="${svMinibar}" varStatus="st">
+      {
+        serviceId: "${s.serviceId}",
+        name: "${fn:escapeXml(s.name)}",
+        price: ${s.unitPrice}
+      }<c:if test="${!st.last}">,</c:if>
+      </c:forEach>
+    ],
+    2: [
+      <c:forEach var="s" items="${svLaundry}" varStatus="st">
+      {
+        serviceId: "${s.serviceId}",
+        name: "${fn:escapeXml(s.name)}",
+        price: ${s.unitPrice}
+      }<c:if test="${!st.last}">,</c:if>
+      </c:forEach>
+    ],
+    3: [
+      <c:forEach var="s" items="${svCleaning}" varStatus="st">
+      {
+        serviceId: "${s.serviceId}",
+        name: "${fn:escapeXml(s.name)}",
+        price: ${s.unitPrice}
+      }<c:if test="${!st.last}">,</c:if>
+      </c:forEach>
+    ]
+  };
+
+  let currentType = ${type != null ? type : 1};
   const newItems = [];
+
+  function formatMoney(num) {
+    return Number(num).toFixed(2);
+  }
+
+  function switchType(type) {
+    currentType = type;
+
+    document.querySelectorAll('.aim-tab').forEach(tab => tab.classList.remove('active'));
+    const activeTab = document.getElementById('tab-' + type);
+    if (activeTab) activeTab.classList.add('active');
+
+    renderServiceOptions();
+  }
+
+  function renderServiceOptions() {
+    const sel = document.getElementById('serviceSelect');
+    const list = servicesByType[currentType] || [];
+
+    sel.innerHTML = '<option value="">Select a service...</option>';
+
+    list.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.serviceId;
+      opt.setAttribute('data-price', s.price);
+      opt.setAttribute('data-name', s.name);
+      opt.textContent = s.name + ' ($' + formatMoney(s.price) + ')';
+      sel.appendChild(opt);
+    });
+
+    sel.value = '';
+    document.getElementById('qtyInput').value = 1;
+  }
 
   function addToNewItems() {
     const sel = document.getElementById('serviceSelect');
@@ -305,13 +344,25 @@
     const serviceId = sel.value;
     const qty = parseInt(document.getElementById('qtyInput').value || '1', 10);
 
-    if (!serviceId) { showToast('Please select a service.'); return; }
-    if (qty < 1)    { showToast('Quantity must be at least 1.'); return; }
+    if (!serviceId) {
+      showToast('Please select a service.');
+      return;
+    }
+    if (qty < 1) {
+      showToast('Quantity must be at least 1.');
+      return;
+    }
 
     const price = parseFloat(opt.getAttribute('data-price'));
-    const name  = opt.getAttribute('data-name');
+    const name = opt.getAttribute('data-name');
 
-    newItems.push({ serviceId, name, price, qty });
+    const existed = newItems.find(it => String(it.serviceId) === String(serviceId));
+    if (existed) {
+      existed.qty += qty;
+    } else {
+      newItems.push({ serviceId, name, price, qty });
+    }
+
     sel.value = '';
     document.getElementById('qtyInput').value = 1;
     renderNewItems();
@@ -327,44 +378,62 @@
     wrap.innerHTML = '';
 
     if (newItems.length === 0) {
-      wrap.innerHTML = '<div class="aim-empty"><div class="aim-empty-icon">🛒</div><div class="aim-empty-text">No items added yet</div></div>';
+      wrap.innerHTML =
+        '<div class="aim-empty">' +
+          '<div class="aim-empty-icon">🛒</div>' +
+          '<div class="aim-empty-text">No items added yet</div>' +
+        '</div>';
       document.getElementById('newCount').innerText = 0;
       document.getElementById('newTotal').innerText = '0.00';
       return;
     }
 
     let total = 0;
+
     newItems.forEach((it, idx) => {
       const line = it.price * it.qty;
       total += line;
+
       const div = document.createElement('div');
       div.className = 'aim-item';
       div.innerHTML =
         '<div class="aim-item-name">' + it.name + '</div>' +
         '<div class="aim-item-row">' +
           '<span class="aim-item-qty">QTY × ' + it.qty + '</span>' +
-          '<span class="aim-item-price">$' + line.toFixed(2) + '</span>' +
+          '<span class="aim-item-price">$' + formatMoney(line) + '</span>' +
         '</div>' +
         '<button type="button" class="aim-remove-btn" onclick="removeNewItem(' + idx + ')">Remove</button>';
+
       wrap.appendChild(div);
     });
 
     document.getElementById('newCount').innerText = newItems.length;
-    document.getElementById('newTotal').innerText = total.toFixed(2);
+    document.getElementById('newTotal').innerText = formatMoney(total);
   }
 
   function beforeSaveItems() {
-    if (newItems.length === 0) { showToast('Please add at least 1 item.'); return false; }
+    if (newItems.length === 0) {
+      showToast('Please add at least 1 item.');
+      return false;
+    }
+
     const hidden = document.getElementById('hiddenNewItems');
     hidden.innerHTML = '';
+
     newItems.forEach(it => {
       const s = document.createElement('input');
-      s.type = 'hidden'; s.name = 'serviceId'; s.value = it.serviceId;
+      s.type = 'hidden';
+      s.name = 'serviceId';
+      s.value = it.serviceId;
       hidden.appendChild(s);
+
       const q = document.createElement('input');
-      q.type = 'hidden'; q.name = 'quantity'; q.value = it.qty;
+      q.type = 'hidden';
+      q.name = 'quantity';
+      q.value = it.qty;
       hidden.appendChild(q);
     });
+
     return true;
   }
 
@@ -375,4 +444,6 @@
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 2500);
   }
+
+  switchType(currentType);
 </script>

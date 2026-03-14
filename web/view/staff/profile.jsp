@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -56,11 +57,17 @@
 <body>
 <c:choose>
     <c:when test="${sessionScope.userAccount.roleId == 1}">
-        <%-- Nếu là Admin (roleId = 1) --%>
+        
         <jsp:include page="../admin_layout/sidebar.jsp" />
+    </c:when>
+    <c:when test="${sessionScope.userAccount.roleId == 2}">
+        <jsp:include page="../manager/sidebar.jsp" />
     </c:when>
     <c:when test="${sessionScope.userAccount.roleId == 3}">
         <jsp:include page="../receptionist/sidebar.jsp" />
+    </c:when>
+    <c:when test="${sessionScope.userAccount.roleId == 4}">
+        <jsp:include page="sidebar_staff/sidebar_staff.jsp" />
     </c:when>
 </c:choose>
     
@@ -76,7 +83,11 @@
             <div class="card card-custom shadow-sm">
                 <div class="profile-header d-flex align-items-center">
                     <div class="avatar-circle me-4">
-                        <c:out value="${staff.fullName.substring(0,1)}" />
+                        <c:set var="names" value="${fn:split(staff.fullName,' ')}"/>
+                        <c:set var="first" value="${names[0]}"/>
+                        <c:set var="last" value="${names[fn:length(names)-1]}"/>
+
+                        ${fn:substring(first,0,1)}${fn:substring(last,0,1)}
                     </div>
                     <div>
                         <span class="badge-role mb-2 d-inline-block">${staff.roleName != null ? staff.roleName : 'RECEPTIONIST'}</span>

@@ -212,7 +212,7 @@
             <i class="bi bi-building"></i><span>Suite Types</span>
         </a>
 
-        <a class="sb-item <%= "roomRegistry".equals(active) ? "active" : "" %>" href="#">
+        <a class="sb-item <%= "roomRegistry".equals(active)?"active":"" %>" href="${pageContext.request.contextPath}/manager/room-registry">
             <i class="bi bi-card-list"></i><span>Room Registry</span>
         </a>
 
@@ -238,7 +238,7 @@
 
     <div class="sb-userwrap" id="sbUserWrap">
         <div class="sb-dropdown" id="sbDropdown">
-            <a href="${pageContext.request.contextPath}/profile">
+            <a href="${pageContext.request.contextPath}/staff-profile">
                 <i class="bi bi-person"></i>
                 <span>Profile</span>
             </a>
