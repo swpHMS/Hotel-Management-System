@@ -36,10 +36,12 @@
                 <i class="bi bi-search"></i>
                 <input type="text" name="q" placeholder="Search room types..." value="${q}" id="rtSearchInput" autocomplete="off"/>
             </div>
+            <input type="hidden" name="page" value="1" id="rtSearchPage"/>
+            <input type="hidden" name="pageSize" value="${pageSize}" id="rtSearchPageSize"/>
         </form>
         <div class="rt-total">
             <span>Total Types</span>
-            <strong>${roomTypes.size()}</strong>
+            <strong>${totalItems}</strong>
         </div>
     </div>
 
@@ -92,6 +94,43 @@
                 </div>
             </article>
         </c:forEach>
+    </div>
+
+    <div class="rt-pagination-bar">
+        <div class="rt-page-size">
+            <span>Show</span>
+            <form method="get" action="${pageContext.request.contextPath}/manager/room-types" id="rtPageSizeForm">
+                <input type="hidden" name="q" value="${q}"/>
+                <input type="hidden" name="page" value="1"/>
+                <select name="pageSize" id="rtPageSizeSelect">
+                    <c:forEach var="size" items="${pageSizeOptions}">
+                        <option value="${size}" ${pageSize == size ? 'selected' : ''}>${size}</option>
+                    </c:forEach>
+                </select>
+            </form>
+        </div>
+
+        <c:if test="${totalPages > 1}">
+            <div class="rt-pagination">
+                <a class="rt-page-btn ${currentPage == 1 ? 'disabled' : ''}"
+                   href="${currentPage == 1 ? '#' : pageContext.request.contextPath}/manager/room-types?q=${q}&pageSize=${pageSize}&page=${currentPage - 1}">Prev</a>
+
+                <c:forEach var="token" items="${pageTokens}">
+                    <c:choose>
+                        <c:when test="${token == '...'}">
+                            <span class="rt-page-ellipsis">...</span>
+                        </c:when>
+                        <c:otherwise>
+                            <a class="rt-page-number ${currentPage == token ? 'active' : ''}"
+                               href="${pageContext.request.contextPath}/manager/room-types?q=${q}&pageSize=${pageSize}&page=${token}">${token}</a>
+                        </c:otherwise>
+                    </c:choose>
+                </c:forEach>
+
+                <a class="rt-page-btn ${currentPage == totalPages ? 'disabled' : ''}"
+                   href="${currentPage == totalPages ? '#' : pageContext.request.contextPath}/manager/room-types?q=${q}&pageSize=${pageSize}&page=${currentPage + 1}">Next</a>
+            </div>
+        </c:if>
     </div>
 
     <c:if test="${mode == 'create' || mode == 'edit'}">
@@ -285,6 +324,9 @@
     const successAlert = document.getElementById('rtSuccessAlert');
     const searchForm = document.getElementById('rtSearchForm');
     const searchInput = document.getElementById('rtSearchInput');
+    const searchPage = document.getElementById('rtSearchPage');
+    const pageSizeSelect = document.getElementById('rtPageSizeSelect');
+    const pageSizeForm = document.getElementById('rtPageSizeForm');
     const thumbnailInput = document.getElementById('rtThumbnailInput');
     const thumbnailPreview = document.getElementById('rtThumbnailPreview');
     const galleryInput = document.getElementById('rtGalleryInput');
@@ -308,8 +350,17 @@
         searchInput.addEventListener('input', () => {
             window.clearTimeout(searchTimer);
             searchTimer = window.setTimeout(() => {
+                if (searchPage) {
+                    searchPage.value = '1';
+                }
                 searchForm.submit();
             }, 350);
+        });
+    }
+
+    if (pageSizeSelect && pageSizeForm) {
+        pageSizeSelect.addEventListener('change', () => {
+            pageSizeForm.submit();
         });
     }
 

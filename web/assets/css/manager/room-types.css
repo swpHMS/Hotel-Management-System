@@ -108,6 +108,69 @@
     grid-template-columns:repeat(3,minmax(0,1fr));
     gap:20px
 }
+.rt-pagination-bar{
+    margin-top:22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px
+}
+.rt-page-size{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#667085;
+    font-size:14px
+}
+.rt-page-size form{
+    margin:0
+}
+.rt-page-size select{
+    min-width:76px;
+    height:42px;
+    border:1px solid #d0d5dd;
+    border-radius:12px;
+    padding:0 12px;
+    background:#fff;
+    color:#111827
+}
+.rt-pagination{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap
+}
+.rt-page-btn,.rt-page-number{
+    min-width:42px;
+    height:42px;
+    padding:0 14px;
+    border:1px solid #d0d5dd;
+    border-radius:12px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    color:#344054;
+    background:#fff;
+    font-size:14px;
+    font-weight:600
+}
+.rt-page-number.active{
+    background:#111827;
+    border-color:#111827;
+    color:#fff
+}
+.rt-page-btn.disabled{
+    opacity:.45;
+    pointer-events:none
+}
+.rt-page-ellipsis{
+    min-width:24px;
+    text-align:center;
+    color:#98a2b3;
+    font-weight:700
+}
 .rt-card{
     background:#fff;
     border:1px solid #e5e7eb;
@@ -583,6 +646,13 @@
         flex-direction:column;
         gap:12px;
         align-items:stretch
+    }
+    .rt-pagination-bar{
+        flex-direction:column;
+        align-items:stretch
+    }
+    .rt-pagination{
+        justify-content:flex-start
     }
     .rt-search-wrap input{
         width:100%

@@ -465,7 +465,7 @@ public class RoomTypeDAO {
                 return rs.next();
             }
         } catch (Exception e) {
-            lastErrorMessage = e.getMessage();
+            lastErrorMessage = describeError(e);
             e.printStackTrace();
             return false;
         }
@@ -477,11 +477,8 @@ public class RoomTypeDAO {
 
     public boolean createRoomType(RoomTypeForm form, String imageUrl, List<String> galleryImageUrls) {
         lastErrorMessage = null;
-        String insertRoomType = """
-                INSERT INTO dbo.room_types(name, description, max_adult, max_children, image_url, status)
-                VALUES (?, ?, ?, ?, ?, ?)
-                SELECT CAST(SCOPE_IDENTITY() AS int) AS room_type_id
-                """;
+        String insertRoomType = "INSERT INTO dbo.room_types(name, description, max_adult, max_children, image_url, status) VALUES (?, ?, ?, ?, ?, ?)";
+        String selectIdentity = "SELECT CAST(SCOPE_IDENTITY() AS int) AS room_type_id";
         String insertAmenity = "INSERT INTO dbo.room_type_amenities(room_type_id, amenity_id) VALUES (?, ?)";
 
         DBContext db = new DBContext();
@@ -496,13 +493,26 @@ public class RoomTypeDAO {
                 ps.setInt(4, form.getMaxChildren());
                 ps.setString(5, imageUrl);
                 ps.setInt(6, form.getStatus());
-                try (ResultSet key = ps.executeQuery()) {
-                    if (key == null || !key.next()) {
-                        lastErrorMessage = "Could not read inserted room type ID.";
-                        con.rollback();
-                        return false;
-                    }
-                    roomTypeId = key.getInt("room_type_id");
+                int inserted = ps.executeUpdate();
+                if (inserted <= 0) {
+                    lastErrorMessage = "Room type insert returned no affected rows.";
+                    con.rollback();
+                    return false;
+                }
+            }
+
+            try (PreparedStatement psIdentity = con.prepareStatement(selectIdentity);
+                 ResultSet key = psIdentity.executeQuery()) {
+                if (key == null || !key.next()) {
+                    lastErrorMessage = "Could not read inserted room type ID.";
+                    con.rollback();
+                    return false;
+                }
+                roomTypeId = key.getInt("room_type_id");
+                if (roomTypeId <= 0) {
+                    lastErrorMessage = "Inserted room type ID was invalid.";
+                    con.rollback();
+                    return false;
                 }
             }
 
@@ -530,7 +540,7 @@ public class RoomTypeDAO {
             con.commit();
             return true;
         } catch (Exception e) {
-            lastErrorMessage = e.getMessage();
+            lastErrorMessage = describeError(e);
             e.printStackTrace();
             return false;
         }
@@ -591,7 +601,7 @@ public class RoomTypeDAO {
             con.commit();
             return true;
         } catch (Exception e) {
-            lastErrorMessage = e.getMessage();
+            lastErrorMessage = describeError(e);
             e.printStackTrace();
             return false;
         }
@@ -668,7 +678,7 @@ public class RoomTypeDAO {
             ps.setInt(2, imageId);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
-            lastErrorMessage = e.getMessage();
+            lastErrorMessage = describeError(e);
             e.printStackTrace();
             return false;
         }
@@ -676,6 +686,17 @@ public class RoomTypeDAO {
 
     public String getLastErrorMessage() {
         return lastErrorMessage;
+    }
+
+    private String describeError(Exception e) {
+        if (e == null) {
+            return "Unknown error";
+        }
+        String message = e.getMessage();
+        if (message != null && !message.isBlank()) {
+            return e.getClass().getSimpleName() + ": " + message;
+        }
+        return e.toString();
     }
 
     private Set<Integer> uniqueAmenityIds(List<Integer> amenityIds) {

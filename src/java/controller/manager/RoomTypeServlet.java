@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -171,10 +172,29 @@ public class RoomTypeServlet extends HttpServlet {
 
     private void loadViewData(HttpServletRequest req) {
         String q = trim(req.getParameter("q"));
-        List<RoomTypeManagementView> roomTypes = roomTypeDAO.getRoomTypesForManager(q);
+        int pageSize = normalizePageSize(toInt(req.getParameter("pageSize"), 3));
+        int currentPage = Math.max(1, toInt(req.getParameter("page"), 1));
+
+        List<RoomTypeManagementView> allRoomTypes = roomTypeDAO.getRoomTypesForManager(q);
+        int totalItems = allRoomTypes.size();
+        int totalPages = Math.max(1, (int) Math.ceil(totalItems / (double) pageSize));
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+
+        int fromIndex = Math.max(0, (currentPage - 1) * pageSize);
+        int toIndex = Math.min(totalItems, fromIndex + pageSize);
+        List<RoomTypeManagementView> roomTypes = allRoomTypes.subList(fromIndex, toIndex);
+
         req.setAttribute("roomTypes", roomTypes);
         req.setAttribute("amenities", roomTypeDAO.getAllActiveAmenities());
         req.setAttribute("q", q == null ? "" : q);
+        req.setAttribute("pageSize", pageSize);
+        req.setAttribute("currentPage", currentPage);
+        req.setAttribute("totalPages", totalPages);
+        req.setAttribute("totalItems", totalItems);
+        req.setAttribute("pageTokens", buildPageTokens(currentPage, totalPages));
+        req.setAttribute("pageSizeOptions", Arrays.asList(3, 6, 9));
 
         Integer editingId = toInt(req.getParameter("editId"), null);
         if (editingId != null && editingId > 0) {
@@ -265,6 +285,48 @@ public class RoomTypeServlet extends HttpServlet {
             return fallback + ". Please check the input and try again.";
         }
         return fallback + ": " + details;
+    }
+
+    private int normalizePageSize(Integer pageSize) {
+        if (pageSize == null) {
+            return 3;
+        }
+        if (pageSize == 6 || pageSize == 9) {
+            return pageSize;
+        }
+        return 3;
+    }
+
+    private List<String> buildPageTokens(int currentPage, int totalPages) {
+        List<String> tokens = new ArrayList<>();
+        if (totalPages <= 3) {
+            for (int i = 1; i <= totalPages; i++) {
+                tokens.add(String.valueOf(i));
+            }
+            return tokens;
+        }
+
+        if (currentPage <= 2) {
+            tokens.add("1");
+            tokens.add("2");
+            tokens.add("...");
+            tokens.add(String.valueOf(totalPages));
+            return tokens;
+        }
+
+        if (currentPage >= totalPages - 1) {
+            tokens.add("1");
+            tokens.add("...");
+            tokens.add(String.valueOf(totalPages - 1));
+            tokens.add(String.valueOf(totalPages));
+            return tokens;
+        }
+
+        tokens.add(String.valueOf(currentPage - 1));
+        tokens.add(String.valueOf(currentPage));
+        tokens.add("...");
+        tokens.add(String.valueOf(totalPages));
+        return tokens;
     }
 
     private String saveImage(Part part, HttpServletRequest req) throws IOException {
