@@ -4,11 +4,16 @@ import model.RoomType;
 import model.RoomTypeForm;
 import model.RoomTypeManagementView;
 import context.DBContext;
+import model.Amenity;
 
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RoomTypeDAO {
 
@@ -319,228 +324,422 @@ public class RoomTypeDAO {
         }
         return null;
     }
-    private static final String SQL_ROOMTYPE_BASE
-            = "SELECT rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, "
-            + "       thumb.thumbnail_url, "
-            + "       rv.price, "
-            + "       COUNT(r.room_id) AS room_count "
-            + "FROM room_types rt "
-            + // lấy 1 giá mới nhất
-            "OUTER APPLY ( "
-            + "   SELECT TOP 1 rv.price "
-            + "   FROM rate_versions rv "
-            + "   WHERE rv.room_type_id = rt.room_type_id "
-            + "   ORDER BY rv.valid_from DESC, rv.rate_version_id DESC "
-            + ") rv "
-            + // lấy thumbnail ưu tiên is_thumbnail = 1, nếu không có thì lấy ảnh đầu tiên
-            "OUTER APPLY ( "
-            + "   SELECT TOP 1 rti.image_url AS thumbnail_url "
-            + "   FROM room_type_images rti "
-            + "   WHERE rti.room_type_id = rt.room_type_id "
-            + "   ORDER BY CASE WHEN rti.is_thumbnail = 1 THEN 0 ELSE 1 END, "
-            + "            ISNULL(rti.sort_order, 999999), "
-            + "            rti.image_id ASC "
-            + ") thumb "
-            + "LEFT JOIN rooms r ON r.room_type_id = rt.room_type_id ";
+       // =====================================================
+    // MANAGER ROOM TYPE MANAGEMENT
+    // =====================================================
 
-    private static final String SQL_ROOMTYPE_GROUP_ORDER
-            = "GROUP BY rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, thumb.thumbnail_url, rv.price "
-            + "ORDER BY rt.room_type_id DESC";
+    public List<RoomTypeManagementView> getRoomTypesForManager(String keyword) {
+        String sql = """
+                SELECT
+                    rt.room_type_id,
+                    rt.name,
+                    rt.description,
+                    rt.max_adult,
+                    rt.max_children,
+                    COALESCE(rt.image_url, thumb.image_url) AS image_url,
+                    rt.status,
+                    rv.price,
+                    rv.valid_from,
+                    rv.valid_to
+                FROM dbo.room_types rt
+                OUTER APPLY (
+                    SELECT TOP 1 image_url
+                    FROM dbo.room_type_images
+                    WHERE room_type_id = rt.room_type_id
+                    ORDER BY is_thumbnail DESC, sort_order ASC, image_id ASC
+                ) thumb
+                OUTER APPLY (
+                    SELECT TOP 1 price, valid_from, valid_to, rate_version_id
+                    FROM dbo.rate_versions
+                    WHERE room_type_id = rt.room_type_id
+                    ORDER BY valid_from DESC, rate_version_id DESC
+                ) rv
+                WHERE (? = '' OR rt.name LIKE N'%' + ? + N'%' OR rt.description LIKE N'%' + ? + N'%')
+                ORDER BY rt.room_type_id DESC
+                """;
 
-    private static final String SQL_SELECT_ROOMTYPE_DETAIL
-            = "SELECT rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, "
-            + "       thumb.thumbnail_url, "
-            + "       rv.price "
-            + "FROM room_types rt "
-            + "OUTER APPLY ( "
-            + "   SELECT TOP 1 rv.price "
-            + "   FROM rate_versions rv "
-            + "   WHERE rv.room_type_id = rt.room_type_id "
-            + "   ORDER BY rv.valid_from DESC, rv.rate_version_id DESC "
-            + ") rv "
-            + "OUTER APPLY ( "
-            + "   SELECT TOP 1 rti.image_url AS thumbnail_url "
-            + "   FROM room_type_images rti "
-            + "   WHERE rti.room_type_id = rt.room_type_id "
-            + "   ORDER BY CASE WHEN rti.is_thumbnail = 1 THEN 0 ELSE 1 END, "
-            + "            ISNULL(rti.sort_order, 999999), "
-            + "            rti.image_id ASC "
-            + ") thumb "
-            + "WHERE rt.room_type_id = ?";
+        List<RoomTypeManagementView> list = new ArrayList<>();
+        DBContext db = new DBContext();
+        String q = keyword == null ? "" : keyword.trim();
 
-    private static final String SQL_INSERT_ROOMTYPE
-            = "INSERT INTO room_types (name, description, max_adult, max_children, image_url, status) "
-            + "VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection con = db.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
-    private static final String SQL_UPDATE_ROOMTYPE
-            = "UPDATE room_types "
-            + "SET name = ?, description = ?, max_adult = ?, max_children = ?, image_url = ?, status = ? "
-            + "WHERE room_type_id = ?";
-
-    private static final String SQL_UPDATE_ROOMTYPE_STATUS
-            = "UPDATE room_types SET status = ? WHERE room_type_id = ?";
-
-    private DBContext dbContext;
-
-    public RoomTypeDAO() {
-        dbContext = new DBContext();
-    }
-
-    public List<RoomTypeManagementView> getAllRoomTypesForDashboard() throws SQLException {
-        List<RoomTypeManagementView> roomTypes = new ArrayList<>();
-        String sql = SQL_ROOMTYPE_BASE + SQL_ROOMTYPE_GROUP_ORDER;
-
-        try (Connection con = dbContext.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                RoomTypeManagementView rt = mapRoomTypeManagementView(rs);
-                rt.setAmenityNames(getAmenityNamesByRoomTypeId(con, rt.getRoomTypeId()));
-                roomTypes.add(rt);
-            }
-        }
-
-        return roomTypes;
-    }
-
-    public RoomTypeManagementView getRoomTypeDetail(int roomTypeId) throws SQLException {
-        RoomTypeManagementView rt = null;
-
-        try (Connection con = dbContext.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_ROOMTYPE_DETAIL)) {
-
-            ps.setInt(1, roomTypeId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    rt = new RoomTypeManagementView();
-                    rt.setRoomTypeId(rs.getInt("room_type_id"));
-                    rt.setName(rs.getString("name"));
-                    rt.setDescription(rs.getString("description"));
-                    rt.setMaxAdult(rs.getInt("max_adult"));
-                    rt.setMaxChildren(rs.getInt("max_children"));
-                    rt.setImageUrl(rs.getString("image_url"));
-                    rt.setThumbnailUrl(resolveThumbnail(rs));
-                    rt.setStatus(rs.getInt("status"));
-                    rt.setPrice(rs.getBigDecimal("price"));
-                }
-            }
-        }
-
-        return rt;
-    }
-
-    public void insertRoomType(RoomTypeForm form) throws SQLException {
-        try (Connection con = dbContext.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_INSERT_ROOMTYPE)) {
-
-            ps.setString(1, form.getName());
-            ps.setString(2, form.getDescription());
-            ps.setInt(3, form.getMaxAdult());
-            ps.setInt(4, form.getMaxChildren());
-            ps.setString(5, form.getImageUrl());
-            ps.setInt(6, form.getStatus());
-            ps.executeUpdate();
-        }
-    }
-
-    public void updateRoomType(RoomTypeForm form) throws SQLException {
-        try (Connection con = dbContext.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_UPDATE_ROOMTYPE)) {
-
-            ps.setString(1, form.getName());
-            ps.setString(2, form.getDescription());
-            ps.setInt(3, form.getMaxAdult());
-            ps.setInt(4, form.getMaxChildren());
-            ps.setString(5, form.getImageUrl());
-            ps.setInt(6, form.getStatus());
-            ps.setInt(7, form.getRoomTypeId());
-            ps.executeUpdate();
-        }
-    }
-
-    public void updateRoomTypeStatus(int roomTypeId, int status) throws SQLException {
-        try (Connection con = dbContext.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_UPDATE_ROOMTYPE_STATUS)) {
-
-            ps.setInt(1, status);
-            ps.setInt(2, roomTypeId);
-            ps.executeUpdate();
-        }
-    }
-
-    public List<RoomTypeManagementView> searchRoomTypes(String keyword) throws SQLException {
-        List<RoomTypeManagementView> roomTypes = new ArrayList<>();
-
-        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
-
-        String sql = SQL_ROOMTYPE_BASE
-                + (hasKeyword ? "WHERE rt.name LIKE ? OR rt.description LIKE ? " : "")
-                + SQL_ROOMTYPE_GROUP_ORDER;
-
-        try (Connection con = dbContext.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-
-            if (hasKeyword) {
-                String likeValue = "%" + keyword.trim() + "%";
-                ps.setString(1, likeValue);
-                ps.setString(2, likeValue);
-            }
+            ps.setString(1, q);
+            ps.setString(2, q);
+            ps.setString(3, q);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    RoomTypeManagementView rt = mapRoomTypeManagementView(rs);
-                    rt.setAmenityNames(getAmenityNamesByRoomTypeId(con, rt.getRoomTypeId()));
-                    roomTypes.add(rt);
+                    RoomTypeManagementView v = new RoomTypeManagementView();
+                    v.setRoomTypeId(rs.getInt("room_type_id"));
+                    v.setName(rs.getString("name"));
+                    v.setImageUrl(rs.getString("image_url"));
+                    v.setMaxAdult(rs.getInt("max_adult"));
+                    v.setMaxChildren(rs.getInt("max_children"));
+                    v.setStatus(rs.getInt("status"));
+                    v.setCurrentPrice(rs.getBigDecimal("price"));
+
+                    Date validFrom = rs.getDate("valid_from");
+                    Date validTo = rs.getDate("valid_to");
+                    v.setValidFrom(validFrom == null ? null : validFrom.toLocalDate());
+                    v.setValidTo(validTo == null ? null : validTo.toLocalDate());
+
+                    fillMetadata(v, rs.getString("description"));
+                    hydrateAmenities(con, v);
+                    list.add(v);
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return roomTypes;
+        return list;
     }
 
-    private RoomTypeManagementView mapRoomTypeManagementView(ResultSet rs) throws SQLException {
-        RoomTypeManagementView rt = new RoomTypeManagementView();
-        rt.setRoomTypeId(rs.getInt("room_type_id"));
-        rt.setName(rs.getString("name"));
-        rt.setDescription(rs.getString("description"));
-        rt.setMaxAdult(rs.getInt("max_adult"));
-        rt.setMaxChildren(rs.getInt("max_children"));
-        rt.setImageUrl(rs.getString("image_url"));
-        rt.setThumbnailUrl(resolveThumbnail(rs));
-        rt.setStatus(rs.getInt("status"));
-        rt.setPrice(rs.getBigDecimal("price"));
-        rt.setRoomCount(rs.getInt("room_count"));
-        return rt;
-    }
-
-    private String resolveThumbnail(ResultSet rs) throws SQLException {
-        String thumbnailUrl = rs.getString("thumbnail_url");
-        if (thumbnailUrl != null && !thumbnailUrl.trim().isEmpty()) {
-            return thumbnailUrl;
+    public RoomTypeManagementView getRoomTypeForManagerById(int roomTypeId) {
+        List<RoomTypeManagementView> items = getRoomTypesForManager(null);
+        for (RoomTypeManagementView item : items) {
+            if (item.getRoomTypeId() == roomTypeId) {
+                return item;
+            }
         }
-
-        String imageUrl = rs.getString("image_url");
-        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
-            return imageUrl;
-        }
-
         return null;
     }
-    private static final String SQL_SELECT_AMENITIES_BY_ROOMTYPE
-            = "SELECT a.name "
-            + "FROM room_type_amenities rta "
-            + "JOIN amenities a ON a.amenity_id = rta.amenity_id "
-            + "WHERE rta.room_type_id = ? "
-            + "ORDER BY a.name";
 
-    private List<String> getAmenityNamesByRoomTypeId(Connection con, int roomTypeId) throws SQLException {
+    public List<Amenity> getAllActiveAmenities() {
+        String sql = "SELECT amenity_id, code, name, description, category, is_active FROM dbo.amenities WHERE is_active = 1 ORDER BY name";
+        List<Amenity> list = new ArrayList<>();
+        DBContext db = new DBContext();
+
+        try (Connection con = db.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Amenity a = new Amenity();
+                a.setAmenityId(rs.getInt("amenity_id"));
+                a.setCode(rs.getString("code"));
+                a.setName(rs.getString("name"));
+                a.setDescription(rs.getString("description"));
+                a.setCategory(rs.getInt("category"));
+                a.setActive(rs.getBoolean("is_active"));
+                list.add(a);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public boolean createRoomType(RoomTypeForm form, String imageUrl) {
+        String insertRoomType = "INSERT INTO dbo.room_types(name, description, max_adult, max_children, image_url, status) VALUES (?, ?, ?, ?, ?, ?)";
+        String insertAmenity = "INSERT INTO dbo.room_type_amenities(room_type_id, amenity_id) VALUES (?, ?)";
+        String insertRate = "INSERT INTO dbo.rate_versions(room_type_id, price, valid_from, valid_to) VALUES (?, ?, ?, ?)";
+
+        DBContext db = new DBContext();
+        try (Connection con = db.getConnection()) {
+            con.setAutoCommit(false);
+
+            int roomTypeId;
+            try (PreparedStatement ps = con.prepareStatement(insertRoomType, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, form.getName().trim());
+                ps.setString(2, form.toStoredDescription());
+                ps.setInt(3, form.getMaxAdult());
+                ps.setInt(4, form.getMaxChildren());
+                ps.setString(5, imageUrl);
+                ps.setInt(6, form.getStatus());
+                ps.executeUpdate();
+
+                try (ResultSet key = ps.getGeneratedKeys()) {
+                    if (!key.next()) {
+                        con.rollback();
+                        return false;
+                    }
+                    roomTypeId = key.getInt(1);
+                }
+            }
+
+            if (imageUrl != null && !imageUrl.isBlank()) {
+                upsertThumbnailImage(con, roomTypeId, imageUrl);
+            }
+
+            if (form.getAmenityIds() != null && !form.getAmenityIds().isEmpty()) {
+                try (PreparedStatement psAmenity = con.prepareStatement(insertAmenity)) {
+                    for (Integer amenityId : uniqueAmenityIds(form.getAmenityIds())) {
+                        psAmenity.setInt(1, roomTypeId);
+                        psAmenity.setInt(2, amenityId);
+                        psAmenity.addBatch();
+                    }
+                    psAmenity.executeBatch();
+                }
+            }
+
+            if (form.getPrice() != null && form.getValidFrom() != null && form.getValidTo() != null) {
+                try (PreparedStatement psRate = con.prepareStatement(insertRate)) {
+                    psRate.setInt(1, roomTypeId);
+                    psRate.setBigDecimal(2, form.getPrice());
+                    psRate.setDate(3, Date.valueOf(form.getValidFrom()));
+                    psRate.setDate(4, Date.valueOf(form.getValidTo()));
+                    psRate.executeUpdate();
+                }
+            }
+
+            con.commit();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateRoomType(int roomTypeId, RoomTypeForm form, String imageUrl, boolean replaceImage) {
+        String updateRoomType = "UPDATE dbo.room_types SET name=?, description=?, max_adult=?, max_children=?, status=?, image_url = CASE WHEN ? = 1 THEN ? ELSE image_url END WHERE room_type_id=?";
+        String deleteAmenity = "DELETE FROM dbo.room_type_amenities WHERE room_type_id = ?";
+        String insertAmenity = "INSERT INTO dbo.room_type_amenities(room_type_id, amenity_id) VALUES (?, ?)";
+        String insertRate = "INSERT INTO dbo.rate_versions(room_type_id, price, valid_from, valid_to) VALUES (?, ?, ?, ?)";
+
+        DBContext db = new DBContext();
+        try (Connection con = db.getConnection()) {
+            con.setAutoCommit(false);
+
+            try (PreparedStatement ps = con.prepareStatement(updateRoomType)) {
+                ps.setString(1, form.getName().trim());
+                ps.setString(2, form.toStoredDescription());
+                ps.setInt(3, form.getMaxAdult());
+                ps.setInt(4, form.getMaxChildren());
+                ps.setInt(5, form.getStatus());
+                ps.setInt(6, replaceImage ? 1 : 0);
+                ps.setString(7, imageUrl);
+                ps.setInt(8, roomTypeId);
+                ps.executeUpdate();
+            }
+
+            if (replaceImage && imageUrl != null && !imageUrl.isBlank()) {
+                upsertThumbnailImage(con, roomTypeId, imageUrl);
+            }
+
+            try (PreparedStatement psDeleteAmenity = con.prepareStatement(deleteAmenity)) {
+                psDeleteAmenity.setInt(1, roomTypeId);
+                psDeleteAmenity.executeUpdate();
+            }
+
+            if (form.getAmenityIds() != null && !form.getAmenityIds().isEmpty()) {
+                try (PreparedStatement psAmenity = con.prepareStatement(insertAmenity)) {
+                    for (Integer amenityId : uniqueAmenityIds(form.getAmenityIds())) {
+                        psAmenity.setInt(1, roomTypeId);
+                        psAmenity.setInt(2, amenityId);
+                        psAmenity.addBatch();
+                    }
+                    psAmenity.executeBatch();
+                }
+            }
+
+            if (form.getPrice() != null && form.getValidFrom() != null && form.getValidTo() != null) {
+                try (PreparedStatement psRate = con.prepareStatement(insertRate)) {
+                    psRate.setInt(1, roomTypeId);
+                    psRate.setBigDecimal(2, form.getPrice());
+                    psRate.setDate(3, Date.valueOf(form.getValidFrom()));
+                    psRate.setDate(4, Date.valueOf(form.getValidTo()));
+                    psRate.executeUpdate();
+                }
+            }
+
+            con.commit();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private void hydrateAmenities(Connection con, RoomTypeManagementView view) {
+        String sql = """
+                SELECT a.amenity_id, a.name
+                FROM dbo.room_type_amenities rta
+                JOIN dbo.amenities a ON a.amenity_id = rta.amenity_id
+                WHERE rta.room_type_id = ?
+                ORDER BY a.name
+                """;
+
+        List<Integer> amenityIds = new ArrayList<>();
         List<String> amenityNames = new ArrayList<>();
 
-        try (PreparedStatement ps = con.prepareStatement(SQL_SELECT_AMENITIES_BY_ROOMTYPE)) {
-            ps.setInt(1, roomTypeId);
-
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, view.getRoomTypeId());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
+                    amenityIds.add(rs.getInt("amenity_id"));
                     amenityNames.add(rs.getString("name"));
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return amenityNames;
+        view.setAmenityIds(amenityIds);
+        view.setAmenityNames(amenityNames);
+    }
+
+    private Set<Integer> uniqueAmenityIds(List<Integer> amenityIds) {
+        Set<Integer> set = new LinkedHashSet<>();
+        for (Integer id : amenityIds) {
+            if (id != null && id > 0) {
+                set.add(id);
+            }
+        }
+        return set;
+    }
+
+    private void upsertThumbnailImage(Connection con, int roomTypeId, String imageUrl) throws SQLException {
+        String clearThumbnail = "UPDATE dbo.room_type_images SET is_thumbnail = 0 WHERE room_type_id = ?";
+        String updateExisting = """
+                UPDATE dbo.room_type_images
+                SET image_url = ?, is_thumbnail = 1, sort_order = COALESCE(sort_order, 0)
+                WHERE image_id = (
+                    SELECT TOP 1 image_id
+                    FROM dbo.room_type_images
+                    WHERE room_type_id = ?
+                    ORDER BY is_thumbnail DESC, sort_order ASC, image_id ASC
+                )
+                """;
+        String insertNew = """
+                INSERT INTO dbo.room_type_images(room_type_id, image_url, is_thumbnail, sort_order, created_at)
+                VALUES (?, ?, 1, 0, GETDATE())
+                """;
+
+        try (PreparedStatement psClear = con.prepareStatement(clearThumbnail)) {
+            psClear.setInt(1, roomTypeId);
+            psClear.executeUpdate();
+        }
+
+        int updated;
+        try (PreparedStatement psUpdate = con.prepareStatement(updateExisting)) {
+            psUpdate.setString(1, imageUrl);
+            psUpdate.setInt(2, roomTypeId);
+            updated = psUpdate.executeUpdate();
+        }
+
+        if (updated == 0) {
+            try (PreparedStatement psInsert = con.prepareStatement(insertNew)) {
+                psInsert.setInt(1, roomTypeId);
+                psInsert.setString(2, imageUrl);
+                psInsert.executeUpdate();
+            }
+        }
+    }
+
+    private void fillMetadata(RoomTypeManagementView view, String storedDescription) {
+        view.setDescriptionRaw(storedDescription == null ? "" : storedDescription);
+
+        String bed = extractToken(storedDescription, "BED");
+        String roomView = extractToken(storedDescription, "VIEW");
+        String size = extractToken(storedDescription, "SIZE");
+
+        if ((bed == null || bed.isBlank()) && (roomView == null || roomView.isBlank()) && (size == null || size.isBlank())) {
+            LegacyDescriptionParts legacyParts = parseLegacyDescription(storedDescription);
+            bed = legacyParts.bedType;
+            roomView = legacyParts.viewType;
+            size = legacyParts.roomSize;
+            view.setDescriptionPlain(legacyParts.plainDescription);
+        }
+
+        view.setBedType(bed == null ? "N/A" : bed);
+        view.setViewType(roomView == null ? "N/A" : roomView);
+
+        int sqm = 0;
+        try {
+            if (size != null && !size.isBlank()) {
+                sqm = Integer.parseInt(size.trim());
+            }
+        } catch (NumberFormatException ignore) {
+            sqm = 0;
+        }
+        view.setRoomSize(sqm);
+
+        String plain = storedDescription == null ? "" : storedDescription;
+        plain = plain.replaceAll("\\[BED:[^\\]]*\\]", "")
+                     .replaceAll("\\[VIEW:[^\\]]*\\]", "")
+                     .replaceAll("\\[SIZE:[^\\]]*\\]", "")
+                     .trim();
+        if (view.getDescriptionPlain() == null || view.getDescriptionPlain().isBlank()) {
+            view.setDescriptionPlain(plain);
+        }
+    }
+
+    private String extractToken(String text, String token) {
+        if (text == null) return null;
+        String marker = "[" + token + ":";
+        int start = text.indexOf(marker);
+        if (start < 0) return null;
+        int end = text.indexOf("]", start);
+        if (end < 0) return null;
+        return text.substring(start + marker.length(), end).trim();
+    }
+
+    private LegacyDescriptionParts parseLegacyDescription(String description) {
+        LegacyDescriptionParts parts = new LegacyDescriptionParts();
+        if (description == null || description.isBlank()) {
+            return parts;
+        }
+
+        String normalized = description.trim().replaceAll("\\s*[•·]\\s*", " • ");
+        String[] segments = normalized.split("\\s+•\\s+");
+
+        if (segments.length > 0) {
+            parts.bedType = blankToNull(segments[0]);
+        }
+        if (segments.length > 1) {
+            parts.viewType = blankToNull(segments[1]);
+        }
+        if (segments.length > 2) {
+            parts.roomSize = extractDigits(segments[2]);
+        }
+        if (segments.length > 3) {
+            StringBuilder plain = new StringBuilder();
+            for (int i = 3; i < segments.length; i++) {
+                if (segments[i] == null || segments[i].isBlank()) {
+                    continue;
+                }
+                if (plain.length() > 0) {
+                    plain.append(" ");
+                }
+                plain.append(segments[i].trim());
+            }
+            parts.plainDescription = plain.toString();
+        }
+
+        if (parts.roomSize == null) {
+            parts.roomSize = extractDigits(normalized);
+        }
+
+        if (parts.plainDescription == null) {
+            // Legacy descriptions usually only contain metadata, so keep the plain description empty.
+            parts.plainDescription = "";
+        }
+        return parts;
+    }
+
+    private String extractDigits(String text) {
+        if (text == null) {
+            return null;
+        }
+        Matcher matcher = Pattern.compile("(\\d+)").matcher(text);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
+    private String blankToNull(String text) {
+        if (text == null) {
+            return null;
+        }
+        String trimmed = text.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static class LegacyDescriptionParts {
+        private String bedType;
+        private String viewType;
+        private String roomSize;
+        private String plainDescription;
     }
 }

@@ -1,8 +1,7 @@
 package model;
 
 import java.math.BigDecimal;
-
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,16 +9,28 @@ public class RoomTypeManagementView {
 
     private int roomTypeId;
     private String name;
-    private String description;
+    private String imageUrl;
+    private String descriptionRaw;
+    private String descriptionPlain;
+
+    private String bedType;
+    private String viewType;
+    private int roomSize;
+
     private int maxAdult;
     private int maxChildren;
-    private String imageUrl;
-    private String thumbnailUrl;
     private int status;
-    private BigDecimal price;
-    private int roomCount;
 
+    private BigDecimal currentPrice;
+    private LocalDate validFrom;
+    private LocalDate validTo;
+
+    private List<Integer> amenityIds = new ArrayList<>();
     private List<String> amenityNames = new ArrayList<>();
+
+    public String getStatusText() {
+        return status == 1 ? "ACTIVE" : "INACTIVE";
+    }
 
     public int getRoomTypeId() {
         return roomTypeId;
@@ -37,12 +48,52 @@ public class RoomTypeManagementView {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
+    public String getImageUrl() {
+        return imageUrl;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getDescriptionRaw() {
+        return descriptionRaw;
+    }
+
+    public void setDescriptionRaw(String descriptionRaw) {
+        this.descriptionRaw = descriptionRaw;
+    }
+
+    public String getDescriptionPlain() {
+        return descriptionPlain;
+    }
+
+    public void setDescriptionPlain(String descriptionPlain) {
+        this.descriptionPlain = descriptionPlain;
+    }
+
+    public String getBedType() {
+        return bedType;
+    }
+
+    public void setBedType(String bedType) {
+        this.bedType = bedType;
+    }
+
+    public String getViewType() {
+        return viewType;
+    }
+
+    public void setViewType(String viewType) {
+        this.viewType = viewType;
+    }
+
+    public int getRoomSize() {
+        return roomSize;
+    }
+
+    public void setRoomSize(int roomSize) {
+        this.roomSize = roomSize;
     }
 
     public int getMaxAdult() {
@@ -61,22 +112,6 @@ public class RoomTypeManagementView {
         this.maxChildren = maxChildren;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    public String getThumbnailUrl() {
-        return thumbnailUrl;
-    }
-
-    public void setThumbnailUrl(String thumbnailUrl) {
-        this.thumbnailUrl = thumbnailUrl;
-    }
-
     public int getStatus() {
         return status;
     }
@@ -85,20 +120,36 @@ public class RoomTypeManagementView {
         this.status = status;
     }
 
-    public BigDecimal getPrice() {
-        return price;
+    public BigDecimal getCurrentPrice() {
+        return currentPrice;
     }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
+    public void setCurrentPrice(BigDecimal currentPrice) {
+        this.currentPrice = currentPrice;
     }
 
-    public int getRoomCount() {
-        return roomCount;
+    public LocalDate getValidFrom() {
+        return validFrom;
     }
 
-    public void setRoomCount(int roomCount) {
-        this.roomCount = roomCount;
+    public void setValidFrom(LocalDate validFrom) {
+        this.validFrom = validFrom;
+    }
+
+    public LocalDate getValidTo() {
+        return validTo;
+    }
+
+    public void setValidTo(LocalDate validTo) {
+        this.validTo = validTo;
+    }
+
+    public List<Integer> getAmenityIds() {
+        return amenityIds;
+    }
+
+    public void setAmenityIds(List<Integer> amenityIds) {
+        this.amenityIds = amenityIds;
     }
 
     public List<String> getAmenityNames() {
@@ -106,6 +157,6 @@ public class RoomTypeManagementView {
     }
 
     public void setAmenityNames(List<String> amenityNames) {
-        this.amenityNames = amenityNames == null ? new ArrayList<>() : amenityNames;
+        this.amenityNames = amenityNames;
     }
 }
