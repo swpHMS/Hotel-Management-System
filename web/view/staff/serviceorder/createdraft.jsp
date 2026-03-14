@@ -506,7 +506,7 @@
                                     <option value="">Select a service...</option>
                                     <c:forEach var="s" items="${svMinibar}">
                                         <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}" data-type="MINIBAR">
-                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" minFractionDigits="2" maxFractionDigits="2"/>)
+                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" maxFractionDigits="0"/>)
                                         </option>
                                     </c:forEach>
                                 </select>
@@ -515,7 +515,7 @@
                                     <option value="">Select a service...</option>
                                     <c:forEach var="s" items="${svLaundry}">
                                         <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}" data-type="LAUNDRY">
-                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" minFractionDigits="2" maxFractionDigits="2"/>)
+                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" maxFractionDigits="0"/>)
                                         </option>
                                     </c:forEach>
                                 </select>
@@ -524,22 +524,15 @@
                                     <option value="">Select a service...</option>
                                     <c:forEach var="s" items="${svCleaning}">
                                         <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}" data-type="CLEANING">
-                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" minFractionDigits="2" maxFractionDigits="2"/>)
+                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" maxFractionDigits="0"/>)
                                         </option>
                                     </c:forEach>
                                 </select>
 
-                                <select id="serviceSelect_SURCHARGE" class="so-select" style="display:none;">
-                                    <option value="">Select a service...</option>
-                                    <c:forEach var="s" items="${servicesSurcharge}">
-                                        <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}" data-type="SURCHARGE">
-                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" minFractionDigits="2" maxFractionDigits="2"/>)
-                                        </option>
-                                    </c:forEach>
-                                </select>
+
                             </div>
 
-                            <div>
+                            <div id="qtyBlock">
                                 <div class="so-label">Quantity</div>
                                 <input id="qtyInput" class="so-input" type="number" min="1" value="1"/>
                             </div>
@@ -568,8 +561,7 @@
                 <div class="so-right-foot">
                     <div>
                         <div class="so-label-foot">Estimated Total</div>
-                        <div class="so-total"><span class="so-total-sym">$</span><span id="estTotal">0.00</span></div>
-                    </div>
+                        <div class="so-total"><span class="so-total-sym">$</span><span id="estTotal">0</span></div>          </div>
                     <div style="text-align:right;">
                         <div class="so-label-foot">New Items</div>
                         <div class="so-newitems-num" id="newItems">0</div>
@@ -598,52 +590,59 @@
     </div>
 </div>
 
-  <script>
-  const contextPath = "${pageContext.request.contextPath}";
+<script>
+    const contextPath = "${pageContext.request.contextPath}";
 
-  const roomNoEl = document.getElementById("roomNo");
-  const bookingIdEl = document.getElementById("bookingId");
-  const errEl = document.getElementById("ctxErr");
+    const roomNoEl = document.getElementById("roomNo");
+    const bookingIdEl = document.getElementById("bookingId");
+    const errEl = document.getElementById("ctxErr");
 
-  const bookingHidden = document.getElementById("bookingIdHidden");
-  const roomHidden = document.getElementById("roomIdHidden");
-  const submitBtn = document.querySelector("#createDraftForm .so-btn-create");
+    const bookingHidden = document.getElementById("bookingIdHidden");
+    const roomHidden = document.getElementById("roomIdHidden");
+    const submitBtn = document.querySelector("#createDraftForm .so-btn-create");
 
-  let timer = null;
+    let timer = null;
 
-  function setCtx(ok, msg, data) {
-    if (errEl) errEl.textContent = ok ? "" : (msg || "No active booking for this room");
+    function setCtx(ok, msg, data) {
+        if (errEl)
+            errEl.textContent = ok ? "" : (msg || "No active booking for this room");
 
-    if (ok) {
-      bookingIdEl.value = data.bookingId;
-      bookingHidden.value = data.bookingId;
-      roomHidden.value = data.roomId;
-      submitBtn.disabled = false;
-    } else {
-      bookingIdEl.value = "";
-      bookingHidden.value = "";
-      roomHidden.value = "";
-      submitBtn.disabled = true;
+        if (ok) {
+            bookingIdEl.value = data.bookingId;
+            bookingHidden.value = data.bookingId;
+            roomHidden.value = data.roomId;
+            submitBtn.disabled = false;
+        } else {
+            bookingIdEl.value = "";
+            bookingHidden.value = "";
+            roomHidden.value = "";
+            submitBtn.disabled = true;
+        }
     }
-  }
 
-  submitBtn.disabled = true;
+    submitBtn.disabled = true;
 
-  roomNoEl.addEventListener("input", () => {
-    clearTimeout(timer);
-    timer = setTimeout(async () => {
-      const roomNo = roomNoEl.value.trim();
-      if (!roomNo) { setCtx(false, "Please enter room number."); return; }
+    roomNoEl.addEventListener("input", () => {
+        clearTimeout(timer);
+        timer = setTimeout(async () => {
+            const roomNo = roomNoEl.value.trim();
+            if (!roomNo) {
+                setCtx(false, "Please enter room number.");
+                return;
+            }
 
-      try {
-const res = await fetch(contextPath + "/staff/service-orders/lookup-booking?roomNo=" + encodeURIComponent(roomNo));        const data = await res.json();
-        if (data.ok) setCtx(true, "", data);
-        else setCtx(false, data.message);
-      } catch (e) {
-        setCtx(false, "Lookup failed. Please try again.");
-      }
-    }, 300);
-  });
+            try {
+                const res = await fetch(contextPath + "/staff/service-orders/lookup-booking?roomNo=" + encodeURIComponent(roomNo));
+                const data = await res.json();
+                if (data.ok)
+                    setCtx(true, "", data);
+                else
+                    setCtx(false, data.message);
+            } catch (e) {
+                setCtx(false, "Lookup failed. Please try again.");
+            }
+        }, 300);
+    });
 </script>
 
 <script>
@@ -652,6 +651,26 @@ const res = await fetch(contextPath + "/staff/service-orders/lookup-booking?room
 
     let currentType = 'MINIBAR';
     const ticket = [];
+
+
+    function formatMoney(value) {
+        return Number(value).toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+    }
+
+    function updateQtyVisibility() {
+        const qtyBlock = document.getElementById('qtyBlock');
+        const qtyInput = document.getElementById('qtyInput');
+
+        if (currentType === 'CLEANING') {
+            qtyBlock.style.display = 'none';
+            qtyInput.value = 1;
+        } else {
+            qtyBlock.style.display = 'block';
+        }
+    }
 
     function openSOModal() {
         document.getElementById('soModal').style.display = 'flex';
@@ -671,10 +690,13 @@ const res = await fetch(contextPath + "/staff/service-orders/lookup-booking?room
         currentType = type;
         document.querySelectorAll('.so-tab').forEach(b => b.classList.remove('active'));
         document.querySelector('.so-tab[data-type="' + type + '"]').classList.add('active');
-        ['MINIBAR', 'LAUNDRY', 'CLEANING', 'SURCHARGE'].forEach(t => {
+
+        ['MINIBAR', 'LAUNDRY', 'CLEANING'].forEach(t => {
             document.getElementById('serviceSelect_' + t).style.display = (t === type) ? 'block' : 'none';
         });
+
         document.getElementById('qtyInput').value = 1;
+        updateQtyVisibility();
     }
 
     function getCurrentSelect() {
@@ -685,20 +707,24 @@ const res = await fetch(contextPath + "/staff/service-orders/lookup-booking?room
         const sel = getCurrentSelect();
         const opt = sel.options[sel.selectedIndex];
         const serviceId = sel.value;
-        const qty = parseInt(document.getElementById('qtyInput').value || '1', 10);
 
         if (!serviceId) {
             showToast('Please select a service.');
-            return;
-        }
-        if (qty < 1) {
-            showToast('Quantity must be at least 1.');
             return;
         }
 
         const price = parseFloat(opt.getAttribute('data-price'));
         const name = opt.getAttribute('data-name');
         const type = opt.getAttribute('data-type');
+
+        let qty = 1;
+        if (type !== 'CLEANING') {
+            qty = parseInt(document.getElementById('qtyInput').value || '1', 10);
+            if (isNaN(qty) || qty < 1) {
+                showToast('Quantity must be at least 1.');
+                return;
+            }
+        }
 
         ticket.push({serviceId, name, type, price, qty});
         sel.value = '';
@@ -719,27 +745,37 @@ const res = await fetch(contextPath + "/staff/service-orders/lookup-booking?room
             wrap.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:30px;"><div style="font-size:30px;opacity:.25;">🛒</div><div style="font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;">No items added yet</div></div>';
             document.getElementById('itemCount').innerText = 0;
             document.getElementById('newItems').innerText = 0;
-            document.getElementById('estTotal').innerText = '0.00';
+            document.getElementById('estTotal').innerText = '0';
             return;
         }
 
         let total = 0;
+
         ticket.forEach((it, idx) => {
             const line = it.price * it.qty;
             total += line;
+
+            const qtyText = it.type === 'CLEANING'
+                    ? ''
+                    : '<span>QTY × ' + it.qty + '</span>';
+
             const div = document.createElement('div');
             div.className = 'so-item';
             div.innerHTML =
                     '<div class="so-item-type">' + it.type + '</div>' +
                     '<div class="so-item-name">' + it.name + '</div>' +
-                    '<div class="so-item-sub"><span>QTY × ' + it.qty + '</span><span>$' + line.toFixed(2) + '</span></div>' +
+                    '<div class="so-item-sub">' +
+                    qtyText +
+                    '<span>$' + formatMoney(line) + '</span>' +
+                    '</div>' +
                     '<div class="so-item-actions"><button type="button" class="so-mini-btn" onclick="removeItem(' + idx + ')">Remove</button></div>';
+
             wrap.appendChild(div);
         });
 
         document.getElementById('itemCount').innerText = ticket.length;
         document.getElementById('newItems').innerText = ticket.length;
-        document.getElementById('estTotal').innerText = total.toFixed(2);
+        document.getElementById('estTotal').innerText = formatMoney(total);
     }
 
     function beforeSubmitCreateDraft() {
@@ -778,4 +814,13 @@ const res = await fetch(contextPath + "/staff/service-orders/lookup-booking?room
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 2500);
     }
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#f1f5f9;padding:10px 20px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:500;z-index:9999999;box-shadow:0 8px 24px rgba(0,0,0,.2);';
+        t.innerText = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
+
+    updateQtyVisibility();
 </script>
