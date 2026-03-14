@@ -23,41 +23,40 @@ public class UserDAO extends DBContext {
 
     // 2. Lấy User theo Email (JOIN để lấy thêm tên từ bảng Profile)
     public User getUserByEmail(String email) {
-        String sql = """
+    String sql = """
         SELECT u.*,
-               COALESCE(s.full_name, c.full_name) AS full_name,
-               COALESCE(s.phone, c.phone) AS phone
+               COALESCE(c.full_name, s.full_name) AS full_name,
+               COALESCE(c.phone, s.phone) AS phone
         FROM users u
         LEFT JOIN staff s ON s.user_id = u.user_id
         LEFT JOIN customers c ON c.user_id = u.user_id
         WHERE u.email = ?
     """;
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, email);
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) {
-                User u = new User();
-                u.setUserId(rs.getInt("user_id"));
-                u.setEmail(rs.getString("email"));
-                u.setRoleId(rs.getInt("role_id"));
-                u.setPasswordHash(rs.getString("password_hash"));
-                u.setStatus(rs.getInt("status"));
-                u.setAuthProvider(rs.getInt("auth_provider"));
-                u.setGoogleSub(rs.getString("google_sub"));
-                u.setToken(rs.getString("token"));
+    try (PreparedStatement st = connection.prepareStatement(sql)) {
+        st.setString(1, email);
+        ResultSet rs = st.executeQuery();
+        if (rs.next()) {
+            User u = new User();
+            u.setUserId(rs.getInt("user_id"));
+            u.setEmail(rs.getString("email"));
+            u.setRoleId(rs.getInt("role_id"));
+            u.setPasswordHash(rs.getString("password_hash"));
+            u.setStatus(rs.getInt("status"));
+            u.setAuthProvider(rs.getInt("auth_provider"));
+            u.setGoogleSub(rs.getString("google_sub"));
+            u.setToken(rs.getString("token"));
 
-                // profile
-                u.setFullName(rs.getString("full_name"));
-                u.setPhone(rs.getString("phone"));
+            u.setFullName(rs.getString("full_name"));
+            u.setPhone(rs.getString("phone"));
 
-                return u;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+            return u;
         }
-        return null;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+    return null;
+}
 
     // 3. Đăng ký tài khoản LOCAL (Transaction 2 bảng)
     public boolean registerLocalUser(String email, String password, String fullName, String phone, String token) {

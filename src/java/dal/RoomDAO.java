@@ -191,6 +191,44 @@ public List<Room> getAllRoomTypes() {
 
     return null;
 }
+public boolean isRoomNoExistsForOtherRoom(String roomNo, int roomId) {
+    String sql = "SELECT COUNT(*) FROM rooms WHERE room_no = ? AND room_id <> ?";
 
+    try {
+        connection = getConnection();
+        PreparedStatement st = connection.prepareStatement(sql);
+        st.setString(1, roomNo);
+        st.setInt(2, roomId);
+        ResultSet rs = st.executeQuery();
+
+        if (rs.next()) {
+            return rs.getInt(1) > 0;
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return false;
+}
+
+public boolean updateRoom(Room room) {
+    String sql = "UPDATE rooms SET room_no = ?, room_type_id = ?, status = ?, floor = ? WHERE room_id = ?";
+
+    try {
+        connection = getConnection();
+        PreparedStatement st = connection.prepareStatement(sql);
+        st.setString(1, room.getRoomNo());
+        st.setInt(2, room.getRoomTypeId());
+        st.setInt(3, room.getStatus());
+        st.setInt(4, room.getFloor());
+        st.setInt(5, room.getRoomId());
+
+        return st.executeUpdate() > 0;
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return false;
+}
 
 }

@@ -73,15 +73,15 @@
         </div>
       </div>
 
-      <h1 class="sc-title">ĐẶT PHÒNG THÀNH CÔNG!</h1>
+      <h1 class="sc-title">BOOKING SUCCESSFUL!</h1>
       <div class="sc-sub">
-  Mã đặt chỗ của bạn là:
+  Your booking code is:
   <b class="sc-code">${bookingCode}</b>
 </div>
 
       <div class="sc-table">
         <div class="sc-row">
-          <div class="sc-k">MÃ ĐẶT CHỖ</div>
+          <div class="sc-k">BOOKING CODE</div>
           <div class="sc-v">
             <c:choose>
   <c:when test="${not empty bookingCode}">${bookingCode}</c:when>
@@ -92,33 +92,33 @@
         </div>
 
         <div class="sc-row">
-          <div class="sc-k">KHÁCH HÀNG</div>
+          <div class="sc-k">CUSTOMER</div>
           <div class="sc-v">${displayEmail}</div>
         </div>
 
         <div class="sc-row">
-          <div class="sc-k">PHÒNG</div>
+          <div class="sc-k">ROOM</div>
           <div class="sc-v">${roomName}</div>
         </div>
         <div class="sc-row">
-          <div class="sc-k">NGÀY NHẬN PHÒNG</div>
+          <div class="sc-k">CHECK IN DATE</div>
           <div class="sc-v">${checkIn}</div>
         </div>
 
         <c:if test="${not empty amount}">
           <div class="sc-row">
-            <div class="sc-k">SỐ TIỀN</div>
+            <div class="sc-k">AMOUNT</div>
             <div class="sc-v">${amount}</div>
           </div>
         </c:if>
       </div>
 
       <div class="sc-note">
-        Một email xác nhận đã được gửi đến <b>${displayEmail}</b>.<br/>
-        Vui lòng kiểm tra hộp thư để biết thêm chi tiết.
+        A confirmation email has been sent <b>${displayEmail}</b>.<br/>
+        Please check your mailbox for more details.
       </div>
 
-      <a class="sc-btn" href="${ctx}/home">QUAY LẠI TRANG CHỦ</a>
+      <a class="sc-btn" href="${ctx}/home">BACK TO HOME</a>
     </div>
   </div>
 </body>
