@@ -573,124 +573,123 @@ public List<BookingCardView> getPastStaysByCustomerIdPaging(int customerId, int 
         return executeBookingQuery(sql, customerId);
     }
 
-// 1. Lấy danh sách hoạt động trong ngày (Dashboard List) - Sửa đếm số người thực tế
-// 1. Lấy danh sách hoạt động trong ngày (Dashboard List) - BẢN SỬA LỖI ĐẾM NGƯỜI THEO PHÒNG  
 public List<BookingDashboard> getTodayOperations(String targetDate, String search, String status, String sort, int index, int pageSize) {
     List<BookingDashboard> list = new ArrayList<>();
+
     StringBuilder sql = new StringBuilder(
-        "SELECT b.booking_id, c.full_name, rt.name AS room_type_name, "
-        + "b.check_in_date, b.check_out_date, b.status AS booking_status, "
-        + "sra.status AS assignment_status, r.room_no, brt.quantity, "
-        + "sra.assignment_id, " // Lấy thêm assignment_id để đồng bộ dữ liệu
-        
-        // --- ĐOẠN SỬA CHUẨN: Đếm số người của RIÊNG từng phòng dựa trên assignment_id ---
-        + "(SELECT COUNT(*) FROM dbo.stay_room_guests srg "
-        + " WHERE srg.assignment_id = sra.assignment_id) AS num_person "
-        // ---------------------------------------------------------------------------
-        
+        "SELECT "
+        + " b.booking_id, "
+        + " c.full_name, "
+        + " rt.name AS room_type_name, "
+        + " b.check_in_date, "
+        + " b.check_out_date, "
+        + " b.status AS booking_status, "
+        + " brt.quantity, "
+
+        // Lấy tất cả số phòng đã assign của booking, ghép thành chuỗi
+        + " (SELECT STRING_AGG(CAST(r2.room_no AS VARCHAR(20)), ', ') "
+        + "    FROM dbo.stay_room_assignments sra2 "
+        + "    JOIN dbo.rooms r2 ON sra2.room_id = r2.room_id "
+        + "   WHERE sra2.booking_id = b.booking_id) AS room_no, "
+
+        // Đếm tổng guest thực tế của cả booking
+        + " (SELECT COUNT(*) "
+        + "    FROM dbo.stay_room_guests srg "
+        + "    JOIN dbo.stay_room_assignments sra3 ON srg.assignment_id = sra3.assignment_id "
+        + "   WHERE sra3.booking_id = b.booking_id) AS num_person, "
+
+        // Lấy assignment status tổng quát:
+        // nếu có ít nhất 1 assignment status=2 thì coi là checked-in
+        + " CASE "
+        + "     WHEN EXISTS (SELECT 1 FROM dbo.stay_room_assignments sra4 WHERE sra4.booking_id = b.booking_id AND sra4.status = 2) THEN 2 "
+        + "     WHEN EXISTS (SELECT 1 FROM dbo.stay_room_assignments sra4 WHERE sra4.booking_id = b.booking_id AND sra4.status = 3) THEN 3 "
+        + "     ELSE NULL "
+        + "   END AS assignment_status "
+
         + "FROM dbo.bookings b "
         + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
         + "LEFT JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
         + "LEFT JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id "
-        + "LEFT JOIN dbo.stay_room_assignments sra ON b.booking_id = sra.booking_id "
-        + "LEFT JOIN dbo.rooms r ON sra.room_id = r.room_id "
-        + "WHERE b.status IN (2, 3, 4) " 
-                // --- ĐOẠN SỬA CHUẨN: Đếm số người của RIÊNG từng phòng dựa trên assignment_id ---
-                + "(SELECT COUNT(*) FROM dbo.stay_room_guests srg "
-                + " WHERE srg.assignment_id = sra.assignment_id) AS num_person "
-                // ---------------------------------------------------------------------------
+        + "WHERE b.status IN (2, 3, 4) "
+    );
 
-                + "FROM dbo.bookings b "
-                + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
-                + "LEFT JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
-                + "LEFT JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id "
-                + "LEFT JOIN dbo.stay_room_assignments sra ON b.booking_id = sra.booking_id "
-                + "LEFT JOIN dbo.rooms r ON sra.room_id = r.room_id "
-                + "WHERE b.status IN (2, 3, 4) "
-        );
+    // Filter status
+    if (status == null || status.equals("0")) {
+        sql.append(" AND ( ")
+           .append("      (CONVERT(DATE, b.check_in_date) = ? AND b.status = 2) ")
+           .append("   OR (b.status = 3) ")
+           .append("   OR (CONVERT(DATE, b.check_out_date) = ? AND b.status = 4) ")
+           .append(" ) ");
+    } else if (status.equals("1")) {
+        sql.append(" AND b.status = 2 AND CONVERT(DATE, b.check_in_date) = ? ");
+    } else if (status.equals("2")) {
+        sql.append(" AND b.status = 3 ");
+    } else if (status.equals("3")) {
+        sql.append(" AND b.status = 4 AND CONVERT(DATE, b.check_out_date) = ? ");
+    }
 
-        // Xử lý bộ lọc theo trạng thái
+    if (search != null && !search.trim().isEmpty()) {
+        sql.append(" AND (c.full_name LIKE ? OR CAST(b.booking_id AS VARCHAR) LIKE ? OR c.phone LIKE ?) ");
+    }
+
+    String orderBy = "Oldest".equals(sort) ? "ASC" : "DESC";
+    sql.append(" ORDER BY b.check_in_date ").append(orderBy)
+       .append(", b.booking_id DESC ")
+       .append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+
+    try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+        int paramIdx = 1;
+
         if (status == null || status.equals("0")) {
-            sql.append(" AND ( (CONVERT(DATE, b.check_in_date) = ? AND b.status = 2) ")
-                    .append(" OR (b.status = 3 AND sra.status = 2) ")
-                    .append(" OR (CONVERT(DATE, b.check_out_date) = ? AND b.status = 4) ) ");
-        } else if (status.equals("1")) {
-            sql.append(" AND b.status = 2 AND (sra.status IS NULL OR sra.status = 1) AND CONVERT(DATE, b.check_in_date) = ? ");
-        } else if (status.equals("2")) {
-            sql.append(" AND b.status = 3 AND sra.status = 2 ");
-        } else if (status.equals("3")) {
-            sql.append(" AND b.status = 4 AND CONVERT(DATE, b.check_out_date) = ? ");
+            st.setString(paramIdx++, targetDate);
+            st.setString(paramIdx++, targetDate);
+        } else if (status.equals("1") || status.equals("3")) {
+            st.setString(paramIdx++, targetDate);
         }
 
         if (search != null && !search.trim().isEmpty()) {
-            sql.append(" AND (c.full_name LIKE ? OR CAST(b.booking_id AS VARCHAR) LIKE ? OR c.phone LIKE ?) ");
+            String p = "%" + search + "%";
+            st.setString(paramIdx++, p);
+            st.setString(paramIdx++, p);
+            st.setString(paramIdx++, p);
         }
 
-        // Xử lý Sort
-        String orderBy = "Oldest".equals(sort) ? "ASC" : "DESC";
-        sql.append(" ORDER BY b.check_in_date ").append(orderBy).append(", b.booking_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+        st.setInt(paramIdx++, (index - 1) * pageSize);
+        st.setInt(paramIdx, pageSize);
 
-        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            int paramIdx = 1;
-
-            if (status == null || status.equals("0")) {
-                st.setString(paramIdx++, targetDate);
-                st.setString(paramIdx++, targetDate);
-            } else if (status.equals("1") || status.equals("3")) {
-                st.setString(paramIdx++, targetDate);
-            }
-
-            if (search != null && !search.trim().isEmpty()) {
-                String p = "%" + search + "%";
-                st.setString(paramIdx++, p);
-                st.setString(paramIdx++, p);
-                st.setString(paramIdx++, p);
-            }
-
-            st.setInt(paramIdx++, (index - 1) * pageSize);
-            st.setInt(paramIdx, pageSize);
-
-            ResultSet rs = st.executeQuery();
-            while (rs.next()) {
-                BookingDashboard d = new BookingDashboard();
-                d.setBookingId(rs.getInt("booking_id"));
-                d.setGuestName(rs.getNString("full_name"));
-                d.setRoomTypeName(rs.getNString("room_type_name"));
-                d.setNumRooms(rs.getInt("quantity"));
-
-                // Kết quả bây giờ sẽ là 1 cho phòng 102 và 2 cho phòng 501
-                d.setNumPersons(rs.getInt("num_person"));
-
-                d.setCheckInDate(rs.getDate("check_in_date"));
-                d.setCheckOutDate(rs.getDate("check_out_date"));
-                d.setBookingStatus(rs.getInt("booking_status"));
-                d.setAssignmentStatus(rs.getInt("assignment_status"));
-                d.setRoomNo(rs.getString("room_no"));
-
-                list.add(d);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        ResultSet rs = st.executeQuery();
+        while (rs.next()) {
+            BookingDashboard d = new BookingDashboard();
+            d.setBookingId(rs.getInt("booking_id"));
+            d.setGuestName(rs.getNString("full_name"));
+            d.setRoomTypeName(rs.getNString("room_type_name"));
+            d.setNumRooms(rs.getInt("quantity"));
+            d.setNumPersons(rs.getInt("num_person"));
+            d.setCheckInDate(rs.getDate("check_in_date"));
+            d.setCheckOutDate(rs.getDate("check_out_date"));
+            d.setBookingStatus(rs.getInt("booking_status"));
+            d.setAssignmentStatus(rs.getInt("assignment_status"));
+            d.setRoomNo(rs.getString("room_no"));
+            list.add(d);
         }
-        return list;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+
+    return list;
+}
 
     public DashboardStats getDashboardStats(String targetDate) {
         DashboardStats stats = new DashboardStats();
-        // Chú ý các số 2, 3 trong câu SQL bên dưới
+
         String sql = "SELECT "
-                + // 1. Đếm tổng khách đang ở (StayRoomAssignment status = 2 là In House)
-                "(SELECT COUNT(*) FROM stay_room_guests srg "
+                + "(SELECT COUNT(*) FROM stay_room_guests srg "
                 + " JOIN stay_room_assignments sra ON srg.assignment_id = sra.assignment_id "
                 + " WHERE sra.status = 2) AS total_guests, "
-                + // 2. Đếm số đơn CONFIRMED (status = 2) có ngày đến là hôm nay
-                "(SELECT COUNT(*) FROM bookings WHERE CAST(check_in_date AS DATE) = ? AND status = 2) AS rooms_booked, "
-                + // 3. Đếm số phòng vừa thực hiện Check-in hôm nay
-                "(SELECT COUNT(*) FROM stay_room_assignments WHERE CAST(actual_check_in AS DATE) = ? AND status = 2) AS check_in_today, "
-                + // 4. Đếm số đơn đã CHECKED_OUT (status = 4) trong ngày hôm nay
-                "(SELECT COUNT(*) FROM bookings WHERE CAST(check_out_date AS DATE) = ? AND status = 4) AS check_out_today, "
-                + // 5. Đếm số đơn NO-SHOW (status = 6) hôm nay
-                "(SELECT COUNT(*) FROM bookings WHERE CAST(check_in_date AS DATE) = ? AND status = 6) AS no_show_today";
+                + "(SELECT COUNT(*) FROM bookings WHERE CAST(check_in_date AS DATE) = ? AND status = 2) AS pending_check_in, "
+                + "(SELECT COUNT(*) FROM stay_room_assignments WHERE CAST(actual_check_in AS DATE) = ? AND status = 2) AS check_in_today, "
+                + "(SELECT COUNT(*) FROM bookings WHERE CAST(check_out_date AS DATE) = ? AND status = 4) AS check_out_today, "
+                + "(SELECT COUNT(*) FROM bookings WHERE CAST(check_in_date AS DATE) = ? AND status IN (2, 3)) AS arrival_today";
 
         try (PreparedStatement st = connection.prepareStatement(sql)) {
             st.setString(1, targetDate);
@@ -701,10 +700,10 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
                 stats.setTotalGuests(rs.getInt("total_guests"));
-                stats.setRoomsBooked(rs.getInt("rooms_booked"));
+                stats.setPendingCheckIn(rs.getInt("pending_check_in"));
                 stats.setCheckInToday(rs.getInt("check_in_today"));
                 stats.setCheckOutToday(rs.getInt("check_out_today"));
-                stats.setNoShowToday(rs.getInt("no_show_today"));
+                stats.setArrivalToday(rs.getInt("arrival_today"));
             }
         } catch (SQLException e) {
             e.printStackTrace();

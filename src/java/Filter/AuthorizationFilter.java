@@ -45,6 +45,7 @@ public class AuthorizationFilter implements Filter {
                 || path.startsWith("/home")
                 || path.startsWith("/policy")
                 || path.contains("view/auth");
+                
     }
 
     @Override
