@@ -168,25 +168,35 @@ public class ReceptCheckoutDAO extends DBContext {
         StringBuilder sql = new StringBuilder(
             "SELECT COUNT(*) FROM dbo.bookings b " +
             "JOIN dbo.customers c ON b.customer_id = c.customer_id " +
-            "WHERE b.status = 3 " // Chỉ lấy khách đang IN-HOUSE (Đã Check-in)
+            "WHERE b.status = 3 " // Chỉ lấy khách đang IN-HOUSE
         );
 
+        // --- CẬP NHẬT LOGIC TÌM KIẾM MỚI ---
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (CAST(b.booking_id AS VARCHAR) LIKE ? OR c.full_name LIKE ? OR c.phone LIKE ?) ");
+            sql.append(" AND (CAST(b.booking_id AS VARCHAR) LIKE ? " +
+                       " OR EXISTS (SELECT 1 FROM dbo.stay_room_assignments sra " +
+                       "            JOIN dbo.rooms r ON sra.room_id = r.room_id " +
+                       "            WHERE sra.booking_id = b.booking_id AND sra.status = 2 AND r.room_no LIKE ?)) ");
         }
-        if ("4".equals(statusFilter)) {
-            // Lọc ra khách Departing Today (Trả phòng hôm nay)
+        
+        if ("5".equals(statusFilter)) {
+            sql.append(" AND SYSDATETIME() > DATEADD(hour, 12, CAST(b.check_out_date AS DATETIME)) ");
+        } else if ("4".equals(statusFilter)) {
             sql.append(" AND CAST(b.check_out_date AS DATE) = CAST(SYSDATETIME() AS DATE) ");
+        } else if ("3".equals(statusFilter)) {
+            sql.append(" AND SYSDATETIME() <= DATEADD(hour, 12, CAST(b.check_out_date AS DATETIME)) ");
         }
 
-        try (Connection con = connection; PreparedStatement ps = con.prepareStatement(sql.toString())) {
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
             int paramIndex = 1;
+            
+            // --- GÁN BIẾN CHO TÌM KIẾM MỚI ---
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim() + "%";
-                ps.setString(paramIndex++, kw);
-                ps.setString(paramIndex++, kw);
-                ps.setString(paramIndex++, kw);
+                ps.setString(paramIndex++, kw); // Cho booking_id
+                ps.setString(paramIndex++, kw); // Cho room_no
             }
+            
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1);
             }
@@ -207,33 +217,39 @@ public class ReceptCheckoutDAO extends DBContext {
             "WHERE b.status = 3 "
         );
 
-        // Điều kiện tìm kiếm
+        // --- CẬP NHẬT LOGIC TÌM KIẾM MỚI ---
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (CAST(b.booking_id AS VARCHAR) LIKE ? OR c.full_name LIKE ? OR c.phone LIKE ?) ");
+            sql.append(" AND (CAST(b.booking_id AS VARCHAR) LIKE ? " +
+                       " OR EXISTS (SELECT 1 FROM dbo.stay_room_assignments sra " +
+                       "            JOIN dbo.rooms r ON sra.room_id = r.room_id " +
+                       "            WHERE sra.booking_id = b.booking_id AND sra.status = 2 AND r.room_no LIKE ?)) ");
         }
         
-        // Điều kiện trạng thái (Departing Today)
-        if ("4".equals(statusFilter)) {
+        if ("5".equals(statusFilter)) {
+            sql.append(" AND SYSDATETIME() > DATEADD(hour, 12, CAST(b.check_out_date AS DATETIME)) ");
+        } else if ("4".equals(statusFilter)) {
             sql.append(" AND CAST(b.check_out_date AS DATE) = CAST(SYSDATETIME() AS DATE) ");
+        } else if ("3".equals(statusFilter)) {
+            sql.append(" AND SYSDATETIME() <= DATEADD(hour, 12, CAST(b.check_out_date AS DATETIME)) ");
         }
 
-        // Điều kiện sắp xếp
         if ("Oldest".equalsIgnoreCase(sortFilter)) {
             sql.append(" ORDER BY b.check_in_date ASC, b.booking_id ASC ");
         } else {
-            sql.append(" ORDER BY b.check_in_date DESC, b.booking_id DESC "); // Mặc định Newest
+            sql.append(" ORDER BY b.check_in_date DESC, b.booking_id DESC ");
         }
-
         sql.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
 
-        try (Connection con = connection; PreparedStatement ps = con.prepareStatement(sql.toString())) {
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
             int paramIndex = 1;
+            
+            // --- GÁN BIẾN CHO TÌM KIẾM MỚI ---
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim() + "%";
-                ps.setString(paramIndex++, kw);
-                ps.setString(paramIndex++, kw);
-                ps.setString(paramIndex++, kw);
+                ps.setString(paramIndex++, kw); // Cho booking_id
+                ps.setString(paramIndex++, kw); // Cho room_no
             }
+            
             ps.setInt(paramIndex++, (page - 1) * size);
             ps.setInt(paramIndex++, size);
 
@@ -245,7 +261,7 @@ public class ReceptCheckoutDAO extends DBContext {
                     summary.setPhone(rs.getString("phone"));
                     summary.setCheckInDate(rs.getDate("check_in_date"));
                     summary.setCheckOutDate(rs.getDate("check_out_date"));
-                    summary.setDepositPaid(rs.getBigDecimal("deposit_paid").longValue());
+                    summary.setDepositPaid(rs.getLong("deposit_paid"));
                     summary.setRoomNo(rs.getString("room_no"));
                     list.add(summary);
                 }

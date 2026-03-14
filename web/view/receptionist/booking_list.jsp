@@ -302,16 +302,24 @@
                                                     <i class="bi bi-eye"></i>
                                                 </a>
 
-                                                <c:if test="${b.status == '1' || b.status == '2'}">
-                                                    <a href="javascript:void(0);"
-                                                       class="btn btn-sm btn-outline-danger"
-                                                       title="Hủy Booking"
-                                                       onclick="if (confirm('Bạn có chắc chắn muốn hủy đơn đặt phòng #${b.bookingId} không?\nPhòng sẽ được hoàn trả lại cho khách khác đặt.')) {
-                                                                   window.location.href = '${pageContext.request.contextPath}/receptionist/booking/cancel?id=${b.bookingId}';
-                                                                           }">
-                                                        <i class="bi bi-x-circle"></i>
-                                                    </a>
-                                                </c:if>
+                                                <!-- Nút Hủy Booking luôn hiển thị -->
+                                                <a href="javascript:void(0);"
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   title="Hủy Booking"
+                                                   onclick="
+                                                   <c:choose>
+                                                       <c:when test="${b.status == '1' || b.status == '2'}">
+                                                           if (confirm('Bạn có chắc chắn muốn hủy đơn đặt phòng #${b.bookingId} không?\nPhòng sẽ được hoàn trả lại cho khách khác đặt.')) {
+                                                               window.location.href = '${pageContext.request.contextPath}/receptionist/booking/cancel?id=${b.bookingId}';
+                                                                       }
+                                                       </c:when>
+                                                       <c:otherwise>
+                                                                       alert('Booking này không thể hủy được do khách đã nhận phòng (Check-in), đã trả phòng (Check-out) hoặc đơn đã bị hủy từ trước!');
+                                                       </c:otherwise>
+                                                   </c:choose>
+                                                   ">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>

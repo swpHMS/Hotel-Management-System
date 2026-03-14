@@ -381,40 +381,50 @@
 }
 
 .checkout-search-box input,
-.checkout-select-box{
-    width: 100%;
-    height: 44px;
-    border: 1px solid #d8ccbb;
-    border-radius: 14px;
-    background: #f6f2ea;
-    color: #2c2416;
-    font-size: 0.92rem;
-    font-weight: 500;
-    outline: none;
-    transition: all 0.2s ease;
-}
+        .checkout-select-box {
+            width: 100%;
+            height: 46px; /* Cân bằng chiều cao tuyệt đối */
+            border: 1px solid #d8ccbb;
+            border-radius: 14px;
+            background: #f6f2ea;
+            color: #2c2416;
+            font-size: 0.92rem;
+            font-weight: 600; /* Tăng độ đậm chữ lên một chút cho đồng bộ */
+            outline: none;
+            box-shadow: none;
+            transition: all 0.2s ease;
+            font-family: 'DM Sans', sans-serif;
+        }
 
-.checkout-search-box input{
-    padding: 0 14px 0 42px;
-}
+        .checkout-search-box input {
+            padding: 0 14px 0 42px;
+        }
 
-.checkout-select-box{
-    padding: 0 14px;
-    appearance: auto;
-}
+        /* ===== ĐỒNG BỘ SELECT BOX (STATUS & SORT) ===== */
+        .checkout-select-box {
+            padding: 0 36px 0 16px; /* Chừa chỗ bên phải cho mũi tên */
+            appearance: none; /* Xóa bỏ giao diện xấu mặc định của trình duyệt */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            /* Thêm icon mũi tên màu nâu xám trùng tone màu thẻ search */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23a88f73' class='bi bi-chevron-down' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 14px;
+            cursor: pointer;
+        }
 
-.checkout-search-box input:focus,
-.checkout-select-box:focus{
-    border-color: #b89c79;
-    background: #fbf8f3;
-    box-shadow: none;
-}
+        .checkout-search-box input:focus,
+        .checkout-select-box:focus {
+            border-color: #b89c79;
+            background: #fbf8f3;
+            box-shadow: 0 0 0 3px rgba(184, 156, 121, 0.15); /* Thêm viền sáng (glow) khi click vào */
+        }
 
-.checkout-search-box input::placeholder{
-    color: #7f8aa0;
-    font-weight: 500;
-}
-
+        .checkout-search-box input::placeholder {
+            color: #9f8767; /* Đổi màu chữ gợi ý đồng bộ với theme */
+            font-weight: 500;
+        }
 .checkout-filter-actions{
     display: flex;
     justify-content: flex-end;
@@ -482,59 +492,80 @@
     <jsp:include page="sidebar.jsp"/>
 
     <main class="hms-main">
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <h1 class="dashboard-title text-uppercase" style="font-size: 1.9rem;">Check-out / Departures</h1>
-            
-        </div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <h1 class="dashboard-title text-uppercase" style="font-size: 1.6rem;">Check-out / Departures</h1>
+    <div class="d-flex gap-2">
+        <a href="${pageContext.request.contextPath}/receptionist/checkout?status=4" 
+           class="btn fw-bold rounded-pill px-4" 
+           style="background: ${param.status == '4' ? 'var(--ink)' : 'var(--paper)'}; 
+                  color: ${param.status == '4' ? '#fff' : 'var(--ink-mid)'};
+                  border: 1px solid ${param.status == '4' ? 'var(--ink)' : 'var(--border)'};">DEPARTURES</a>
+                  
+        <a href="${pageContext.request.contextPath}/receptionist/checkout?status=3" 
+           class="btn fw-bold rounded-pill px-4" 
+           style="background: ${param.status == '3' || empty param.status ? 'var(--ink)' : 'var(--paper)'}; 
+                  color: ${param.status == '3' || empty param.status ? '#fff' : 'var(--ink-mid)'};
+                  border: 1px solid ${param.status == '3' || empty param.status ? 'var(--ink)' : 'var(--border)'};">IN-HOUSE</a>
 
-        <!-- FILTER CARD -->
-<div class="checkout-filter-card">
-    <form method="get" action="${pageContext.request.contextPath}/receptionist/checkout">
-        <div class="checkout-filter-grid">
-            <!-- SEARCH -->
-            <div class="checkout-filter-group checkout-filter-search">
-                <label class="checkout-filter-label">SEARCH</label>
-                <div class="checkout-search-box">
-                    <i class="bi bi-search"></i>
-                    <input
-                        type="text"
-                        name="keyword"
-                        value="${param.keyword}"
-                        placeholder="Search by booking_id, guest name, or phone..."
-                    >
-                </div>
-            </div>
-
-            <!-- STATUS -->
-            <div class="checkout-filter-group">
-                <label class="checkout-filter-label">STATUS</label>
-                <select name="status" class="checkout-select-box">
-                    <option value="">All Status</option>
-                    <option value="3" ${param.status == '3' ? 'selected' : ''}>In-House</option>
-                    <option value="4" ${param.status == '4' ? 'selected' : ''}>Departing Today</option>
-                </select>
-            </div>
-
-            <!-- SORT -->
-            <div class="checkout-filter-group">
-                <label class="checkout-filter-label">SORT</label>
-                <select name="sort" class="checkout-select-box">
-                    <option value="Newest" ${param.sort == 'Newest' ? 'selected' : ''}>Newest</option>
-                    <option value="Oldest" ${param.sort == 'Oldest' ? 'selected' : ''}>Oldest</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="checkout-filter-actions">
-            <a href="${pageContext.request.contextPath}/receptionist/checkout" class="checkout-btn-reset">
-                Reset
-            </a>
-            <button type="submit" class="checkout-btn-apply">
-                Apply Filter
-            </button>
-        </div>
-    </form>
+        <a href="${pageContext.request.contextPath}/receptionist/checkout?status=5" 
+           class="btn fw-bold rounded-pill px-4" 
+           style="background: ${param.status == '5' ? '#dc2626' : 'var(--paper)'}; 
+                  color: ${param.status == '5' ? '#fff' : '#dc2626'};
+                  border: 1px solid ${param.status == '5' ? '#dc2626' : '#fca5a5'};">OVERSTAY <i class="bi bi-exclamation-circle ms-1"></i></a>
+    </div>
 </div>
+
+         <!-- FILTER CARD -->
+        <div class="checkout-filter-card">
+            <form method="get" action="${pageContext.request.contextPath}/receptionist/checkout">
+                <div class="checkout-filter-grid">
+
+                    <!-- SEARCH -->
+                    <div class="checkout-filter-group checkout-filter-search">
+                        <label class="checkout-filter-label">SEARCH</label>
+                        <div class="checkout-search-box">
+                            <i class="bi bi-search"></i>
+                            <input 
+                                type="text" 
+                                name="keyword" 
+                                value="${param.keyword}" 
+                                placeholder="Search by Booking ID, Room No..." 
+                            >
+                        </div>
+                    </div>
+
+                    <!-- STATUS -->
+                    <div class="checkout-filter-group">
+                        <label class="checkout-filter-label">STATUS</label>
+                        <select name="status" class="checkout-select-box">
+                            <option value="">All Status</option>
+                            <option value="3" ${param.status == '3' ? 'selected' : ''}>In-House</option>
+                            <option value="4" ${param.status == '4' ? 'selected' : ''}>Departing Today</option>
+                            <option value="5" ${param.status == '5' ? 'selected' : ''}>Overstay (Past due)</option>
+                        </select>
+                    </div>
+
+                    <!-- SORT -->
+                    <div class="checkout-filter-group">
+                        <label class="checkout-filter-label">SORT</label>
+                        <select name="sort" class="checkout-select-box">
+                            <option value="Newest" ${param.sort == 'Newest' ? 'selected' : ''}>Newest</option>
+                            <option value="Oldest" ${param.sort == 'Oldest' ? 'selected' : ''}>Oldest</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="checkout-filter-actions">
+                    <a href="${pageContext.request.contextPath}/receptionist/checkout" class="checkout-btn-reset">
+                        Reset
+                    </a>
+                    <button type="submit" class="checkout-btn-apply">
+                        Apply Filter
+                    </button>
+                </div>
+            </form>
+        </div>
         <!-- TABLE -->
         <div class="table-card mt-2">
             <table class="hms-table">

@@ -1,5 +1,6 @@
 package dal;
 
+import java.sql.SQLException;
 import context.DBContext;
 import java.sql.Connection;
 import java.sql.Date;
@@ -403,6 +404,72 @@ public class ReceptBookingListDAO extends DBContext {
         } finally {
             if (con != null) {
                 con.setAutoCommit(true);
+            }
+        }
+    }
+    
+    // ==========================================
+    // CẬP NHẬT TRẠNG THÁI NO-SHOW VÀ NHẢ PHÒNG
+    // ==========================================
+    public void updateNoShowBookings() {
+        // 1. Trả lại phòng vào kho (giảm booked_rooms trong bảng room_type_inventory)
+        String sqlReleaseInventory =
+            "UPDATE i " +
+            "SET i.booked_rooms = CASE " +
+            "    WHEN i.booked_rooms >= brt.quantity THEN i.booked_rooms - brt.quantity " +
+            "    ELSE 0 " +
+            "END " +
+            "FROM dbo.room_type_inventory i " +
+            "JOIN dbo.booking_room_types brt ON i.room_type_id = brt.room_type_id " +
+            "JOIN dbo.bookings b ON b.booking_id = brt.booking_id " +
+            "WHERE b.status IN (1, 2) " + // Chỉ lấy các đơn Pending hoặc Confirmed
+            "  AND b.check_in_date < CAST(SYSDATETIME() AS DATE) " + // Đã qua 24h của ngày check-in (nhỏ hơn ngày hiện tại)
+            "  AND i.inventory_date >= b.check_in_date " +
+            "  AND i.inventory_date < b.check_out_date";
+
+        // 2. Hủy các phòng thực tế đã được gán sẵn cho khách này (nếu có)
+        String sqlReleaseAssignments =
+            "UPDATE dbo.stay_room_assignments " +
+            "SET status = 0 " + // 0: Cancelled
+            "WHERE booking_id IN (" +
+            "    SELECT booking_id FROM dbo.bookings " +
+            "    WHERE status IN (1, 2) AND check_in_date < CAST(SYSDATETIME() AS DATE)" +
+            ") AND status = 1"; // 1: Assigned
+
+        // 3. Đổi trạng thái Booking thành No-Show (status = 6)
+        String sqlUpdateStatus =
+            "UPDATE dbo.bookings " +
+            "SET status = 6 " + // 6: No Show
+            "WHERE status IN (1, 2) " +
+            "  AND check_in_date < CAST(SYSDATETIME() AS DATE)";
+
+        Connection con = null;
+        try {
+            con = connection;
+            con.setAutoCommit(false); // Bắt đầu Transaction
+
+            // Thực thi trả phòng về kho
+            try (PreparedStatement ps1 = con.prepareStatement(sqlReleaseInventory)) {
+                ps1.executeUpdate();
+            }
+            // Thực thi hủy phòng đã gán
+            try (PreparedStatement ps2 = con.prepareStatement(sqlReleaseAssignments)) {
+                ps2.executeUpdate();
+            }
+            // Thực thi đổi trạng thái Booking
+            try (PreparedStatement ps3 = con.prepareStatement(sqlUpdateStatus)) {
+                ps3.executeUpdate();
+            }
+
+            con.commit(); // Lưu thay đổi
+        } catch (SQLException e) {
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            e.printStackTrace();
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); } catch (SQLException ex) { ex.printStackTrace(); }
             }
         }
     }

@@ -75,6 +75,9 @@ public class ReceptionistBookingListServlet extends HttpServlet {
         ReceptBookingListDAO dao = new ReceptBookingListDAO();
 
         try {
+            // ---> THÊM DÒNG NÀY ĐỂ HỆ THỐNG TỰ ĐỘNG CHỐT NO-SHOW & NHẢ PHÒNG TRƯỚC KHI HIỂN THỊ <---
+            dao.updateNoShowBookings();
+            
             int total = dao.countBookingsFiltered(
                     keyword,
                     status,

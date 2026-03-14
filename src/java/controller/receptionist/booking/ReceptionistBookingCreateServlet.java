@@ -50,23 +50,12 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
     }
 
     // ================================
-    // RULE 14:00
-    // ================================
-
-    private LocalDate getMinCheckInDate() {
-
-        LocalDate today = LocalDate.now();
-
-        LocalTime now = LocalTime.now();
-
-        LocalTime cutoff = LocalTime.of(14, 0);
-
-        if (now.isBefore(cutoff)) {
-            return today;
-        }
-
-        return today.plusDays(1);
-    }
+    // BỎ RULE 14:00 - LUÔN CHO PHÉP BOOK TRONG NGÀY
+// ================================
+private LocalDate getMinCheckInDate() {
+    // Ngày check-in nhỏ nhất luôn luôn là ngày hôm nay
+    return LocalDate.now();
+}
 
     // ================================
     // GET CREATE BOOKING PAGE
@@ -213,17 +202,13 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
         }
 
         if (checkIn.toLocalDate().isBefore(minCheckIn)) {
-
-            req.setAttribute(
-                    "errors",
-                    java.util.List.of(
-                            "After 14:00, check-in must be from tomorrow."
-                    )
-            );
-
-            doGet(req, resp);
-            return;
-        }
+    req.setAttribute(
+        "errors",
+        java.util.List.of("Ngày Check-in không hợp lệ (không được chọn ngày trong quá khứ).")
+    );
+    doGet(req, resp);
+    return;
+}
 
         if (checkOut == null) {
             checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(1));
