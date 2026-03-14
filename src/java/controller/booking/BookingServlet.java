@@ -72,9 +72,11 @@ public class BookingServlet extends HttpServlet {
 
     private void process(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-HotelInformationDAO hotelDao = new HotelInformationDAO();
-HotelInformation hotel = hotelDao.getSingleHotel();
-request.setAttribute("hotel", hotel);
+
+        HotelInformationDAO hotelDao = new HotelInformationDAO();
+        HotelInformation hotel = hotelDao.getSingleHotel();
+        request.setAttribute("hotel", hotel);
+
         String q = normalize(request.getParameter("q"));
         Integer selectedRoomTypeId = parseIntegerOrNull(request.getParameter("roomTypeId"));
 
@@ -122,25 +124,64 @@ request.setAttribute("hotel", hotel);
                 + ", roomTypeId=" + selectedRoomTypeId
                 + ", results=" + (roomTypes == null ? 0 : roomTypes.size()));
 
-        if (roomTypes != null) {
-            for (RoomType rt : roomTypes) {
-                try {
-                    List<RoomTypeImage> images = imageDAO.getImagesByRoomTypeId(rt.getRoomTypeId());
-                    rt.setImages(images);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    rt.setImages(null);
-                }
+        // ✅ THÊM: tính availableQty cho từng roomType và maxAvailableQty cho filter
+        int maxAvailableQty = 1;
 
-                List<String> names = amenityDAO.getAmenityNamesByRoomType(rt.getRoomTypeId());
-                rt.setAmenityNames(names);
+        if (roomTypes != null) {
+    for (RoomType rt : roomTypes) {
+        try {
+            List<RoomTypeImage> images = imageDAO.getImagesByRoomTypeId(rt.getRoomTypeId());
+            rt.setImages(images);
+
+            if (images != null && !images.isEmpty()) {
+                rt.setImageUrl(rt.getThumbnailUrl());
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            rt.setImages(null);
+        }
+
+        List<String> names = amenityDAO.getAmenityNamesByRoomType(rt.getRoomTypeId());
+        rt.setAmenityNames(names);
+
+        try {
+            int availableQty = roomTypeDAO.getAvailableRoomQty(
+                    rt.getRoomTypeId(),
+                    checkIn,
+                    checkOut
+            );
+
+            if (availableQty < 0) {
+                availableQty = 0;
+            }
+
+            rt.setAvailableQty(availableQty);
+
+            if (availableQty > maxAvailableQty) {
+                maxAvailableQty = availableQty;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            rt.setAvailableQty(0);
+        }
+    }
+}
+
+        // ✅ THÊM: clamp lại roomQty nếu user nhập vượt quá số lớn nhất đang còn
+        if (maxAvailableQty <= 0) {
+            maxAvailableQty = 1;
+        }
+
+        if (roomQty > maxAvailableQty) {
+            roomQty = maxAvailableQty;
         }
 
         // Đưa room user vừa chọn từ Home lên đầu danh sách
-       if (sort.isBlank()) {
-    moveSelectedRoomTypeToTop(roomTypes, selectedRoomTypeId);
-}
+        if (sort.isBlank()) {
+            moveSelectedRoomTypeToTop(roomTypes, selectedRoomTypeId);
+        }
+
         request.setAttribute("checkIn", checkIn.toString());
         request.setAttribute("checkOut", checkOut.toString());
         request.setAttribute("adults", adults);
@@ -150,6 +191,9 @@ request.setAttribute("hotel", hotel);
         request.setAttribute("sort", sort); // THÊM
         request.setAttribute("selectedRoomTypeId", selectedRoomTypeId);
         request.setAttribute("roomTypes", roomTypes);
+
+        // ✅ THÊM: truyền maxAvailableQty xuống booking.jsp cho ô Rooms phía trên
+        request.setAttribute("maxAvailableQty", maxAvailableQty);
 
         request.getRequestDispatcher("/view/booking/booking.jsp").forward(request, response);
     }

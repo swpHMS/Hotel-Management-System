@@ -14,42 +14,35 @@ import java.util.List;
 public class RoomTypeDAO {
 
     // =====================================================
-    // BOOKING SEARCH (DATE RANGE + AVAILABILITY BY COUNT BOOKINGS + CAPACITY BY ROOMQTY + KEYWORD)
+    // BOOKING SEARCH (DATE RANGE + AVAILABILITY BY INVENTORY + CAPACITY BY ROOMQTY + KEYWORD)
     // =====================================================
     //
     // ✅ Rule:
-    // available = total_rooms_of_type - SUM(booked quantity overlapping [checkIn, checkOut))
+    // available = MIN(total_rooms - booked_rooms - held_rooms) in [checkIn, checkOut)
     //
-    // Overlap condition:
-    // booking.check_in < checkOut AND booking.check_out > checkIn
+    // Overlap condition in inventory:
+    // inventory_date >= checkIn AND inventory_date < checkOut
     //
     // NOTE:
-    // - This approach does NOT count "holds" (availability_holds).
-    // - It counts existing bookings in DB to decide availability.
+    // - This uses dbo.room_type_inventory to keep the same logic as receptionist side.
+    // - held_rooms is included.
     //
 
     private static final String SQL_SEARCH_BOOKING_BASE =
-            "WITH booked AS ( " +
-            "   SELECT brt.room_type_id, SUM(brt.quantity) AS booked_qty " +
-            "   FROM dbo.bookings b " +
-            "   JOIN dbo.booking_room_types brt ON brt.booking_id = b.booking_id " +
-            "   WHERE b.status IN (2,3) " +
-            "     AND b.check_in_date < ? " +
-            "     AND b.check_out_date > ? " +
-            "   GROUP BY brt.room_type_id " +
-            "), total_rooms AS ( " +
-            "   SELECT room_type_id, COUNT(*) AS total_rooms " +
-            "   FROM dbo.rooms " +
-            "   WHERE status IN (1) " +
-            "   GROUP BY room_type_id " +
+            "WITH inv AS ( " +
+            "   SELECT rti.room_type_id, " +
+            "          MIN(rti.total_rooms - rti.booked_rooms - rti.held_rooms) AS available_rooms " +
+            "   FROM dbo.room_type_inventory rti " +
+            "   WHERE rti.inventory_date >= ? " +
+            "     AND rti.inventory_date < ? " +
+            "   GROUP BY rti.room_type_id " +
             ") " +
             "SELECT TOP (%d) " +
             "  rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, " +
             "  rv.price AS price_today, " +
-            "  (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) AS available_rooms " +
+            "  COALESCE(inv.available_rooms, 0) AS available_rooms " +
             "FROM dbo.room_types rt " +
-            "LEFT JOIN total_rooms tr ON tr.room_type_id = rt.room_type_id " +
-            "LEFT JOIN booked bk      ON bk.room_type_id = rt.room_type_id " +
+            "LEFT JOIN inv ON inv.room_type_id = rt.room_type_id " +
             "OUTER APPLY ( " +
             "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id " +
             "   FROM dbo.rate_versions " +
@@ -58,7 +51,7 @@ public class RoomTypeDAO {
             "   ORDER BY valid_from DESC, rate_version_id DESC " +
             ") rv " +
             "WHERE rt.status=1 " +
-            "  AND (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) >= ? " +
+            "  AND COALESCE(inv.available_rooms, 0) >= ? " +
             "  AND ( ? = '' OR rt.name LIKE '%%' + ? + '%%' OR rt.description LIKE '%%' + ? + '%%' ) " +
             "  AND ( ? <= rt.max_adult * ? ) " +
             "  AND ( ? <= rt.max_children * ? ) ";
@@ -91,6 +84,14 @@ public class RoomTypeDAO {
 
     private static final String SQL_COUNT_ACTIVE_ROOMTYPES =
             "SELECT COUNT(*) AS total FROM dbo.room_types WHERE status = 1";
+
+    // ✅ NEW: lấy availableQty từ inventory theo khoảng ngày
+    private static final String SQL_GET_AVAILABLE_ROOM_QTY =
+            "SELECT MIN(rti.total_rooms - rti.booked_rooms - rti.held_rooms) AS available_qty " +
+            "FROM dbo.room_type_inventory rti " +
+            "WHERE rti.room_type_id = ? " +
+            "  AND rti.inventory_date >= ? " +
+            "  AND rti.inventory_date < ? ";
 
     // =====================================================
     // PUBLIC METHODS
@@ -133,13 +134,13 @@ public class RoomTypeDAO {
         DBContext db = new DBContext();
 
         String orderBy;
-        if ("priceAsc".equalsIgnoreCase(sort)) {
-            orderBy = " ORDER BY CASE WHEN rv.price IS NULL THEN 1 ELSE 0 END, rv.price ASC, rt.room_type_id DESC";
-        } else if ("priceDesc".equalsIgnoreCase(sort)) {
-            orderBy = " ORDER BY CASE WHEN rv.price IS NULL THEN 1 ELSE 0 END, rv.price DESC, rt.room_type_id DESC";
-        } else {
-            orderBy = " ORDER BY (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) DESC, rt.room_type_id DESC";
-        }
+if ("priceAsc".equalsIgnoreCase(sort)) {
+    orderBy = " ORDER BY COALESCE(rv.price, 999999999) ASC, rt.room_type_id DESC";
+} else if ("priceDesc".equalsIgnoreCase(sort)) {
+    orderBy = " ORDER BY COALESCE(rv.price, 0) DESC, rt.room_type_id DESC";
+} else {
+    orderBy = " ORDER BY COALESCE(inv.available_rooms, 0) DESC, rt.room_type_id DESC";
+}
 
         String sql = String.format(SQL_SEARCH_BOOKING_BASE, limit) + orderBy;
         String keyword = (q == null) ? "" : q.trim();
@@ -149,9 +150,9 @@ public class RoomTypeDAO {
 
             int idx = 1;
 
-            // booked CTE overlap params
-            ps.setDate(idx++, Date.valueOf(checkOut));
+            // inventory range params
             ps.setDate(idx++, Date.valueOf(checkIn));
+            ps.setDate(idx++, Date.valueOf(checkOut));
 
             // rate at checkIn
             ps.setDate(idx++, Date.valueOf(checkIn));
@@ -183,6 +184,7 @@ public class RoomTypeDAO {
                     rt.setImageUrl(rs.getString("image_url"));
                     rt.setStatus(rs.getInt("status"));
                     rt.setPriceToday(rs.getBigDecimal("price_today"));
+                    rt.setAvailableQty(rs.getInt("available_rooms"));
                     list.add(rt);
                 }
             }
@@ -240,6 +242,37 @@ public class RoomTypeDAO {
 
             if (rs.next()) return rs.getInt("total");
         }
+        return 0;
+    }
+
+    // ✅ NEW: dùng cho BookingServlet / JSP để biết tối đa còn bao nhiêu phòng
+    public int getAvailableRoomQty(int roomTypeId, LocalDate checkIn, LocalDate checkOut) {
+        if (roomTypeId <= 0 || checkIn == null || checkOut == null || !checkOut.isAfter(checkIn)) {
+            return 0;
+        }
+
+        DBContext db = new DBContext();
+
+        try (Connection con = db.getConnection();
+             PreparedStatement ps = con.prepareStatement(SQL_GET_AVAILABLE_ROOM_QTY)) {
+
+            ps.setInt(1, roomTypeId);
+            ps.setDate(2, Date.valueOf(checkIn));
+            ps.setDate(3, Date.valueOf(checkOut));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int available = rs.getInt("available_qty");
+                    if (rs.wasNull()) {
+                        return 0;
+                    }
+                    return Math.max(available, 0);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return 0;
     }
 

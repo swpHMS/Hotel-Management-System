@@ -15,6 +15,9 @@ public class RoomType {
     private int status;
     private BigDecimal priceToday;
 
+    // ✅ NEW: số phòng còn trống trong khoảng ngày search
+    private int availableQty;
+
     // ✅ Amenities (đang dùng)
     private List<String> amenityNames = new ArrayList<>();
 
@@ -46,6 +49,19 @@ public class RoomType {
 
     public BigDecimal getPriceToday() { return priceToday; }
     public void setPriceToday(BigDecimal priceToday) { this.priceToday = priceToday; }
+
+    // =========================================================
+    // ✅ NEW: available rooms
+    // =========================================================
+    public int getAvailableQty() {
+        return availableQty;
+    }
+
+    public void setAvailableQty(int availableQty) {
+        this.availableQty = availableQty;
+    }
+
+    // =========================================================
 
     public List<String> getAmenityNames() { return amenityNames; }
     public void setAmenityNames(List<String> amenityNames) {
@@ -94,6 +110,7 @@ public class RoomType {
                 + ", maxChildren=" + maxChildren
                 + ", status=" + status
                 + ", priceToday=" + priceToday
+                + ", availableQty=" + availableQty   // ✅ NEW
                 + ", amenityNames=" + amenityNames
                 + ", images=" + (images == null ? 0 : images.size())
                 + '}';
