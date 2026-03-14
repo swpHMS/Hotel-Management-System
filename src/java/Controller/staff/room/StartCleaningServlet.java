@@ -5,6 +5,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,6 +26,30 @@ public class StartCleaningServlet extends HttpServlet {
         cleaningRooms.add(roomId);
         session.setAttribute("cleaningRooms", cleaningRooms);
 
-        response.sendRedirect(request.getContextPath() + "/room/staff/room-operations");
+        String status = request.getParameter("status");
+        String keyword = request.getParameter("keyword");
+        String page = request.getParameter("page");
+        String pageSize = request.getParameter("pageSize");
+
+        if (status == null || status.isEmpty()) {
+            status = "all";
+        }
+        if (keyword == null) {
+            keyword = "";
+        }
+        if (page == null || page.isEmpty()) {
+            page = "1";
+        }
+        if (pageSize == null || pageSize.isEmpty()) {
+            pageSize = "10";
+        }
+
+        response.sendRedirect(
+                request.getContextPath()
+                + "/staff/room-operations?status=" + status
+                + "&keyword=" + URLEncoder.encode(keyword, "UTF-8")
+                + "&page=" + page
+                + "&pageSize=" + pageSize
+        );
     }
 }

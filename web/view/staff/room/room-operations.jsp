@@ -150,16 +150,20 @@
 
                                 <c:if test="${r.status == 4 && !cleaningRooms.contains(r.roomId)}">
                                     <form method="post"
-                                          action="${pageContext.request.contextPath}/staff/room-operations/start"
-                                          style="margin:0;">
-                                        <input type="hidden" name="roomId" value="${r.roomId}">
-                                        <button type="submit" class="btn btn-start">▶ Start</button>
-                                    </form>
+      action="${pageContext.request.contextPath}/staff/room-operations/start"
+      style="margin:0;">
+    <input type="hidden" name="roomId" value="${r.roomId}">
+    <input type="hidden" name="status" value="${selectedStatus}">
+    <input type="hidden" name="keyword" value="${keyword}">
+    <input type="hidden" name="page" value="${page}">
+    <input type="hidden" name="pageSize" value="${pageSize}">
+    <button type="submit" class="btn btn-start">▶ Start</button>
+</form>
                                 </c:if>
 
                                 <button type="button"
         class="btn btn-update"
-        onclick="openUpdateModal('${r.roomId}', '${r.roomNo}')">
+        onclick="openUpdateModal('${r.roomId}', '${r.roomNo}', '${r.statusText}')">
     Update
 </button>
                             </div>
@@ -237,7 +241,7 @@
                     <div class="room-chip" id="modalRoomNo">202</div>
                     <div>
                         <div class="current-label">Current Status</div>
-                        <div class="current-value">DIRTY / NEEDS CLEANING</div>
+                        <div class="current-value" id="modalCurrentStatus">AVAILABLE</div>
                     </div>
                 </div>
 
@@ -272,20 +276,22 @@
 </div>
 
 <script>
-function openUpdateModal(roomId, roomNo) {
+function openUpdateModal(roomId, roomNo, currentStatusText) {
     const updateModal = document.getElementById("updateModal");
     const modalRoomId = document.getElementById("modalRoomId");
     const modalRoomNo = document.getElementById("modalRoomNo");
+    const modalCurrentStatus = document.getElementById("modalCurrentStatus");
     const modalNewStatus = document.getElementById("modalNewStatus");
     const choices = document.querySelectorAll(".choice");
 
-    if (!updateModal || !modalRoomId || !modalRoomNo || !modalNewStatus) {
+    if (!updateModal || !modalRoomId || !modalRoomNo || !modalCurrentStatus || !modalNewStatus) {
         alert("Modal not found");
         return;
     }
 
     modalRoomId.value = roomId;
     modalRoomNo.textContent = roomNo;
+    modalCurrentStatus.textContent = currentStatusText;
     modalNewStatus.value = "1";
 
     choices.forEach(function (c) {
