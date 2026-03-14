@@ -20,7 +20,11 @@
         <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
 
         <style>
-            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
             :root {
                 --ink:       #2c2416;
@@ -48,7 +52,8 @@
             /* ── SIDEBAR OVERRIDE ── */
             .hms-sidebar, aside.hms-sidebar, aside {
                 position: fixed !important;
-                top: 0; left: 0;
+                top: 0;
+                left: 0;
                 width: var(--sidebar-w) !important;
                 height: 100vh !important;
                 overflow-y: auto !important;
@@ -74,7 +79,6 @@
                 from { opacity:0; transform:translateY(-10px); }
                 to   { opacity:1; transform:translateY(0); }
             }
-            .page-header-left {}
             .eyebrow {
                 font-size: 11px;
                 font-weight: 700;
@@ -89,7 +93,8 @@
             .eyebrow::before {
                 content: '';
                 display: block;
-                width: 22px; height: 1.5px;
+                width: 22px;
+                height: 1.5px;
                 background: var(--gold);
             }
             .page-title {
@@ -123,14 +128,18 @@
                 color: var(--ink-mid);
                 transition: all .18s ease;
             }
-            .tab-link:hover { background: var(--bg2); color: var(--ink); }
+            .tab-link:hover {
+                background: var(--bg2);
+                color: var(--ink);
+            }
             .tab-link.is-active {
                 background: var(--ink);
                 color: #fff;
                 box-shadow: 0 4px 14px rgba(44,36,22,.22);
             }
             .tab-link .tab-icon {
-                width: 15px; height: 15px;
+                width: 15px;
+                height: 15px;
                 opacity: .75;
             }
 
@@ -158,51 +167,216 @@
             .left-panel {
                 background: var(--bg2);
                 border-right: 1px solid var(--border);
-                padding: 24px 16px;
+                padding: 20px 14px 24px;
                 display: flex;
                 flex-direction: column;
-                gap: 4px;
+                gap: 0;
             }
-            .panel-label {
-                font-size: 10.5px;
-                font-weight: 800;
-                letter-spacing: .18em;
-                text-transform: uppercase;
-                color: var(--ink-soft);
-                padding: 0 12px 10px;
-                border-bottom: 1px solid var(--border);
-                margin-bottom: 8px;
-            }
-            .nav-item {
+
+            .panel-label-row {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 13px 14px;
-                border-radius: 13px;
+                padding: 0 4px 14px;
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 14px;
+            }
+
+            .panel-label {
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: .2em;
+                text-transform: uppercase;
+                color: var(--ink-soft);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .panel-label::before {
+                content: '';
+                display: block;
+                width: 14px;
+                height: 1.5px;
+                background: var(--ink-soft);
+                border-radius: 2px;
+            }
+
+            .add-policy-btn {
+                width: 30px;
+                height: 30px;
+                border: 0;
+                border-radius: 50%;
+                background: var(--ink);
+                color: #fff;
+                font-size: 19px;
+                font-weight: 300;
+                line-height: 1;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background .18s ease, transform .28s ease;
+                flex-shrink: 0;
+            }
+            .add-policy-btn:hover {
+                background: var(--gold);
+                color: var(--ink);
+                transform: scale(1.08) rotate(90deg);
+            }
+
+            /* ── ADD / RENAME FORMS ── */
+            .add-policy-form,
+            .rename-policy-form {
+                background: var(--paper);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 10px;
+                margin: 0 2px 10px;
+            }
+
+            .policy-input {
+                width: 100%;
+                border: 1px solid var(--border2);
+                border-radius: 10px;
+                padding: 10px 12px;
+                font-size: 13px;
+                outline: none;
+                background: #fff;
+                color: var(--ink);
+                font-family: 'DM Sans', sans-serif;
+            }
+            .policy-input:focus {
+                border-color: var(--gold);
+                box-shadow: 0 0 0 3px rgba(181,131,42,.12);
+            }
+
+            .policy-form-actions {
+                margin-top: 8px;
+                display: flex;
+                gap: 8px;
+            }
+
+            .mini-btn {
+                border: 0;
+                border-radius: 9px;
+                padding: 7px 10px;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                font-family: 'DM Sans', sans-serif;
+            }
+            .mini-btn-save {
+                background: var(--ink);
+                color: #fff;
+            }
+            .mini-btn-save:hover { opacity: .9; }
+            .mini-btn-cancel {
+                background: var(--bg2);
+                color: var(--ink-mid);
+            }
+            .mini-btn-cancel:hover { background: var(--border); }
+
+            /* ── POLICY LIST ── */
+            .policy-list {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+            }
+
+            .policy-row {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 4px 4px 2px;
+                border-radius: 14px;
+            }
+
+            .policy-link {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 11px 13px;
+                border-radius: 12px;
                 text-decoration: none;
                 color: var(--ink-mid);
                 font-weight: 600;
-                font-size: 13.5px;
-                transition: all .18s ease;
+                font-size: 13px;
+                transition: background .18s ease, color .16s ease, transform .16s ease;
             }
-            .nav-item:hover {
+            .policy-link:hover {
                 background: var(--paper);
                 color: var(--ink);
                 transform: translateX(2px);
             }
-            .nav-item.active {
+            .policy-row.active .policy-link {
                 background: var(--ink);
                 color: #fff;
-                box-shadow: 0 4px 16px rgba(44,36,22,.2);
+                box-shadow: 0 4px 18px rgba(44,36,22,.18);
             }
-            .nav-item.active .nav-arrow { color: var(--gold); opacity: 1; }
-            .nav-name { position: relative; z-index: 1; }
+
+            .nav-name {
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 140px;
+            }
+
+            /* Arrow indicator */
             .nav-arrow {
-                font-size: 16px;
-                opacity: .5;
-                transition: transform .18s;
+                font-size: 15px;
+                opacity: 0;
+                transition: opacity .16s ease, transform .16s ease;
+                flex-shrink: 0;
             }
-            .nav-item:hover .nav-arrow { transform: translateX(3px); opacity: .8; }
+            .policy-link:hover .nav-arrow {
+                opacity: .5;
+                transform: translateX(2px);
+            }
+            .policy-row.active .policy-link .nav-arrow {
+                opacity: .65;
+                color: var(--gold-lt);
+            }
+
+            /* Action buttons — hidden until row hover */
+            .policy-actions {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                opacity: 0;
+                transition: opacity .18s ease;
+                flex-shrink: 0;
+            }
+            .policy-row:hover .policy-actions {
+                opacity: 1;
+            }
+
+            .icon-btn {
+                width: 28px;
+                height: 28px;
+                border: 1px solid var(--border);
+                background: var(--paper);
+                color: var(--ink-soft);
+                border-radius: 9px;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background .16s ease, color .16s ease, border-color .16s ease;
+                flex-shrink: 0;
+            }
+            .icon-btn:hover {
+                background: var(--bg2);
+                color: var(--ink);
+            }
+            .icon-btn.danger:hover {
+                background: #fbe9e9;
+                color: #b42318;
+                border-color: #f2b8b5;
+            }
 
             /* ── RIGHT PANEL ── */
             .right-panel {
@@ -239,7 +413,8 @@
                 margin-top: 4px;
             }
             .badge-dot {
-                width: 6px; height: 6px;
+                width: 6px;
+                height: 6px;
                 background: var(--gold);
                 border-radius: 50%;
             }
@@ -285,7 +460,8 @@
             .editor-label::before {
                 content: '';
                 display: inline-block;
-                width: 8px; height: 8px;
+                width: 8px;
+                height: 8px;
                 background: var(--gold);
                 border-radius: 50%;
             }
@@ -308,7 +484,9 @@
                 color: var(--ink);
                 background: var(--paper);
             }
-            textarea::placeholder { color: var(--ink-soft); }
+            textarea::placeholder {
+                color: var(--ink-soft);
+            }
 
             /* ── FOOTER ACTIONS ── */
             .actions {
@@ -322,7 +500,10 @@
                 color: var(--ink-soft);
                 font-weight: 500;
             }
-            .btn-group { display: flex; gap: 10px; }
+            .btn-group {
+                display: flex;
+                gap: 10px;
+            }
 
             .btn {
                 display: inline-flex;
@@ -342,7 +523,11 @@
                 color: var(--ink-mid);
                 border: 1.5px solid var(--border);
             }
-            .btn-ghost:hover { background: var(--bg2); border-color: var(--border2); color: var(--ink); }
+            .btn-ghost:hover {
+                background: var(--bg2);
+                border-color: var(--border2);
+                color: var(--ink);
+            }
             .btn-primary {
                 background: var(--ink);
                 color: #fff;
@@ -358,7 +543,8 @@
             /* ── TOAST ── */
             #toast {
                 position: fixed;
-                bottom: 32px; right: 32px;
+                bottom: 32px;
+                right: 32px;
                 background: var(--ink);
                 color: #fff;
                 padding: 14px 22px;
@@ -375,8 +561,14 @@
                 gap: 10px;
                 z-index: 99999;
             }
-            #toast.show { opacity: 1; transform: translateY(0); }
-            #toast .toast-icon { color: var(--gold); font-size: 16px; }
+            #toast.show {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            #toast .toast-icon {
+                color: var(--gold);
+                font-size: 16px;
+            }
         </style>
     </head>
 
@@ -389,8 +581,8 @@
             <!-- Page Header -->
             <div class="page-header">
                 <div class="page-header-left">
-                    <div class="eyebrow"> System Configuration</div>
-                    <h1 class="page-title">Terms Policies</h1>
+                    <div class="eyebrow">System Configuration</div>
+                    <h1 class="page-title">Terms and Policies</h1>
                 </div>
 
                 <!-- Tab Nav -->
@@ -400,7 +592,7 @@
                         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Terms  Policies
+                        Terms and Policies
                     </a>
                     <a class="tab-link"
                        href="${pageContext.request.contextPath}/admin/templates">
@@ -418,63 +610,160 @@
 
                     <!-- LEFT: Policy Nav -->
                     <div class="left-panel">
-                        <div class="panel-label">Policy Sections</div>
 
-                        <c:forEach var="entry" items="${sidebarMap}">
-                            <a class="nav-item ${entry.key eq activeKey ? 'active' : ''}"
-                               href="${pageContext.request.contextPath}/admin/policies?key=${entry.key}">
-                                <span class="nav-name">${entry.value}</span>
-                                <span class="nav-arrow">›</span>
-                            </a>
-                        </c:forEach>
-                    </div>
+                        <div class="panel-label-row">
+                            <span class="panel-label">Policy Sections</span>
+                            <button type="button" class="add-policy-btn" onclick="toggleAddPolicyForm()" title="Add Policy Section">+</button>
+                        </div>
+
+                        <div id="addPolicyForm" class="add-policy-form" style="display:none;">
+                            <form method="post" action="${pageContext.request.contextPath}/admin/policies">
+                                <input type="hidden" name="action" value="addPolicy"/>
+                                <input type="text"
+                                       name="newPolicyName"
+                                       class="policy-input"
+                                       placeholder="New section name…"
+                                       required />
+                                <div class="policy-form-actions">
+                                    <button type="submit" class="mini-btn mini-btn-save">Add</button>
+                                    <button type="button" class="mini-btn mini-btn-cancel" onclick="toggleAddPolicyForm(false)">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="policy-list">
+                            <c:choose>
+                                <c:when test="${not empty policies}">
+                                    <c:forEach var="p" items="${policies}">
+
+                                        <div class="policy-row ${p.name eq activeKey ? 'active' : ''}">
+                                            <a class="policy-link"
+                                               href="${pageContext.request.contextPath}/admin/policies?key=${p.name}">
+                                                <span class="nav-name"><c:out value="${p.name}"/></span>
+                                                <span class="nav-arrow">›</span>
+                                            </a>
+
+                                            <div class="policy-actions">
+                                                <button type="button"
+                                                        class="icon-btn"
+                                                        title="Rename"
+                                                        onclick="toggleRenameForm('${p.policyId}')">
+                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                    </svg>
+                                                </button>
+
+                                                <form method="post"
+                                                      action="${pageContext.request.contextPath}/admin/policies"
+                                                      style="display:inline;"
+                                                      onsubmit="return confirm('Are you sure you want to delete this policy section?');">
+                                                    <input type="hidden" name="action" value="deletePolicy"/>
+                                                    <input type="hidden" name="policyId" value="${p.policyId}"/>
+                                                    <button type="submit" class="icon-btn danger" title="Delete">
+                                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                            <polyline points="3 6 5 6 21 6"/>
+                                                            <path d="M19 6l-1 14H6L5 6"/>
+                                                            <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        <div id="renameForm-${p.policyId}" class="rename-policy-form" style="display:none;">
+                                            <form method="post" action="${pageContext.request.contextPath}/admin/policies">
+                                                <input type="hidden" name="action" value="renamePolicy"/>
+                                                <input type="hidden" name="policyId" value="${p.policyId}"/>
+                                                <input type="text"
+                                                       name="renameValue"
+                                                       class="policy-input"
+                                                       value="${p.name}"
+                                                       required />
+                                                <div class="policy-form-actions">
+                                                    <button type="submit" class="mini-btn mini-btn-save">Save</button>
+                                                    <button type="button" class="mini-btn mini-btn-cancel"
+                                                            onclick="toggleRenameForm('${p.policyId}', false)">Cancel</button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                    </c:forEach>
+                                </c:when>
+
+                                <c:otherwise>
+                                    <div style="padding: 12px 4px; color: var(--ink-soft); font-size: 13px;">
+                                        No policy sections found.
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+
+                    </div><!-- /LEFT -->
 
                     <!-- RIGHT: Editor -->
                     <div class="right-panel">
 
-                        <div class="section-header">
-                            <h2 class="section-title"><c:out value="${sidebarMap[activeKey]}"/></h2>
-                        </div>
-                        <div class="section-badge">
-                            <span class="badge-dot"></span>
-                            KEY: ${activeKey}
-                        </div>
+                        <c:choose>
+                            <c:when test="${selectedPolicy != null}">
 
-                        <div class="divider"></div>
-
-                        <form method="post" action="${pageContext.request.contextPath}/admin/policies"
-                              style="flex:1;display:flex;flex-direction:column;gap:0;">
-                            <input type="hidden" name="key" value="${activeKey}"/>
-                            <input type="hidden" name="policyId" value="${selectedPolicy.policyId}"/>
-
-                            <div class="editor-shell">
-                                <div class="editor-toolbar">
-                                    <span class="editor-label">Document Editor</span>
-                                    <span class="char-count" id="charCount">0 characters</span>
+                                <div class="section-header">
+                                    <h2 class="section-title">
+                                        <c:out value="${selectedPolicy.name}"/>
+                                    </h2>
                                 </div>
-                                <textarea name="content" id="editor"
-                                    placeholder="Start writing your policy content here…"><c:out value="${selectedPolicy.content}"/></textarea>
-                            </div>
 
-                            <div class="actions">
-                                <span class="last-edited">Policy ID: ${selectedPolicy.policyId}</span>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-ghost"
-                                            onclick="window.location = '${pageContext.request.contextPath}/admin/policies?key=${activeKey}'">
-                                        Discard
-                                    </button>
-                                    <button type="submit" class="btn btn-primary" onclick="showToast()">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                                            <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-                                        </svg>
-                                        Save Changes
-                                    </button>
+                                <div class="section-badge">
+                                    <span class="badge-dot"></span>
+                                    KEY: <c:out value="${activeKey}"/>
                                 </div>
-                            </div>
-                        </form>
 
-                    </div>
+                                <div class="divider"></div>
+
+                                <form method="post" action="${pageContext.request.contextPath}/admin/policies"
+                                      style="flex:1;display:flex;flex-direction:column;gap:0;">
+                                    <input type="hidden" name="key" value="${activeKey}"/>
+                                    <input type="hidden" name="policyId" value="${selectedPolicy.policyId}"/>
+
+                                    <div class="editor-shell">
+                                        <div class="editor-toolbar">
+                                            <span class="editor-label">Document Editor</span>
+                                            <span class="char-count" id="charCount">0 characters</span>
+                                        </div>
+                                        <textarea name="content" id="editor"
+                                                  placeholder="Start writing your policy content here…"><c:out value="${selectedPolicy.content}"/></textarea>
+                                    </div>
+
+                                    <div class="actions">
+                                        <span class="last-edited">Policy ID: ${selectedPolicy.policyId}</span>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-ghost"
+                                                    onclick="window.location = '${pageContext.request.contextPath}/admin/policies?key=${activeKey}'">
+                                                Discard
+                                            </button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                                                    <polyline points="17 21 17 13 7 13 7 21"/>
+                                                    <polyline points="7 3 7 8 15 8"/>
+                                                </svg>
+                                                Save Changes
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+
+                            </c:when>
+
+                            <c:otherwise>
+                                <div style="padding: 24px 8px; color: var(--ink-soft); font-size: 14px;">
+                                    No policy content available in database.
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+
+                    </div><!-- /RIGHT -->
+
                 </div>
             </div>
         </div>
@@ -488,26 +777,53 @@
         <script>
             const editor = document.getElementById('editor');
             const charCount = document.getElementById('charCount');
-            function updateCount() { //hàm đếm kí tự
+
+            function updateCount() {
+                if (!editor || !charCount) return;
                 const n = editor.value.length;
                 charCount.textContent = n.toLocaleString() + ' character' + (n !== 1 ? 's' : '');
             }
-            editor.addEventListener('input', updateCount);
-            updateCount(); //theo dõi khi người dùng gõ
+
+            if (editor) {
+                editor.addEventListener('input', updateCount);
+                updateCount();
+            }
 
             function showToast() {
                 const t = document.getElementById('toast');
+                if (!t) return;
                 t.classList.add('show');
                 setTimeout(() => t.classList.remove('show'), 2800);
             }
 
+            function toggleAddPolicyForm(force) {
+                const box = document.getElementById('addPolicyForm');
+                if (!box) return;
+                if (force === false) { box.style.display = 'none'; return; }
+                box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'block' : 'none';
+            }
+
+            function toggleRenameForm(policyId, force) {
+                const el = document.getElementById('renameForm-' + policyId);
+                if (!el) return;
+                if (force === false) { el.style.display = 'none'; return; }
+                el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+            }
+
             document.addEventListener('keydown', e => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    const form = document.querySelector('form');
+                    if (!form) return;
                     e.preventDefault();
-                    document.querySelector('form').submit();
-                    showToast();
+                    form.submit();
                 }
             });
+
+            <c:if test="${param.saved == '1'}">
+            window.addEventListener('load', function () {
+                showToast();
+            });
+            </c:if>
         </script>
 
     </body>

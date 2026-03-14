@@ -157,31 +157,35 @@
             --%>
             <form method="post" action="${ctx}/booking/pay" id="cfForm">
 
-              <c:set var="hid" value="${holdId}" />
-              <c:if test="${empty hid}">
-                <c:set var="hid" value="${param.holdId}" />
-              </c:if>
-              <input type="hidden" name="holdId" value="${hid}"/>
+    <c:set var="hid" value="${holdId}" />
+    <c:if test="${empty hid}">
+        <c:set var="hid" value="${param.holdId}" />
+    </c:if>
 
-              <input type="hidden" name="roomTypeId" value="${rt.roomTypeId}">
-              <input type="hidden" name="checkIn" value="${checkIn}">
-              <input type="hidden" name="checkOut" value="${checkOut}">
-              <input type="hidden" name="roomQty" value="${roomQty}">
-              <input type="hidden" name="adults" value="${adults}">
-              <input type="hidden" name="children" value="${children}">
-              <input type="hidden" name="customerEmail" value="${customerEmail}"/>
+    <input type="hidden" name="holdId" value="${hid}"/>
+    <input type="hidden" name="paymentMethod" value="vnpay"/>
 
-              <div class="cf-check">
-                <input type="checkbox" id="cfAgree" name="agree" value="1" required/>
-                <label for="cfAgree">
-                  I agree to the Deposit Agreement & Booking Terms (Non-refundable policy applied)
-                </label>
-              </div>
+    <input type="hidden" name="roomTypeId" value="${rt.roomTypeId}">
+    <input type="hidden" name="checkIn" value="${checkIn}">
+    <input type="hidden" name="checkOut" value="${checkOut}">
+    <input type="hidden" name="roomQty" value="${roomQty}">
+    <input type="hidden" name="adults" value="${adults}">
+    <input type="hidden" name="children" value="${children}">
+    <input type="hidden" name="customerEmail" value="${customerEmail}"/>
+    <input type="hidden" name="deposit" value="${deposit}"/>
+    <input type="hidden" name="total" value="${total}"/>
 
-              <button type="submit" class="cf-btn" id="cfContinue">
-                Agree and Continue to Payment →
-              </button>
-            </form>
+    <div class="cf-check">
+        <input type="checkbox" id="cfAgree" name="agree" value="1" required/>
+        <label for="cfAgree">
+            I agree to the Deposit Agreement & Booking Terms (Non-refundable policy applied)
+        </label>
+    </div>
+
+    <button type="submit" class="cf-btn" id="cfContinue">
+        Agree and Continue to Payment →
+    </button>
+</form>
 
           </div>
         </div>
