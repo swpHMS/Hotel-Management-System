@@ -208,9 +208,10 @@
             <i class="bi bi-door-open-fill"></i><span>Rooms</span>
         </a>
 
-        <a class="sb-item <%= "suiteTypes".equals(active) ? "active" : "" %>" href="#">
-            <i class="bi bi-building"></i><span>Suite Types</span>
-        </a>
+<a class="sb-item <%= "roomTypes".equals(active) ? "active" : "" %>" 
+   href="<%=request.getContextPath()%>/manager/room-types">
+    <i class="bi bi-building"></i><span>Room Types</span>
+</a>
 
         <a class="sb-item <%= "roomRegistry".equals(active) ? "active" : "" %>" href="#">
             <i class="bi bi-card-list"></i><span>Room Registry</span>
