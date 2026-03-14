@@ -55,16 +55,12 @@ public class RoomTypeForm {
             errors.add("Status is invalid.");
         }
 
-        boolean hasAnyPricing = price != null || validFrom != null || validTo != null;
-        if (hasAnyPricing) {
-            if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
-                errors.add("Price must be >= 0.");
-            }
-            if (validFrom == null || validTo == null) {
-                errors.add("Valid From and Valid To are required when setting price.");
-            } else if (validTo.isBefore(validFrom)) {
-                errors.add("Valid To must be greater than or equal to Valid From.");
-            }
+        if (price == null) {
+            errors.add("Base price is required.");
+        }
+
+        if (price != null && price.compareTo(BigDecimal.ZERO) < 0) {
+            errors.add("Price must be >= 0.");
         }
 
         if (amenityIds == null) {

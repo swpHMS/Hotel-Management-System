@@ -17,7 +17,7 @@
     </div>
 
     <c:if test="${not empty param.success}">
-        <div class="rt-alert success">Action completed: ${param.success}</div>
+        <div class="rt-alert success" id="rtSuccessAlert">Action completed: ${param.success}</div>
     </c:if>
     <c:if test="${not empty param.error}">
         <div class="rt-alert error">${param.error}</div>
@@ -31,12 +31,11 @@
     </c:if>
 
     <div class="rt-toolbar-card">
-        <form method="get" action="${pageContext.request.contextPath}/manager/room-types" class="rt-search-form">
+        <form method="get" action="${pageContext.request.contextPath}/manager/room-types" class="rt-search-form" id="rtSearchForm">
             <div class="rt-search-wrap">
                 <i class="bi bi-search"></i>
-                <input type="text" name="q" placeholder="Search room types..." value="${q}"/>
+                <input type="text" name="q" placeholder="Search room types..." value="${q}" id="rtSearchInput" autocomplete="off"/>
             </div>
-            <button type="submit">Search</button>
         </form>
         <div class="rt-total">
             <span>Total Types</span>
@@ -110,6 +109,14 @@
                         </a>
                     </div>
 
+                    <c:if test="${not empty errors}">
+                        <div class="rt-alert error rt-modal-alert">
+                            <ul>
+                                <c:forEach var="err" items="${errors}"><li>${err}</li></c:forEach>
+                            </ul>
+                        </div>
+                    </c:if>
+
                     <form method="post" enctype="multipart/form-data" action="${pageContext.request.contextPath}/manager/room-types">
                         <input type="hidden" name="action" value="${mode == 'create' ? 'create' : 'update'}"/>
                         <c:if test="${mode == 'edit'}">
@@ -117,29 +124,40 @@
                         </c:if>
                         <input type="hidden" name="status"
                                value="${formValue != null ? formValue.status : (editing != null ? editing.status : 1)}"/>
+                        <c:if test="${not empty preservedThumbnailUrl}">
+                            <input type="hidden" name="existingThumbnailUrl" value="${preservedThumbnailUrl}"/>
+                        </c:if>
+                        <c:forEach var="preservedGalleryUrl" items="${preservedGalleryUrls}">
+                            <input type="hidden" name="existingGalleryUrls" value="${preservedGalleryUrl}"/>
+                        </c:forEach>
 
                         <div class="rt-form-section">
                             <h3>Images</h3>
                             <div class="rt-image-layout">
                                 <div class="rt-thumb-panel">
-                                    <span class="rt-section-label">Thumbnail</span>
+                                    <span class="rt-section-label">Thumbnail *</span>
                                     <label class="rt-thumb-drop">
-                                        <input type="file" name="thumbnailImage" accept=".jpg,.jpeg,.png,.webp"/>
-                                        <c:choose>
-                                            <c:when test="${mode == 'edit' && editing != null && editing.thumbnailImage != null}">
-                                                <img src="${pageContext.request.contextPath}/${editing.thumbnailImage.imageUrl}" alt="Thumbnail"/>
-                                            </c:when>
-                                            <c:when test="${mode == 'edit' && editing != null && not empty editing.imageUrl}">
-                                                <img src="${pageContext.request.contextPath}/${editing.imageUrl}" alt="Thumbnail"/>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="rt-thumb-placeholder">
-                                                    <i class="bi bi-image"></i>
-                                                    <strong>Upload thumbnail</strong>
-                                                    <small>Click here to choose a new thumbnail image</small>
-                                                </span>
-                                            </c:otherwise>
-                                        </c:choose>
+                                        <input id="rtThumbnailInput" type="file" name="thumbnailImage" accept=".jpg,.jpeg,.png,.webp"/>
+                                        <span id="rtThumbnailPreview">
+                                            <c:choose>
+                                                <c:when test="${not empty preservedThumbnailUrl}">
+                                                    <img src="${pageContext.request.contextPath}/${preservedThumbnailUrl}" alt="Thumbnail"/>
+                                                </c:when>
+                                                <c:when test="${mode == 'edit' && editing != null && editing.thumbnailImage != null}">
+                                                    <img src="${pageContext.request.contextPath}/${editing.thumbnailImage.imageUrl}" alt="Thumbnail"/>
+                                                </c:when>
+                                                <c:when test="${mode == 'edit' && editing != null && not empty editing.imageUrl}">
+                                                    <img src="${pageContext.request.contextPath}/${editing.imageUrl}" alt="Thumbnail"/>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="rt-thumb-placeholder">
+                                                        <i class="bi bi-image"></i>
+                                                        <strong>Upload thumbnail</strong>
+                                                        <small>Click here to choose a new thumbnail image</small>
+                                                    </span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </span>
                                     </label>
                                     <small class="rt-help-text">Click the thumbnail area to replace it with a new image.</small>
                                 </div>
@@ -150,12 +168,18 @@
                                         <label class="rt-gallery-upload">
                                             <i class="bi bi-cloud-arrow-up"></i>
                                             <span>Add Images</span>
-                                            <input type="file" name="galleryImages" accept=".jpg,.jpeg,.png,.webp" multiple/>
+                                            <input id="rtGalleryInput" type="file" name="galleryImages" accept=".jpg,.jpeg,.png,.webp" multiple/>
                                         </label>
                                     </div>
 
-                                    <c:if test="${mode == 'edit' && editing != null && not empty editing.galleryImages}">
-                                        <div class="rt-gallery-grid">
+                                    <div class="rt-gallery-grid" id="rtGalleryPreview">
+                                        <c:forEach var="preservedGalleryUrl" items="${preservedGalleryUrls}">
+                                            <div class="rt-gallery-item rt-gallery-item-preview">
+                                                <img src="${pageContext.request.contextPath}/${preservedGalleryUrl}" alt="Gallery preview"/>
+                                                <span class="rt-preview-badge">New</span>
+                                            </div>
+                                        </c:forEach>
+                                        <c:if test="${mode == 'edit' && editing != null && not empty editing.galleryImages}">
                                             <c:forEach var="image" items="${editing.galleryImages}">
                                                 <div class="rt-gallery-item">
                                                     <img src="${pageContext.request.contextPath}/${image.imageUrl}" alt="Room image"/>
@@ -166,11 +190,9 @@
                                                     </a>
                                                 </div>
                                             </c:forEach>
-                                        </div>
-                                    </c:if>
-                                    <c:if test="${mode == 'create' || empty editing.galleryImages}">
-                                        <div class="rt-gallery-empty">Upload one or more non-thumbnail images for this room type.</div>
-                                    </c:if>
+                                        </c:if>
+                                    </div>
+                                    <div class="rt-gallery-empty ${(not empty preservedGalleryUrls) || (mode == 'edit' && editing != null && not empty editing.galleryImages) ? 'is-hidden' : ''}" id="rtGalleryEmpty">Upload one or more non-thumbnail images for this room type.</div>
                                 </div>
                             </div>
                         </div>
@@ -186,11 +208,11 @@
                                            value="${formValue != null ? formValue.name : (editing != null ? editing.name : '')}"/>
                                 </label>
                                 <label>Bed Type *
-                                    <input type="text" name="bedType" placeholder="King Bed / Queen Bed" required
+                                    <input type="text" name="bedType" placeholder="Ex: King Bed / Queen Bed" required
                                            value="${formValue != null ? formValue.bedType : (editing != null ? editing.bedType : '')}"/>
                                 </label>
                                 <label>View Type *
-                                    <input type="text" name="viewType" placeholder="Ocean View / City View" required
+                                    <input type="text" name="viewType" placeholder="Ex: Ocean View / City View" required
                                            value="${formValue != null ? formValue.viewType : (editing != null ? editing.viewType : '')}"/>
                                 </label>
                                 <label>Room Size (sqm) *
@@ -203,7 +225,7 @@
                         <div class="rt-panel">
                             <div class="rt-panel-head">
                                 <h3>Capacity And Pricing</h3>
-                                <p>Set occupancy and optional price period for this room type.</p>
+                                <p>Set occupancy and price. The date range will be managed automatically by the system.</p>
                             </div>
                             <div class="rt-form-grid cols-2">
                                 <label>Max Adults *
@@ -216,19 +238,15 @@
                                 </label>
                             </div>
 
-                            <div class="rt-form-grid cols-3">
-                                <label>Base Price
-                                    <input type="number" min="0" step="0.01" name="price"
+                            <div class="rt-form-grid cols-2">
+                                <label>Base Price *
+                                    <input type="number" min="0" step="0.01" name="price" required
                                            value="${formValue != null ? formValue.price : (editing != null ? editing.currentPrice : '')}"/>
                                 </label>
-                                <label>Valid From
-                                    <input type="date" name="validFrom"
-                                           value="${formValue != null ? formValue.validFrom : (editing != null ? editing.validFrom : '')}"/>
-                                </label>
-                                <label>Valid To
-                                    <input type="date" name="validTo"
-                                           value="${formValue != null ? formValue.validTo : (editing != null ? editing.validTo : '')}"/>
-                                </label>
+                                <div class="rt-static-note">
+                                    <strong>Automatic Price Period</strong>
+                                    <span>${mode == 'create' ? 'The first price starts from tomorrow. When you change the price later, the previous price period will be closed automatically.' : 'When you change the price, the new price starts today and the previous price period will be closed automatically.'}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -261,3 +279,80 @@
         </div>
     </c:if>
 </div>
+
+<script>
+(() => {
+    const successAlert = document.getElementById('rtSuccessAlert');
+    const searchForm = document.getElementById('rtSearchForm');
+    const searchInput = document.getElementById('rtSearchInput');
+    const thumbnailInput = document.getElementById('rtThumbnailInput');
+    const thumbnailPreview = document.getElementById('rtThumbnailPreview');
+    const galleryInput = document.getElementById('rtGalleryInput');
+    const galleryPreview = document.getElementById('rtGalleryPreview');
+    const galleryEmpty = document.getElementById('rtGalleryEmpty');
+    let searchTimer;
+
+    if (successAlert) {
+        window.setTimeout(() => {
+            successAlert.style.display = 'none';
+        }, 3000);
+    }
+
+    if (searchForm && searchInput) {
+        if (document.activeElement !== searchInput) {
+            searchInput.focus();
+            const valueLength = searchInput.value.length;
+            searchInput.setSelectionRange(valueLength, valueLength);
+        }
+
+        searchInput.addEventListener('input', () => {
+            window.clearTimeout(searchTimer);
+            searchTimer = window.setTimeout(() => {
+                searchForm.submit();
+            }, 350);
+        });
+    }
+
+    if (thumbnailInput && thumbnailPreview) {
+        thumbnailInput.addEventListener('change', (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            const url = URL.createObjectURL(file);
+            thumbnailPreview.innerHTML = '';
+            const image = document.createElement('img');
+            image.src = url;
+            image.alt = 'Thumbnail preview';
+            thumbnailPreview.appendChild(image);
+        });
+    }
+
+    if (galleryInput && galleryPreview) {
+        galleryInput.addEventListener('change', (event) => {
+            const files = Array.from(event.target.files || []);
+            if (!files.length) return;
+
+            files.forEach((file) => {
+                const url = URL.createObjectURL(file);
+                const item = document.createElement('div');
+                item.className = 'rt-gallery-item rt-gallery-item-preview';
+                const image = document.createElement('img');
+                image.src = url;
+                image.alt = 'Gallery preview';
+
+                const badge = document.createElement('span');
+                badge.className = 'rt-preview-badge';
+                badge.textContent = 'New';
+
+                item.appendChild(image);
+                item.appendChild(badge);
+                galleryPreview.appendChild(item);
+            });
+
+            if (galleryEmpty) {
+                galleryEmpty.classList.add('is-hidden');
+            }
+        });
+    }
+})();
+</script>

@@ -18,6 +18,9 @@ import java.util.regex.Pattern;
 
 public class RoomTypeDAO {
 
+    private volatile String lastErrorMessage;
+    private static final LocalDate OPEN_ENDED_RATE_DATE = LocalDate.of(9999, 12, 31);
+
     // =====================================================
     // BOOKING SEARCH (DATE RANGE + AVAILABILITY BY COUNT BOOKINGS + CAPACITY BY ROOMQTY + KEYWORD)
     // =====================================================
@@ -434,35 +437,72 @@ public class RoomTypeDAO {
         return list;
     }
 
+    public boolean existsRoomTypeName(String name, Integer excludeRoomTypeId) {
+        if (name == null || name.trim().isEmpty()) {
+            return false;
+        }
+
+        String sql = """
+                SELECT TOP 1 1
+                FROM dbo.room_types
+                WHERE LOWER(LTRIM(RTRIM(name))) = LOWER(LTRIM(RTRIM(?)))
+                  AND (? IS NULL OR room_type_id <> ?)
+                """;
+
+        DBContext db = new DBContext();
+        try (Connection con = db.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, name.trim());
+            if (excludeRoomTypeId == null) {
+                ps.setNull(2, Types.INTEGER);
+                ps.setNull(3, Types.INTEGER);
+            } else {
+                ps.setInt(2, excludeRoomTypeId);
+                ps.setInt(3, excludeRoomTypeId);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            lastErrorMessage = e.getMessage();
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean createRoomType(RoomTypeForm form, String imageUrl) {
         return createRoomType(form, imageUrl, new ArrayList<>());
     }
 
     public boolean createRoomType(RoomTypeForm form, String imageUrl, List<String> galleryImageUrls) {
-        String insertRoomType = "INSERT INTO dbo.room_types(name, description, max_adult, max_children, image_url, status) VALUES (?, ?, ?, ?, ?, ?)";
+        lastErrorMessage = null;
+        String insertRoomType = """
+                INSERT INTO dbo.room_types(name, description, max_adult, max_children, image_url, status)
+                VALUES (?, ?, ?, ?, ?, ?)
+                SELECT CAST(SCOPE_IDENTITY() AS int) AS room_type_id
+                """;
         String insertAmenity = "INSERT INTO dbo.room_type_amenities(room_type_id, amenity_id) VALUES (?, ?)";
-        String insertRate = "INSERT INTO dbo.rate_versions(room_type_id, price, valid_from, valid_to) VALUES (?, ?, ?, ?)";
 
         DBContext db = new DBContext();
         try (Connection con = db.getConnection()) {
             con.setAutoCommit(false);
 
             int roomTypeId;
-            try (PreparedStatement ps = con.prepareStatement(insertRoomType, Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement ps = con.prepareStatement(insertRoomType)) {
                 ps.setString(1, form.getName().trim());
                 ps.setString(2, form.toStoredDescription());
                 ps.setInt(3, form.getMaxAdult());
                 ps.setInt(4, form.getMaxChildren());
                 ps.setString(5, imageUrl);
                 ps.setInt(6, form.getStatus());
-                ps.executeUpdate();
-
-                try (ResultSet key = ps.getGeneratedKeys()) {
-                    if (!key.next()) {
+                try (ResultSet key = ps.executeQuery()) {
+                    if (key == null || !key.next()) {
+                        lastErrorMessage = "Could not read inserted room type ID.";
                         con.rollback();
                         return false;
                     }
-                    roomTypeId = key.getInt(1);
+                    roomTypeId = key.getInt("room_type_id");
                 }
             }
 
@@ -483,19 +523,14 @@ public class RoomTypeDAO {
                 }
             }
 
-            if (form.getPrice() != null && form.getValidFrom() != null && form.getValidTo() != null) {
-                try (PreparedStatement psRate = con.prepareStatement(insertRate)) {
-                    psRate.setInt(1, roomTypeId);
-                    psRate.setBigDecimal(2, form.getPrice());
-                    psRate.setDate(3, Date.valueOf(form.getValidFrom()));
-                    psRate.setDate(4, Date.valueOf(form.getValidTo()));
-                    psRate.executeUpdate();
-                }
+            if (form.getPrice() != null) {
+                upsertRateVersion(con, roomTypeId, form.getPrice(), LocalDate.now().plusDays(1));
             }
 
             con.commit();
             return true;
         } catch (Exception e) {
+            lastErrorMessage = e.getMessage();
             e.printStackTrace();
             return false;
         }
@@ -506,10 +541,10 @@ public class RoomTypeDAO {
     }
 
     public boolean updateRoomType(int roomTypeId, RoomTypeForm form, String imageUrl, boolean replaceImage, List<String> galleryImageUrls) {
+        lastErrorMessage = null;
         String updateRoomType = "UPDATE dbo.room_types SET name=?, description=?, max_adult=?, max_children=?, status=?, image_url = CASE WHEN ? = 1 THEN ? ELSE image_url END WHERE room_type_id=?";
         String deleteAmenity = "DELETE FROM dbo.room_type_amenities WHERE room_type_id = ?";
         String insertAmenity = "INSERT INTO dbo.room_type_amenities(room_type_id, amenity_id) VALUES (?, ?)";
-        String insertRate = "INSERT INTO dbo.rate_versions(room_type_id, price, valid_from, valid_to) VALUES (?, ?, ?, ?)";
 
         DBContext db = new DBContext();
         try (Connection con = db.getConnection()) {
@@ -549,19 +584,14 @@ public class RoomTypeDAO {
                 }
             }
 
-            if (form.getPrice() != null && form.getValidFrom() != null && form.getValidTo() != null) {
-                try (PreparedStatement psRate = con.prepareStatement(insertRate)) {
-                    psRate.setInt(1, roomTypeId);
-                    psRate.setBigDecimal(2, form.getPrice());
-                    psRate.setDate(3, Date.valueOf(form.getValidFrom()));
-                    psRate.setDate(4, Date.valueOf(form.getValidTo()));
-                    psRate.executeUpdate();
-                }
+            if (form.getPrice() != null) {
+                upsertRateVersion(con, roomTypeId, form.getPrice(), LocalDate.now());
             }
 
             con.commit();
             return true;
         } catch (Exception e) {
+            lastErrorMessage = e.getMessage();
             e.printStackTrace();
             return false;
         }
@@ -625,6 +655,7 @@ public class RoomTypeDAO {
     }
 
     public boolean deleteGalleryImage(int roomTypeId, int imageId) {
+        lastErrorMessage = null;
         String sql = """
                 DELETE FROM dbo.room_type_images
                 WHERE room_type_id = ? AND image_id = ? AND ISNULL(is_thumbnail, 0) = 0
@@ -637,9 +668,14 @@ public class RoomTypeDAO {
             ps.setInt(2, imageId);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            lastErrorMessage = e.getMessage();
             e.printStackTrace();
             return false;
         }
+    }
+
+    public String getLastErrorMessage() {
+        return lastErrorMessage;
     }
 
     private Set<Integer> uniqueAmenityIds(List<Integer> amenityIds) {
@@ -722,6 +758,54 @@ public class RoomTypeDAO {
                 psInsert.addBatch();
             }
             psInsert.executeBatch();
+        }
+    }
+
+    private void upsertRateVersion(Connection con, int roomTypeId, java.math.BigDecimal price, LocalDate effectiveFrom) throws SQLException {
+        String closeOpenRateSql = """
+                UPDATE dbo.rate_versions
+                SET valid_to = ?
+                WHERE room_type_id = ?
+                  AND valid_to = ?
+                  AND valid_from < ?
+                """;
+        String updateSameDayRateSql = """
+                UPDATE dbo.rate_versions
+                SET price = ?, valid_to = ?
+                WHERE room_type_id = ?
+                  AND valid_from = ?
+                """;
+        String insertRateSql = """
+                INSERT INTO dbo.rate_versions(room_type_id, price, valid_from, valid_to)
+                VALUES (?, ?, ?, ?)
+                """;
+
+        LocalDate previousValidTo = effectiveFrom.minusDays(1);
+
+        try (PreparedStatement psUpdateSameDay = con.prepareStatement(updateSameDayRateSql)) {
+            psUpdateSameDay.setBigDecimal(1, price);
+            psUpdateSameDay.setDate(2, Date.valueOf(OPEN_ENDED_RATE_DATE));
+            psUpdateSameDay.setInt(3, roomTypeId);
+            psUpdateSameDay.setDate(4, Date.valueOf(effectiveFrom));
+            if (psUpdateSameDay.executeUpdate() > 0) {
+                return;
+            }
+        }
+
+        try (PreparedStatement psClose = con.prepareStatement(closeOpenRateSql)) {
+            psClose.setDate(1, Date.valueOf(previousValidTo));
+            psClose.setInt(2, roomTypeId);
+            psClose.setDate(3, Date.valueOf(OPEN_ENDED_RATE_DATE));
+            psClose.setDate(4, Date.valueOf(effectiveFrom));
+            psClose.executeUpdate();
+        }
+
+        try (PreparedStatement psInsert = con.prepareStatement(insertRateSql)) {
+            psInsert.setInt(1, roomTypeId);
+            psInsert.setBigDecimal(2, price);
+            psInsert.setDate(3, Date.valueOf(effectiveFrom));
+            psInsert.setDate(4, Date.valueOf(OPEN_ENDED_RATE_DATE));
+            psInsert.executeUpdate();
         }
     }
 

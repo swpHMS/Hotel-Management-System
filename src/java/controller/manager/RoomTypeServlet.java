@@ -55,10 +55,13 @@ public class RoomTypeServlet extends HttpServlet {
 
         RoomTypeForm form = parseForm(req);
         List<String> errors = form.validate("create".equals(action));
+        Integer roomTypeId = toInt(req.getParameter("roomTypeId"), null);
 
         String thumbnailImageUrl = null;
         boolean hasNewThumbnail = false;
         List<String> galleryImageUrls = new ArrayList<>();
+        String preservedThumbnailUrl = trim(req.getParameter("existingThumbnailUrl"));
+        List<String> preservedGalleryUrls = parseStringList(req.getParameterValues("existingGalleryUrls"));
         try {
             Part thumbnailPart = req.getPart("thumbnailImage");
             if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
@@ -74,15 +77,44 @@ public class RoomTypeServlet extends HttpServlet {
             errors.add("Gallery upload failed: " + ex.getMessage());
         }
 
+        if (!hasNewThumbnail) {
+            thumbnailImageUrl = preservedThumbnailUrl;
+        }
+        if (!preservedGalleryUrls.isEmpty()) {
+            List<String> mergedGalleryUrls = new ArrayList<>(preservedGalleryUrls);
+            mergedGalleryUrls.addAll(galleryImageUrls);
+            galleryImageUrls = mergedGalleryUrls;
+        }
+
+        if ("update".equals(action) && (thumbnailImageUrl == null || thumbnailImageUrl.isBlank()) && roomTypeId != null && roomTypeId > 0) {
+            RoomTypeManagementView existingRoomType = roomTypeDAO.getRoomTypeForManagerById(roomTypeId);
+            if (existingRoomType != null && existingRoomType.getThumbnailImage() != null) {
+                thumbnailImageUrl = existingRoomType.getThumbnailImage().getImageUrl();
+            } else if (existingRoomType != null && existingRoomType.getImageUrl() != null && !existingRoomType.getImageUrl().isBlank()) {
+                thumbnailImageUrl = existingRoomType.getImageUrl();
+            }
+        }
+
+        if (thumbnailImageUrl == null || thumbnailImageUrl.isBlank()) {
+            errors.add("Thumbnail image is required.");
+        }
+        if ("create".equals(action) && roomTypeDAO.existsRoomTypeName(form.getName(), null)) {
+            errors.add("Room type name already exists.");
+        }
+        if ("update".equals(action) && roomTypeDAO.existsRoomTypeName(form.getName(), roomTypeId)) {
+            errors.add("Room type name already exists.");
+        }
+
         if (!errors.isEmpty()) {
-            Integer editingId = toInt(req.getParameter("roomTypeId"), null);
             req.setAttribute("errors", errors);
             req.setAttribute("mode", "create".equals(action) ? "create" : "edit");
-            req.setAttribute("editingId", editingId);
-            if (editingId != null && editingId > 0) {
-                req.setAttribute("editingRoomType", roomTypeDAO.getRoomTypeForManagerById(editingId));
+            req.setAttribute("editingId", roomTypeId);
+            if (roomTypeId != null && roomTypeId > 0) {
+                req.setAttribute("editingRoomType", roomTypeDAO.getRoomTypeForManagerById(roomTypeId));
             }
             req.setAttribute("formValue", form);
+            req.setAttribute("preservedThumbnailUrl", thumbnailImageUrl);
+            req.setAttribute("preservedGalleryUrls", galleryImageUrls);
             loadViewData(req);
             renderPage(req, resp);
             return;
@@ -90,7 +122,6 @@ public class RoomTypeServlet extends HttpServlet {
 
         boolean ok;
         if ("update".equals(action)) {
-            Integer roomTypeId = toInt(req.getParameter("roomTypeId"), null);
             if (roomTypeId == null || roomTypeId <= 0) {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?error=Invalid+room+type+id");
                 return;
@@ -99,14 +130,28 @@ public class RoomTypeServlet extends HttpServlet {
             if (ok) {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?success=updated");
             } else {
-                resp.sendRedirect(req.getContextPath() + "/manager/room-types?error=Update+failed");
+                req.setAttribute("errors", List.of(buildPersistenceError("Update failed", roomTypeDAO.getLastErrorMessage())));
+                req.setAttribute("mode", "edit");
+                req.setAttribute("editingId", roomTypeId);
+                req.setAttribute("editingRoomType", roomTypeDAO.getRoomTypeForManagerById(roomTypeId));
+                req.setAttribute("formValue", form);
+                req.setAttribute("preservedThumbnailUrl", thumbnailImageUrl);
+                req.setAttribute("preservedGalleryUrls", galleryImageUrls);
+                loadViewData(req);
+                renderPage(req, resp);
             }
         } else {
             ok = roomTypeDAO.createRoomType(form, thumbnailImageUrl, galleryImageUrls);
             if (ok) {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?success=created");
             } else {
-                resp.sendRedirect(req.getContextPath() + "/manager/room-types?error=Create+failed");
+                req.setAttribute("errors", List.of(buildPersistenceError("Create failed", roomTypeDAO.getLastErrorMessage())));
+                req.setAttribute("mode", "create");
+                req.setAttribute("formValue", form);
+                req.setAttribute("preservedThumbnailUrl", thumbnailImageUrl);
+                req.setAttribute("preservedGalleryUrls", galleryImageUrls);
+                loadViewData(req);
+                renderPage(req, resp);
             }
         }
     }
@@ -161,24 +206,6 @@ public class RoomTypeServlet extends HttpServlet {
             }
         }
 
-        String fromRaw = trim(req.getParameter("validFrom"));
-        if (fromRaw != null && !fromRaw.isEmpty()) {
-            try {
-                form.setValidFrom(LocalDate.parse(fromRaw));
-            } catch (Exception ignore) {
-                form.setValidFrom(null);
-            }
-        }
-
-        String toRaw = trim(req.getParameter("validTo"));
-        if (toRaw != null && !toRaw.isEmpty()) {
-            try {
-                form.setValidTo(LocalDate.parse(toRaw));
-            } catch (Exception ignore) {
-                form.setValidTo(null);
-            }
-        }
-
         form.setAmenityIds(parseAmenityIds(req));
         return form;
     }
@@ -195,6 +222,20 @@ public class RoomTypeServlet extends HttpServlet {
             }
         }
         return ids;
+    }
+
+    private List<String> parseStringList(String[] values) {
+        List<String> list = new ArrayList<>();
+        if (values == null) {
+            return list;
+        }
+        for (String value : values) {
+            String trimmed = trim(value);
+            if (trimmed != null && !trimmed.isEmpty()) {
+                list.add(trimmed);
+            }
+        }
+        return list;
     }
 
     private List<String> saveImages(java.util.Collection<Part> parts, String fieldName, HttpServletRequest req) throws IOException {
@@ -217,6 +258,13 @@ public class RoomTypeServlet extends HttpServlet {
         req.setAttribute("pageTitle", "Room Types");
         req.setAttribute("contentPage", "/view/manager/room-types.jsp");
         req.getRequestDispatcher("/view/manager/layout.jsp").forward(req, resp);
+    }
+
+    private String buildPersistenceError(String fallback, String details) {
+        if (details == null || details.isBlank()) {
+            return fallback + ". Please check the input and try again.";
+        }
+        return fallback + ": " + details;
     }
 
     private String saveImage(Part part, HttpServletRequest req) throws IOException {

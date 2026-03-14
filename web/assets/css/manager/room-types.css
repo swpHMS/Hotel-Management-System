@@ -44,6 +44,14 @@
     background:#fee2e2;
     color:#991b1b
 }
+.rt-modal-alert{
+    margin-bottom:18px;
+    border:1px solid #fecaca
+}
+.rt-modal-alert ul{
+    margin:0;
+    padding-left:18px
+}
 .rt-toolbar-card{
     background:#fff;
     border:1px solid #e5e7eb;
@@ -271,6 +279,26 @@
     background:#fff;
     min-height:48px
 }
+.rt-static-note{
+    min-height:48px;
+    border:1px dashed #cbd5e1;
+    border-radius:14px;
+    padding:12px 14px;
+    background:#f8fafc;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:4px
+}
+.rt-static-note strong{
+    font-size:14px;
+    color:#344054
+}
+.rt-static-note span{
+    font-size:13px;
+    color:#667085;
+    line-height:1.45
+}
 .rt-form-grid textarea{
     min-height:110px;
     resize:vertical
@@ -373,13 +401,14 @@
     display:grid;
     grid-template-columns:280px 1fr;
     gap:18px;
-    align-items:start
+    align-items:stretch
 }
 .rt-thumb-panel,.rt-gallery-panel{
     border:1px solid #e5e7eb;
     border-radius:18px;
     padding:18px;
-    background:#fcfcfd
+    background:#fcfcfd;
+    height:100%
 }
 .rt-section-label{
     display:block;
@@ -488,6 +517,25 @@
     text-align:center;
     color:#667085;
     padding:18px
+}
+.rt-gallery-empty.is-hidden{
+    display:none
+}
+.rt-gallery-item-preview{
+    position:relative
+}
+.rt-preview-badge{
+    position:absolute;
+    left:10px;
+    bottom:10px;
+    padding:5px 9px;
+    border-radius:999px;
+    background:rgba(17,24,39,.82);
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    text-transform:uppercase
 }
 .rt-panel{
     border:1px solid #e5e7eb;
