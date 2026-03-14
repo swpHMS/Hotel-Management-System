@@ -99,14 +99,13 @@
                                     <label class="form-label">Check-in date</label>
                                     <input type="date" class="form-control" name="checkIn" id="checkInDate"
                                            value="<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>"
-                                           min="<%= java.time.LocalDate.now().toString() %>">
+                                           min="${minCheckInDate}">
                                 </div>
 
                                 <div class="col-md-4">
                                     <label class="form-label">Check-out date</label>
                                     <input type="date" class="form-control" name="checkOut" id="checkOutDate"
-                                           value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>"
-                                           min="<%= java.time.LocalDate.now().plusDays(1).toString() %>">
+                                           value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>">
                                 </div>
 
 
@@ -124,22 +123,22 @@
 
                                 <div class="row g-3">
 
-    <div class="col-md-4">
-        <label for="rooms" class="form-label fw-semibold">Number of rooms</label>
-        <input type="number" class="form-control" id="rooms" name="rooms" min="1" max="50" step="1" value="${rooms != null ? rooms : 1}" required>
-    </div>
+                                    <div class="col-md-4">
+                                        <label for="rooms" class="form-label fw-semibold">Number of rooms</label>
+                                        <input type="number" class="form-control" id="rooms" name="rooms" min="1" max="50" step="1" value="${rooms != null ? rooms : 1}" required>
+                                    </div>
 
-    <div class="col-md-4">
-        <label for="adults" class="form-label fw-semibold">Adults</label>
-        <input type="number" class="form-control" id="adults" name="adults" min="1" max="10" step="1" value="${adults != null ? adults : 1}" required>
-    </div>
+                                    <div class="col-md-4">
+                                        <label for="adults" class="form-label fw-semibold">Adults</label>
+                                        <input type="number" class="form-control" id="adults" name="adults" min="1" max="10" step="1" value="${adults != null ? adults : 1}" required>
+                                    </div>
 
-    <div class="col-md-4">
-        <label for="children" class="form-label fw-semibold">Children</label>
-        <input type="number" class="form-control" id="children" name="children" min="0" max="10" step="1" value="${children != null ? children : 0}" required>
-    </div>
+                                    <div class="col-md-4">
+                                        <label for="children" class="form-label fw-semibold">Children</label>
+                                        <input type="number" class="form-control" id="children" name="children" min="0" max="10" step="1" value="${children != null ? children : 0}" required>
+                                    </div>
 
-</div>
+                                </div>
                             </div>
 
                             <div class="d-flex justify-content-end mt-3">
@@ -233,8 +232,10 @@
 
                         <!-- POST confirm: gửi đủ data -->
                         <form method="post" action="${pageContext.request.contextPath}/receptionist/booking/create" class="mt-3">
-                            <input type="hidden" name="checkIn" value="${fn:escapeXml(param.checkIn)}">
-                            <input type="hidden" name="checkOut" value="${fn:escapeXml(param.checkOut)}">
+                            <input type="hidden" name="checkIn"
+                                   value="<fmt:formatDate value='${checkIn}' pattern='yyyy-MM-dd'/>">                           
+                            <input type="hidden" name="checkOut"
+                                   value="<fmt:formatDate value='${checkOut}' pattern='yyyy-MM-dd'/>">
                             <input type="hidden" name="rooms" value="${rooms}">
                             <input type="hidden" name="adults" value="${adults}">
                             <input type="hidden" name="children" value="${children}">
@@ -260,41 +261,41 @@
 
         <!-- ✅ Sync dropdown RoomType ↔ cards -->
         <script>
-                                                document.addEventListener("DOMContentLoaded", function () {
-                                                    const dropdown = document.getElementById("roomTypeSelect");
-                                                    const cards = document.querySelectorAll(".rt-card");
+            document.addEventListener("DOMContentLoaded", function () {
+                const dropdown = document.getElementById("roomTypeSelect");
+                const cards = document.querySelectorAll(".rt-card");
 
-                                                    if (!dropdown || !cards.length)
-                                                        return;
+                if (!dropdown || !cards.length)
+                    return;
 
-                                                    function setActiveCard(roomTypeId) {
-                                                        cards.forEach(card => {
-                                                            const isMatch = card.dataset.roomId === String(roomTypeId);
-                                                            card.classList.toggle("active", isMatch);
-                                                        });
-                                                    }
+                function setActiveCard(roomTypeId) {
+                    cards.forEach(card => {
+                        const isMatch = card.dataset.roomId === String(roomTypeId);
+                        card.classList.toggle("active", isMatch);
+                    });
+                }
 
-                                                    // 1) Dropdown change -> active card
-                                                    dropdown.addEventListener("change", function () {
-                                                        setActiveCard(this.value);
-                                                        // (tuỳ chọn) scroll nhẹ xuống card đang chọn
-                                                        const target = document.querySelector('.rt-card[data-room-id="' + this.value + '"]');
-                                                        if (target)
-                                                            target.scrollIntoView({behavior: "smooth", block: "center"});
-                                                    });
+                // 1) Dropdown change -> active card
+                dropdown.addEventListener("change", function () {
+                    setActiveCard(this.value);
+                    // (tuỳ chọn) scroll nhẹ xuống card đang chọn
+                    const target = document.querySelector('.rt-card[data-room-id="' + this.value + '"]');
+                    if (target)
+                        target.scrollIntoView({behavior: "smooth", block: "center"});
+                });
 
-                                                    // 2) Click card -> dropdown selected (bonus)
-                                                    cards.forEach(card => {
-                                                        card.addEventListener("click", function () {
-                                                            const id = this.dataset.roomId;
-                                                            dropdown.value = id;
-                                                            setActiveCard(id);
-                                                        });
-                                                    });
+                // 2) Click card -> dropdown selected (bonus)
+                cards.forEach(card => {
+                    card.addEventListener("click", function () {
+                        const id = this.dataset.roomId;
+                        dropdown.value = id;
+                        setActiveCard(id);
+                    });
+                });
 
-                                                    // init (khi load trang)
-                                                    setActiveCard(dropdown.value);
-                                                });
+                // init (khi load trang)
+                setActiveCard(dropdown.value);
+            });
         </script>
         <script>
             document.addEventListener("DOMContentLoaded", function () {
@@ -304,11 +305,10 @@
                 if (!checkInInput || !checkOutInput)
                     return;
 
-                const today = new Date();
-                const todayStr = today.toISOString().split("T")[0];
+                const minCheckInDate = "${minCheckInDate}";
 
                 // luôn chặn chọn ngày check-in trong quá khứ
-                checkInInput.min = todayStr;
+                checkInInput.min = minCheckInDate;
 
                 function formatDate(date) {
                     return date.toISOString().split("T")[0];
@@ -334,9 +334,9 @@
 
                 // khi đổi check-in
                 checkInInput.addEventListener("change", function () {
-                    if (checkInInput.value < todayStr) {
-                        alert("Không được chọn ngày Check-in trong quá khứ!");
-                        checkInInput.value = todayStr;
+                    if (checkInInput.value < minCheckInDate) {
+                        alert("Ngày check-in không hợp lệ theo quy định khách sạn!");
+                        checkInInput.value = minCheckInDate;
                     }
 
                     updateCheckOutMin();
@@ -353,7 +353,7 @@
                 // chặn submit nếu user cố nhập sai
                 document.querySelectorAll("form").forEach(form => {
                     form.addEventListener("submit", function (e) {
-                        if (checkInInput.value < todayStr) {
+                        if (checkInInput.value < minCheckInDate) {
                             e.preventDefault();
                             alert("Không được chọn ngày Check-in trong quá khứ!");
                             checkInInput.focus();
