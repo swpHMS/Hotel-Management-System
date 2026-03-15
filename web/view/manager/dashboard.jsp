@@ -1,15 +1,11 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
-<div class="dash-topbar d-flex justify-content-between align-items-start gap-3 mb-3">
+<div class="dash-topbar mb-3">
     <div>
         <div class="dashboard-title">Management Intelligence</div>
         <div class="dashboard-date">Overseeing the legacy of excellence and property performance.</div>
     </div>
-
-    <button class="btn-new-reservation" type="button">
-        <i class="bi bi-broadcast-pin me-2"></i> LIVE MONITORING SYSTEM
-    </button>
 </div>
 
 <!-- KPI -->
@@ -57,12 +53,11 @@
 
 <div class="row g-4">
     <!-- Booking Velocity -->
-    <div class="col-lg-7">
-        <div class="stat-card" style="flex-direction:column; align-items:stretch;">
+    <div class="col-lg-7 d-flex">
+        <div class="stat-card h-100 w-100" style="flex-direction:column; align-items:stretch; min-height: 520px;">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div>
-                    <div style="font-weight:900; color:#0f172a;">BOOKING VELOCITY</div>
-                    <div class="dashboard-date">OCCUPANCY TRENDS</div>
+                    <div style="font-weight:900; color:#0f172a;">OCCUPANCY TREND</div>
                 </div>
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-sm btn-light" id="btnDaily">DAILY</button>
@@ -70,15 +65,15 @@
                 </div>
             </div>
 
-            <div style="height:260px;">
+            <div style="height:420px; flex:1; display:flex; align-items:center;">
                 <canvas id="velocityChart"></canvas>
             </div>
         </div>
     </div>
 
     <!-- Composition -->
-    <div class="col-lg-5">
-        <div class="stat-card" style="flex-direction:column; align-items:stretch;">
+    <div class="col-lg-5 d-flex">
+        <div class="stat-card h-100 w-100" style="flex-direction:column; align-items:stretch; min-height: 520px;">
             <div class="mb-2">
                 <div style="font-weight:900; color:#0f172a;">COMPOSITION</div>
                 <div class="dashboard-date">INVENTORY STATUS</div>
