@@ -117,21 +117,12 @@ public class HomeServlet extends HttpServlet {
                 || (childrenStr != null && !childrenStr.isBlank());
 
         List<model.RoomType> roomTypes;
-        boolean viewAll = "all".equalsIgnoreCase(view);
 
-        if (isSearching) {
-            if (viewAll) {
-                roomTypes = roomTypeRepo.searchForBooking(checkIn, checkOut, q, adults, children, roomQty, 200);
-            } else {
-                roomTypes = roomTypeRepo.searchForBooking(checkIn, checkOut, q, adults, children, roomQty, DEFAULT_LIMIT);
-            }
-        } else {
-            if (viewAll) {
-                roomTypes = roomTypeRepo.getAllActiveRoomTypesForHome();
-            } else {
-                roomTypes = roomTypeRepo.getActiveRoomTypesForHome(DEFAULT_LIMIT);
-            }
-        }
+if (isSearching) {
+    roomTypes = roomTypeRepo.searchForBooking(checkIn, checkOut, q, adults, children, roomQty, 200);
+} else {
+    roomTypes = roomTypeRepo.getAllActiveRoomTypesForHome();
+}
 
         // ✅ Map lưu nhiều ảnh cho từng room type
         Map<Integer, List<String>> imagesMap = new HashMap<>();
