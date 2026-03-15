@@ -547,6 +547,9 @@
 .rt-gallery-item{
     position:relative
 }
+.rt-gallery-item.is-hidden{
+    display:none
+}
 .rt-gallery-item img{
     width:100%;
     height:130px;

@@ -588,10 +588,14 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
     }
 
     public boolean updateRoomType(int roomTypeId, RoomTypeForm form, String imageUrl, boolean replaceImage) {
-        return updateRoomType(roomTypeId, form, imageUrl, replaceImage, new ArrayList<>());
+        return updateRoomType(roomTypeId, form, imageUrl, replaceImage, new ArrayList<>(), new ArrayList<>());
     }
 
     public boolean updateRoomType(int roomTypeId, RoomTypeForm form, String imageUrl, boolean replaceImage, List<String> galleryImageUrls) {
+        return updateRoomType(roomTypeId, form, imageUrl, replaceImage, galleryImageUrls, new ArrayList<>());
+    }
+
+    public boolean updateRoomType(int roomTypeId, RoomTypeForm form, String imageUrl, boolean replaceImage, List<String> galleryImageUrls, List<Integer> deletedGalleryImageIds) {
         lastErrorMessage = null;
         String updateRoomType = "UPDATE dbo.room_types SET name=?, description=?, max_adult=?, max_children=?, status=?, image_url = CASE WHEN ? = 1 THEN ? ELSE image_url END WHERE room_type_id=?";
         String deleteAmenity = "DELETE FROM dbo.room_type_amenities WHERE room_type_id = ?";
@@ -617,6 +621,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
                 upsertThumbnailImage(con, roomTypeId, imageUrl);
             }
 
+            deleteGalleryImages(con, roomTypeId, deletedGalleryImageIds);
             insertGalleryImages(con, roomTypeId, galleryImageUrls);
 
             try (PreparedStatement psDeleteAmenity = con.prepareStatement(deleteAmenity)) {
@@ -822,6 +827,28 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
                 psInsert.addBatch();
             }
             psInsert.executeBatch();
+        }
+    }
+
+    private void deleteGalleryImages(Connection con, int roomTypeId, List<Integer> imageIds) throws SQLException {
+        if (imageIds == null || imageIds.isEmpty()) {
+            return;
+        }
+
+        String sql = """
+                DELETE FROM dbo.room_type_images
+                WHERE room_type_id = ? AND image_id = ? AND ISNULL(is_thumbnail, 0) = 0
+                """;
+        try (PreparedStatement psDelete = con.prepareStatement(sql)) {
+            for (Integer imageId : imageIds) {
+                if (imageId == null || imageId <= 0) {
+                    continue;
+                }
+                psDelete.setInt(1, roomTypeId);
+                psDelete.setInt(2, imageId);
+                psDelete.addBatch();
+            }
+            psDelete.executeBatch();
         }
     }
 
