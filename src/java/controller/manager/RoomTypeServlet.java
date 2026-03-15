@@ -11,6 +11,12 @@ import jakarta.servlet.http.Part;
 import model.RoomTypeForm;
 import model.RoomTypeManagementView;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -22,6 +28,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.MemoryCacheImageOutputStream;
 
 @WebServlet(name = "RoomTypeServlet", urlPatterns = {"/manager/room-types"})
 @MultipartConfig(
@@ -33,6 +44,7 @@ public class RoomTypeServlet extends HttpServlet {
 
     private static final List<String> ALLOWED_IMAGE_EXTENSIONS = List.of(".jpg", ".jpeg", ".png");
     private static final String ALLOWED_IMAGE_LABEL = "JPG, JPEG, PNG";
+    private static final int MAX_IMAGE_BYTES = 300 * 1024;
     private final RoomTypeDAO roomTypeDAO = new RoomTypeDAO();
 
     @Override
@@ -348,10 +360,11 @@ public class RoomTypeServlet extends HttpServlet {
         if (extension == null) {
             throw new IOException("Only " + ALLOWED_IMAGE_LABEL + " files are allowed");
         }
-        String fileName = "rt_" + UUID.randomUUID().toString().replace("-", "") + extension;
 
         String relativeFolder = "assets/images/room_types";
         byte[] content = part.getInputStream().readAllBytes();
+        ProcessedImage processedImage = normalizeImageForStorage(content, extension);
+        String fileName = "rt_" + UUID.randomUUID().toString().replace("-", "") + processedImage.extension;
         Set<Path> imageFolders = resolveImageFolders(req, relativeFolder);
         if (imageFolders.isEmpty()) {
             throw new IOException("Cannot resolve image directory");
@@ -359,10 +372,128 @@ public class RoomTypeServlet extends HttpServlet {
 
         for (Path folder : imageFolders) {
             Files.createDirectories(folder);
-            Files.write(folder.resolve(fileName), content);
+            Files.write(folder.resolve(fileName), processedImage.bytes);
         }
 
         return relativeFolder + "/" + fileName;
+    }
+
+    private ProcessedImage normalizeImageForStorage(byte[] originalBytes, String originalExtension) throws IOException {
+        if (originalBytes == null || originalBytes.length == 0) {
+            throw new IOException("Empty image file");
+        }
+        if (originalBytes.length <= MAX_IMAGE_BYTES) {
+            return new ProcessedImage(originalBytes, originalExtension);
+        }
+
+        BufferedImage source = ImageIO.read(new ByteArrayInputStream(originalBytes));
+        if (source == null) {
+            throw new IOException("Unsupported or corrupted image");
+        }
+
+        String format = ".png".equals(originalExtension) ? "png" : "jpg";
+        String extension = "png".equals(format) ? ".png" : ".jpg";
+        BufferedImage current = "png".equals(format) ? source : toRgbImage(source);
+        float quality = 0.9f;
+
+        for (int attempt = 0; attempt < 10; attempt++) {
+            byte[] encoded = writeImage(current, format, quality);
+            if (encoded.length <= MAX_IMAGE_BYTES) {
+                return new ProcessedImage(encoded, extension);
+            }
+
+            int nextWidth = Math.max(240, (int) Math.round(current.getWidth() * 0.85));
+            int nextHeight = Math.max(180, (int) Math.round(current.getHeight() * 0.85));
+            if (nextWidth == current.getWidth() && nextHeight == current.getHeight()) {
+                break;
+            }
+            current = resizeImage(current, nextWidth, nextHeight, "png".equals(format));
+            if (!"png".equals(format)) {
+                quality = Math.max(0.55f, quality - 0.08f);
+            }
+        }
+
+        BufferedImage jpgSource = toRgbImage(source);
+        float jpgQuality = 0.82f;
+        BufferedImage jpgCurrent = jpgSource;
+        for (int attempt = 0; attempt < 10; attempt++) {
+            byte[] encoded = writeImage(jpgCurrent, "jpg", jpgQuality);
+            if (encoded.length <= MAX_IMAGE_BYTES) {
+                return new ProcessedImage(encoded, ".jpg");
+            }
+
+            int nextWidth = Math.max(240, (int) Math.round(jpgCurrent.getWidth() * 0.82));
+            int nextHeight = Math.max(180, (int) Math.round(jpgCurrent.getHeight() * 0.82));
+            if (nextWidth == jpgCurrent.getWidth() && nextHeight == jpgCurrent.getHeight()) {
+                break;
+            }
+            jpgCurrent = resizeImage(jpgCurrent, nextWidth, nextHeight, false);
+            jpgQuality = Math.max(0.5f, jpgQuality - 0.07f);
+        }
+
+        byte[] fallbackBytes = writeImage(jpgCurrent, "jpg", 0.5f);
+        return new ProcessedImage(fallbackBytes, ".jpg");
+    }
+
+    private BufferedImage resizeImage(BufferedImage source, int width, int height, boolean keepAlpha) {
+        int imageType = keepAlpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
+        BufferedImage resized = new BufferedImage(width, height, imageType);
+        Graphics2D graphics = resized.createGraphics();
+        if (!keepAlpha) {
+            graphics.setColor(Color.WHITE);
+            graphics.fillRect(0, 0, width, height);
+        }
+        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.drawImage(source, 0, 0, width, height, null);
+        graphics.dispose();
+        return resized;
+    }
+
+    private BufferedImage toRgbImage(BufferedImage source) {
+        if (source.getType() == BufferedImage.TYPE_INT_RGB) {
+            return source;
+        }
+        BufferedImage rgbImage = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = rgbImage.createGraphics();
+        graphics.setColor(Color.WHITE);
+        graphics.fillRect(0, 0, source.getWidth(), source.getHeight());
+        graphics.drawImage(source, 0, 0, null);
+        graphics.dispose();
+        return rgbImage;
+    }
+
+    private byte[] writeImage(BufferedImage image, String format, float quality) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        if ("jpg".equals(format)) {
+            ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+            try (MemoryCacheImageOutputStream imageOutput = new MemoryCacheImageOutputStream(output)) {
+                writer.setOutput(imageOutput);
+                ImageWriteParam writeParam = writer.getDefaultWriteParam();
+                if (writeParam.canWriteCompressed()) {
+                    writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+                    writeParam.setCompressionQuality(quality);
+                }
+                writer.write(null, new IIOImage(image, null, null), writeParam);
+            } finally {
+                writer.dispose();
+            }
+            return output.toByteArray();
+        }
+
+        ImageIO.write(image, format, output);
+        return output.toByteArray();
+    }
+
+    private static final class ProcessedImage {
+        private final byte[] bytes;
+        private final String extension;
+
+        private ProcessedImage(byte[] bytes, String extension) {
+            this.bytes = bytes;
+            this.extension = extension;
+        }
     }
 
     private Set<Path> resolveImageFolders(HttpServletRequest req, String relativeFolder) {

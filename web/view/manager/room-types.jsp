@@ -209,7 +209,7 @@
                                             </c:choose>
                                         </span>
                                     </label>
-                                    <small class="rt-help-text">Click the thumbnail area to replace it with a new image. Supported formats: JPG, JPEG, PNG.</small>
+                                    <small class="rt-help-text">Click the thumbnail area to replace it with a new image. Supported formats: JPG, JPEG, PNG. Files larger than 300 KB will be resized automatically.</small>
                                 </div>
 
                                 <div class="rt-gallery-panel">
@@ -246,7 +246,7 @@
                                             </c:forEach>
                                         </c:if>
                                     </div>
-                                    <div class="rt-gallery-empty ${(not empty preservedGalleryUrls) || (mode == 'edit' && editing != null && not empty editing.galleryImages) ? 'is-hidden' : ''}" id="rtGalleryEmpty">Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG.</div>
+                                    <div class="rt-gallery-empty ${(not empty preservedGalleryUrls) || (mode == 'edit' && editing != null && not empty editing.galleryImages) ? 'is-hidden' : ''}" id="rtGalleryEmpty">Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG. Files larger than 300 KB will be resized automatically.</div>
                                 </div>
                             </div>
                         </div>
