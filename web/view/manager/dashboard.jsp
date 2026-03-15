@@ -25,7 +25,7 @@
     <div class="stat-card">
         <div class="stat-icon-wrapper bg-green-soft"><i class="bi bi-check-circle-fill"></i></div>
         <div>
-            <span class="stat-label">LIVE SUITES</span>
+            <span class="stat-label">AVAILABLE</span>
             <div class="stat-value">${liveSuites}</div>
         </div>
     </div>
@@ -33,7 +33,7 @@
     <div class="stat-card">
         <div class="stat-icon-wrapper bg-indigo-soft"><i class="bi bi-crown-fill"></i></div>
         <div>
-            <span class="stat-label">GUEST STAYS</span>
+            <span class="stat-label">OCCUPIED</span>
             <div class="stat-value">${guestStays}</div>
         </div>
     </div>
@@ -41,7 +41,7 @@
     <div class="stat-card">
         <div class="stat-icon-wrapper bg-orange-soft"><i class="bi bi-stars"></i></div>
         <div>
-            <span class="stat-label">SERVICING</span>
+            <span class="stat-label">DIRTY</span>
             <div class="stat-value">${servicing}</div>
         </div>
     </div>
@@ -49,7 +49,7 @@
     <div class="stat-card">
         <div class="stat-icon-wrapper bg-red-soft"><i class="bi bi-gear-fill"></i></div>
         <div>
-            <span class="stat-label">OUT OF ORDER</span>
+            <span class="stat-label">MAINTENANCE</span>
             <div class="stat-value">${outOfOrder}</div>
         </div>
     </div>
