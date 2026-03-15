@@ -419,7 +419,7 @@ public class RoomTypeDAO {
                 rt.setDescription(rs.getString("description"));
                 rt.setMaxAdult(rs.getInt("max_adult"));
                 rt.setMaxChildren(rs.getInt("max_children"));
-                rt.setImageUrl(rs.getString("image_url"));
+                rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
                 rt.setStatus(rs.getInt("status"));
 
                 if (withRate) {
@@ -430,6 +430,91 @@ public class RoomTypeDAO {
 
                 list.add(rt);
             }
+        }
+
+        return list;
+    }
+
+    public List<RoomTypeManagementView> getRoomTypesForManager(String keyword) {
+        String sql = """
+                SELECT
+                    rt.room_type_id,
+                    rt.name,
+                    rt.description,
+                    rt.max_adult,
+                    rt.max_children,
+                    COALESCE(rt.image_url, thumb.image_url) AS image_url,
+                    rt.status,
+                    rv.price,
+                    rv.valid_from,
+                    rv.valid_to
+                FROM dbo.room_types rt
+                OUTER APPLY (
+                    SELECT TOP 1 image_url
+                    FROM dbo.room_type_images
+                    WHERE room_type_id = rt.room_type_id
+                    ORDER BY is_thumbnail DESC, sort_order ASC, image_id ASC
+                ) thumb
+                OUTER APPLY (
+                    SELECT TOP 1 price, valid_from, valid_to, rate_version_id
+                    FROM dbo.rate_versions
+                    WHERE room_type_id = rt.room_type_id
+                    ORDER BY
+                        CASE
+                            WHEN CAST(GETDATE() AS date) BETWEEN valid_from AND valid_to THEN 0
+                            WHEN valid_from > CAST(GETDATE() AS date) THEN 1
+                            ELSE 2
+                        END,
+                        valid_from DESC,
+                        rate_version_id DESC
+                ) rv
+                WHERE (? IS NULL OR ? = ''
+                       OR rt.name LIKE '%' + ? + '%'
+                       OR rt.description LIKE '%' + ? + '%')
+                ORDER BY rt.room_type_id DESC
+                """;
+
+        List<RoomTypeManagementView> list = new ArrayList<>();
+        DBContext db = new DBContext();
+
+        try (Connection con = db.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            String search = keyword == null ? null : keyword.trim();
+            ps.setString(1, search);
+            ps.setString(2, search);
+            ps.setString(3, search);
+            ps.setString(4, search);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    RoomTypeManagementView view = new RoomTypeManagementView();
+                    view.setRoomTypeId(rs.getInt("room_type_id"));
+                    view.setName(rs.getString("name"));
+                    view.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
+                    view.setMaxAdult(rs.getInt("max_adult"));
+                    view.setMaxChildren(rs.getInt("max_children"));
+                    view.setStatus(rs.getInt("status"));
+                    view.setCurrentPrice(rs.getBigDecimal("price"));
+
+                    Date validFrom = rs.getDate("valid_from");
+                    if (validFrom != null) {
+                        view.setValidFrom(validFrom.toLocalDate());
+                    }
+
+                    Date validTo = rs.getDate("valid_to");
+                    if (validTo != null) {
+                        view.setValidTo(validTo.toLocalDate());
+                    }
+
+                    fillMetadata(view, rs.getString("description"));
+                    hydrateAmenities(con, view);
+                    hydrateImages(con, view);
+                    list.add(view);
+                }
+            }
+        } catch (Exception e) {
+            lastErrorMessage = describeError(e);
+            e.printStackTrace();
         }
 
         return list;
