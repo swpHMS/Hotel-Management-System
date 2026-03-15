@@ -42,7 +42,15 @@
             <c:param name="children" value="${ch}" />
             <c:param name="roomQty" value="${rq}" />
         </c:url>
-
+        <c:url var="viewAllUrl" value="/home">
+            <c:param name="view" value="all" />
+            <c:param name="q" value="${q}" />
+            <c:param name="checkIn" value="${ci}" />
+            <c:param name="checkOut" value="${co}" />
+            <c:param name="roomQty" value="${rq}" />
+            <c:param name="adults" value="${ad}" />
+            <c:param name="children" value="${ch}" />
+        </c:url>
         <jsp:include page="header.jsp"/>
 
         <section class="hero">
@@ -303,8 +311,8 @@
                                         <li>
                                             <span class="suites-ico" aria-hidden="true">
                                                 <svg viewBox="0 0 24 24">
-                                                    <path d="M3 12V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"/>
-                                                    <path d="M2 18h20"/><path d="M4 18v-3"/><path d="M20 18v-3"/>
+                                                <path d="M3 12V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"/>
+                                                <path d="M2 18h20"/><path d="M4 18v-3"/><path d="M20 18v-3"/>
                                                 </svg>
                                             </span>
                                             <span><c:out value="${not empty bedText ? bedText : 'Bed info'}"/></span>
@@ -313,8 +321,8 @@
                                         <li>
                                             <span class="suites-ico" aria-hidden="true">
                                                 <svg viewBox="0 0 24 24">
-                                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
-                                                    <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
+                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                                                <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>
                                                 </svg>
                                             </span>
                                             <span><c:out value="${not empty viewText ? viewText : 'View'}"/></span>
@@ -323,10 +331,10 @@
                                         <li>
                                             <span class="suites-ico" aria-hidden="true">
                                                 <svg viewBox="0 0 24 24">
-                                                    <path d="M8 3H3v5"/><path d="M16 3h5v5"/>
-                                                    <path d="M8 21H3v-5"/><path d="M16 21h5v-5"/>
-                                                    <path d="M3 8l6-6"/><path d="M21 8l-6-6"/>
-                                                    <path d="M3 16l6 6"/><path d="M21 16l-6 6"/>
+                                                <path d="M8 3H3v5"/><path d="M16 3h5v5"/>
+                                                <path d="M8 21H3v-5"/><path d="M16 21h5v-5"/>
+                                                <path d="M3 8l6-6"/><path d="M21 8l-6-6"/>
+                                                <path d="M3 16l6 6"/><path d="M21 16l-6 6"/>
                                                 </svg>
                                             </span>
                                             <span><c:out value="${not empty sizeText ? sizeText : 'N/A'}"/></span>
@@ -362,7 +370,7 @@
 
                 <!-- ✅ VIEW ALL: show thêm phòng ở bên dưới (không chuyển trang) -->
                 <div class="view-all-wrap">
-                    <a id="viewAllBtn" class="view-all-btn" href="javascript:void(0)">
+                    <a id="viewAllBtn" class="view-all-btn" href="${viewAllUrl}">
                         VIEW ALL RESIDENTIAL OPTIONS
                         <span class="arrow" aria-hidden="true">→</span>
                     </a>
@@ -414,28 +422,27 @@
                         <div class="room-modal__amenities" id="rmAmenities"></div>
 
                         <div class="room-modal__actions">
-    <a id="rmBookingBtn"
-       class="room-modal__btn room-modal__btn-primary"
-       href="${moveBookingUrl}">
-        MOVE TO BOOKING
-    </a>
-</div>
+                            <a id="rmBookingBtn"
+                               class="room-modal__btn room-modal__btn-primary"
+                               href="${moveBookingUrl}">
+                                MOVE TO BOOKING
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-<script>
-  window.__CTX__ = "${pageContext.request.contextPath}";
-  window.__MOVE_BOOKING_URL__ = "${moveBookingUrl}";
-</script>
+        <script>
+            window.__CTX__ = "${pageContext.request.contextPath}";
+            window.__MOVE_BOOKING_URL__ = "${moveBookingUrl}";
+        </script>
         <script src="${pageContext.request.contextPath}/assets/js/home_js/header_scroll.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/home_js/room_modal.js?v=20260304_1"></script>        <script src="${pageContext.request.contextPath}/assets/js/home_js/booking_date.js"></script>
+        <script src="${pageContext.request.contextPath}/assets/js/home_js/room_modal.js?v=20260304_1"></script>        <script src="${pageContext.request.contextPath}/assets/js/home_js/booking_date.js"></script>
         <script src="${pageContext.request.contextPath}/assets/js/home_js/guest_panel.js"></script>
 
         <script src="${pageContext.request.contextPath}/assets/js/home_js/user.js"></script>
         <c:set var="email" value="${sessionScope.user.email}" />
         <c:set var="initials" value="${fn:toUpperCase(fn:substring(email,0,2))}" />
 
-        <script src="${pageContext.request.contextPath}/assets/js/home_js/view_all_toggle.js?v=1"></script>
     </body>
 </html>
