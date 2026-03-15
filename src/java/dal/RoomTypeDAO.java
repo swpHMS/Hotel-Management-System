@@ -35,29 +35,42 @@ public class RoomTypeDAO {
     // - This uses dbo.room_type_inventory to keep the same logic as receptionist side.
     // - held_rooms is included.
     //
+    private static final String SQL_WITH_RATE_ALL
+            = "SELECT "
+            + "  rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, "
+            + "  rv.price AS price_today "
+            + "FROM dbo.room_types rt "
+            + "OUTER APPLY ( "
+            + "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id "
+            + "   FROM dbo.rate_versions "
+            + "   WHERE room_type_id = rt.room_type_id "
+            + "     AND CAST(GETDATE() AS date) BETWEEN valid_from AND valid_to "
+            + "   ORDER BY valid_from DESC, rate_version_id DESC "
+            + ") rv "
+            + "WHERE rt.status = 1 "
+            + "ORDER BY rt.room_type_id DESC";
 
+    private static final String SQL_NO_RATE_ALL
+            = "SELECT "
+            + "  room_type_id, name, description, max_adult, max_children, image_url, status "
+            + "FROM dbo.room_types "
+            + "WHERE status = 1 "
+            + "ORDER BY room_type_id DESC";
     private static final String SQL_SEARCH_BOOKING_BASE
-            = "WITH booked AS ( "
-            + "   SELECT brt.room_type_id, SUM(brt.quantity) AS booked_qty "
-            + "   FROM dbo.bookings b "
-            + "   JOIN dbo.booking_room_types brt ON brt.booking_id = b.booking_id "
-            + "   WHERE b.status IN (2,3) "
-            + "     AND b.check_in_date < ? "
-            + "     AND b.check_out_date > ? "
-            + "   GROUP BY brt.room_type_id "
-            + "), total_rooms AS ( "
-            + "   SELECT room_type_id, COUNT(*) AS total_rooms "
-            + "   FROM dbo.rooms "
-            + "   WHERE status IN (1) "
-            + "   GROUP BY room_type_id "
+            = "WITH inv AS ( "
+            + "   SELECT rti.room_type_id, "
+            + "          MIN(rti.total_rooms - rti.booked_rooms - rti.held_rooms) AS available_rooms "
+            + "   FROM dbo.room_type_inventory rti "
+            + "   WHERE rti.inventory_date >= ? "
+            + "     AND rti.inventory_date < ? "
+            + "   GROUP BY rti.room_type_id "
             + ") "
             + "SELECT TOP (%d) "
             + "  rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, "
             + "  rv.price AS price_today, "
-            + "  (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) AS available_rooms "
+            + "  COALESCE(inv.available_rooms, 0) AS available_rooms "
             + "FROM dbo.room_types rt "
-            + "LEFT JOIN total_rooms tr ON tr.room_type_id = rt.room_type_id "
-            + "LEFT JOIN booked bk      ON bk.room_type_id = rt.room_type_id "
+            + "LEFT JOIN inv ON inv.room_type_id = rt.room_type_id "
             + "OUTER APPLY ( "
             + "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id "
             + "   FROM dbo.rate_versions "
@@ -66,7 +79,7 @@ public class RoomTypeDAO {
             + "   ORDER BY valid_from DESC, rate_version_id DESC "
             + ") rv "
             + "WHERE rt.status=1 "
-            + "  AND (COALESCE(tr.total_rooms,0) - COALESCE(bk.booked_qty,0)) >= ? "
+            + "  AND COALESCE(inv.available_rooms, 0) >= ? "
             + "  AND ( ? = '' OR rt.name LIKE '%%' + ? + '%%' OR rt.description LIKE '%%' + ? + '%%' ) "
             + "  AND ( ? <= rt.max_adult * ? ) "
             + "  AND ( ? <= rt.max_children * ? ) ";
@@ -100,12 +113,12 @@ public class RoomTypeDAO {
             = "SELECT COUNT(*) AS total FROM dbo.room_types WHERE status = 1";
 
     // ✅ NEW: lấy availableQty từ inventory theo khoảng ngày
-    private static final String SQL_GET_AVAILABLE_ROOM_QTY =
-            "SELECT MIN(rti.total_rooms - rti.booked_rooms - rti.held_rooms) AS available_qty " +
-            "FROM dbo.room_type_inventory rti " +
-            "WHERE rti.room_type_id = ? " +
-            "  AND rti.inventory_date >= ? " +
-            "  AND rti.inventory_date < ? ";
+    private static final String SQL_GET_AVAILABLE_ROOM_QTY
+            = "SELECT MIN(rti.total_rooms - rti.booked_rooms - rti.held_rooms) AS available_qty "
+            + "FROM dbo.room_type_inventory rti "
+            + "WHERE rti.room_type_id = ? "
+            + "  AND rti.inventory_date >= ? "
+            + "  AND rti.inventory_date < ? ";
 
     // =====================================================
     // PUBLIC METHODS
@@ -147,13 +160,13 @@ public class RoomTypeDAO {
         DBContext db = new DBContext();
 
         String orderBy;
-if ("priceAsc".equalsIgnoreCase(sort)) {
-    orderBy = " ORDER BY COALESCE(rv.price, 999999999) ASC, rt.room_type_id DESC";
-} else if ("priceDesc".equalsIgnoreCase(sort)) {
-    orderBy = " ORDER BY COALESCE(rv.price, 0) DESC, rt.room_type_id DESC";
-} else {
-    orderBy = " ORDER BY COALESCE(inv.available_rooms, 0) DESC, rt.room_type_id DESC";
-}
+        if ("priceAsc".equalsIgnoreCase(sort)) {
+            orderBy = " ORDER BY COALESCE(rv.price, 999999999) ASC, rt.room_type_id DESC";
+        } else if ("priceDesc".equalsIgnoreCase(sort)) {
+            orderBy = " ORDER BY COALESCE(rv.price, 0) DESC, rt.room_type_id DESC";
+        } else {
+            orderBy = " ORDER BY COALESCE(inv.available_rooms, 0) DESC, rt.room_type_id DESC";
+        }
 
         String sql = String.format(SQL_SEARCH_BOOKING_BASE, limit) + orderBy;
         String keyword = (q == null) ? "" : q.trim();
@@ -265,8 +278,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
 
         DBContext db = new DBContext();
 
-        try (Connection con = db.getConnection();
-             PreparedStatement ps = con.prepareStatement(SQL_GET_AVAILABLE_ROOM_QTY)) {
+        try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_GET_AVAILABLE_ROOM_QTY)) {
 
             ps.setInt(1, roomTypeId);
             ps.setDate(2, Date.valueOf(checkIn));
@@ -369,75 +381,55 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
         }
         return null;
     }
-       // =====================================================
-    // MANAGER ROOM TYPE MANAGEMENT
-    // =====================================================
 
-    public List<RoomTypeManagementView> getRoomTypesForManager(String keyword) {
-        String sql = """
-                SELECT
-                    rt.room_type_id,
-                    rt.name,
-                    rt.description,
-                    rt.max_adult,
-                    rt.max_children,
-                    COALESCE(rt.image_url, thumb.image_url) AS image_url,
-                    rt.status,
-                    rv.price,
-                    rv.valid_from,
-                    rv.valid_to
-                FROM dbo.room_types rt
-                OUTER APPLY (
-                    SELECT TOP 1 image_url
-                    FROM dbo.room_type_images
-                    WHERE room_type_id = rt.room_type_id
-                    ORDER BY is_thumbnail DESC, sort_order ASC, image_id ASC
-                ) thumb
-                OUTER APPLY (
-                    SELECT TOP 1 price, valid_from, valid_to, rate_version_id
-                    FROM dbo.rate_versions
-                    WHERE room_type_id = rt.room_type_id
-                    ORDER BY valid_from DESC, rate_version_id DESC
-                ) rv
-                WHERE (? = '' OR rt.name LIKE N'%' + ? + N'%' OR rt.description LIKE N'%' + ? + N'%')
-                ORDER BY rt.room_type_id DESC
-                """;
+    public List<RoomType> getAllActiveRoomTypesForHome() {
+        List<RoomType> withRate;
 
-        List<RoomTypeManagementView> list = new ArrayList<>();
-        DBContext db = new DBContext();
-        String q = keyword == null ? "" : keyword.trim();
-
-        try (Connection con = db.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, q);
-            ps.setString(2, q);
-            ps.setString(3, q);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    RoomTypeManagementView v = new RoomTypeManagementView();
-                    v.setRoomTypeId(rs.getInt("room_type_id"));
-                    v.setName(rs.getString("name"));
-                    v.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
-                    v.setMaxAdult(rs.getInt("max_adult"));
-                    v.setMaxChildren(rs.getInt("max_children"));
-                    v.setStatus(rs.getInt("status"));
-                    v.setCurrentPrice(rs.getBigDecimal("price"));
-
-                    Date validFrom = rs.getDate("valid_from");
-                    Date validTo = rs.getDate("valid_to");
-                    v.setValidFrom(validFrom == null ? null : validFrom.toLocalDate());
-                    v.setValidTo(validTo == null ? null : validTo.toLocalDate());
-
-                    fillMetadata(v, rs.getString("description"));
-                    hydrateAmenities(con, v);
-                    hydrateImages(con, v);
-                    list.add(v);
-                }
+        try {
+            withRate = fetchAll(true);
+            if (withRate != null && !withRate.isEmpty()) {
+                return withRate;
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        try {
+            return fetchAll(false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new ArrayList<>();
+    }
+
+    private List<RoomType> fetchAll(boolean withRate) throws Exception {
+        List<RoomType> list = new ArrayList<>();
+        DBContext db = new DBContext();
+
+        String sql = withRate ? SQL_WITH_RATE_ALL : SQL_NO_RATE_ALL;
+
+        try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                RoomType rt = new RoomType();
+
+                rt.setRoomTypeId(rs.getInt("room_type_id"));
+                rt.setName(rs.getString("name"));
+                rt.setDescription(rs.getString("description"));
+                rt.setMaxAdult(rs.getInt("max_adult"));
+                rt.setMaxChildren(rs.getInt("max_children"));
+                rt.setImageUrl(rs.getString("image_url"));
+                rt.setStatus(rs.getInt("status"));
+
+                if (withRate) {
+                    rt.setPriceToday(rs.getBigDecimal("price_today"));
+                } else {
+                    rt.setPriceToday(null);
+                }
+
+                list.add(rt);
+            }
         }
 
         return list;
