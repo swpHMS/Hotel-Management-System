@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<c:set var="fallbackRoomImage" value="${pageContext.request.contextPath}/assets/images/room_types/standard_doubleee.jpg"/>
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/manager/room-types.css"/>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
@@ -54,7 +55,10 @@
                     </a>
                 </div>
 
-                <img class="rt-thumb" src="${pageContext.request.contextPath}/${item.imageUrl}" alt="${item.name}"/>
+                <img class="rt-thumb"
+                     src="${pageContext.request.contextPath}/${item.imageUrl}"
+                     alt="${item.name}"
+                     onerror="this.onerror=null;this.src='${fallbackRoomImage}';"/>
 
                 <div class="rt-card-body">
                     <div class="rt-row between">
@@ -155,6 +159,7 @@
                             </ul>
                         </div>
                     </c:if>
+                    <div class="rt-alert error rt-modal-alert" id="rtClientImageError" style="display:none;"></div>
 
                     <form method="post" enctype="multipart/form-data" action="${pageContext.request.contextPath}/manager/room-types">
                         <input type="hidden" name="action" value="${mode == 'create' ? 'create' : 'update'}"/>
@@ -176,17 +181,23 @@
                                 <div class="rt-thumb-panel">
                                     <span class="rt-section-label">Thumbnail *</span>
                                     <label class="rt-thumb-drop">
-                                        <input id="rtThumbnailInput" type="file" name="thumbnailImage" accept=".jpg,.jpeg,.png,.webp"/>
+                                        <input id="rtThumbnailInput" type="file" name="thumbnailImage" accept=".jpg,.jpeg,.png"/>
                                         <span id="rtThumbnailPreview">
                                             <c:choose>
                                                 <c:when test="${not empty preservedThumbnailUrl}">
-                                                    <img src="${pageContext.request.contextPath}/${preservedThumbnailUrl}" alt="Thumbnail"/>
+                                                    <img src="${pageContext.request.contextPath}/${preservedThumbnailUrl}"
+                                                         alt="Thumbnail"
+                                                         onerror="this.onerror=null;this.src='${fallbackRoomImage}';"/>
                                                 </c:when>
                                                 <c:when test="${mode == 'edit' && editing != null && editing.thumbnailImage != null}">
-                                                    <img src="${pageContext.request.contextPath}/${editing.thumbnailImage.imageUrl}" alt="Thumbnail"/>
+                                                    <img src="${pageContext.request.contextPath}/${editing.thumbnailImage.imageUrl}"
+                                                         alt="Thumbnail"
+                                                         onerror="this.onerror=null;this.src='${fallbackRoomImage}';"/>
                                                 </c:when>
                                                 <c:when test="${mode == 'edit' && editing != null && not empty editing.imageUrl}">
-                                                    <img src="${pageContext.request.contextPath}/${editing.imageUrl}" alt="Thumbnail"/>
+                                                    <img src="${pageContext.request.contextPath}/${editing.imageUrl}"
+                                                         alt="Thumbnail"
+                                                         onerror="this.onerror=null;this.src='${fallbackRoomImage}';"/>
                                                 </c:when>
                                                 <c:otherwise>
                                                     <span class="rt-thumb-placeholder">
@@ -198,7 +209,7 @@
                                             </c:choose>
                                         </span>
                                     </label>
-                                    <small class="rt-help-text">Click the thumbnail area to replace it with a new image.</small>
+                                    <small class="rt-help-text">Click the thumbnail area to replace it with a new image. Supported formats: JPG, JPEG, PNG.</small>
                                 </div>
 
                                 <div class="rt-gallery-panel">
@@ -207,21 +218,25 @@
                                         <label class="rt-gallery-upload">
                                             <i class="bi bi-cloud-arrow-up"></i>
                                             <span>Add Images</span>
-                                            <input id="rtGalleryInput" type="file" name="galleryImages" accept=".jpg,.jpeg,.png,.webp" multiple/>
+                                            <input id="rtGalleryInput" type="file" name="galleryImages" accept=".jpg,.jpeg,.png" multiple/>
                                         </label>
                                     </div>
 
                                     <div class="rt-gallery-grid" id="rtGalleryPreview">
                                         <c:forEach var="preservedGalleryUrl" items="${preservedGalleryUrls}">
                                             <div class="rt-gallery-item rt-gallery-item-preview">
-                                                <img src="${pageContext.request.contextPath}/${preservedGalleryUrl}" alt="Gallery preview"/>
+                                                <img src="${pageContext.request.contextPath}/${preservedGalleryUrl}"
+                                                     alt="Gallery preview"
+                                                     onerror="this.onerror=null;this.src='${fallbackRoomImage}';"/>
                                                 <span class="rt-preview-badge">New</span>
                                             </div>
                                         </c:forEach>
                                         <c:if test="${mode == 'edit' && editing != null && not empty editing.galleryImages}">
                                             <c:forEach var="image" items="${editing.galleryImages}">
                                                 <div class="rt-gallery-item">
-                                                    <img src="${pageContext.request.contextPath}/${image.imageUrl}" alt="Room image"/>
+                                                    <img src="${pageContext.request.contextPath}/${image.imageUrl}"
+                                                         alt="Room image"
+                                                         onerror="this.onerror=null;this.src='${fallbackRoomImage}';"/>
                                                     <a class="rt-delete-image"
                                                        href="${pageContext.request.contextPath}/manager/room-types?action=deleteImage&roomTypeId=${editing.roomTypeId}&imageId=${image.imageId}"
                                                        title="Delete image">
@@ -231,7 +246,7 @@
                                             </c:forEach>
                                         </c:if>
                                     </div>
-                                    <div class="rt-gallery-empty ${(not empty preservedGalleryUrls) || (mode == 'edit' && editing != null && not empty editing.galleryImages) ? 'is-hidden' : ''}" id="rtGalleryEmpty">Upload one or more non-thumbnail images for this room type.</div>
+                                    <div class="rt-gallery-empty ${(not empty preservedGalleryUrls) || (mode == 'edit' && editing != null && not empty editing.galleryImages) ? 'is-hidden' : ''}" id="rtGalleryEmpty">Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG.</div>
                                 </div>
                             </div>
                         </div>
@@ -332,6 +347,8 @@
     const galleryInput = document.getElementById('rtGalleryInput');
     const galleryPreview = document.getElementById('rtGalleryPreview');
     const galleryEmpty = document.getElementById('rtGalleryEmpty');
+    const clientImageError = document.getElementById('rtClientImageError');
+    const allowedImageExtensions = ['jpg', 'jpeg', 'png'];
     let searchTimer;
 
     if (successAlert) {
@@ -368,6 +385,12 @@
         thumbnailInput.addEventListener('change', (event) => {
             const file = event.target.files && event.target.files[0];
             if (!file) return;
+            if (!isAllowedImage(file)) {
+                showClientImageError('Thumbnail only supports JPG, JPEG, or PNG files.');
+                event.target.value = '';
+                return;
+            }
+            clearClientImageError();
 
             const url = URL.createObjectURL(file);
             thumbnailPreview.innerHTML = '';
@@ -382,6 +405,13 @@
         galleryInput.addEventListener('change', (event) => {
             const files = Array.from(event.target.files || []);
             if (!files.length) return;
+            const invalidFile = files.find((file) => !isAllowedImage(file));
+            if (invalidFile) {
+                showClientImageError('Gallery images only support JPG, JPEG, or PNG files.');
+                event.target.value = '';
+                return;
+            }
+            clearClientImageError();
 
             files.forEach((file) => {
                 const url = URL.createObjectURL(file);
@@ -404,6 +434,28 @@
                 galleryEmpty.classList.add('is-hidden');
             }
         });
+    }
+
+    function isAllowedImage(file) {
+        const name = (file && file.name ? file.name : '').toLowerCase();
+        const extension = name.includes('.') ? name.split('.').pop() : '';
+        return allowedImageExtensions.includes(extension);
+    }
+
+    function showClientImageError(message) {
+        if (!clientImageError) {
+            return;
+        }
+        clientImageError.textContent = message;
+        clientImageError.style.display = 'block';
+    }
+
+    function clearClientImageError() {
+        if (!clientImageError) {
+            return;
+        }
+        clientImageError.textContent = '';
+        clientImageError.style.display = 'none';
     }
 })();
 </script>

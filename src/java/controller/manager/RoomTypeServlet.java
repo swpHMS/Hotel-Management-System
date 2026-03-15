@@ -11,16 +11,16 @@ import jakarta.servlet.http.Part;
 import model.RoomTypeForm;
 import model.RoomTypeManagementView;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @WebServlet(name = "RoomTypeServlet", urlPatterns = {"/manager/room-types"})
@@ -31,6 +31,8 @@ import java.util.UUID;
 )
 public class RoomTypeServlet extends HttpServlet {
 
+    private static final List<String> ALLOWED_IMAGE_EXTENSIONS = List.of(".jpg", ".jpeg", ".png");
+    private static final String ALLOWED_IMAGE_LABEL = "JPG, JPEG, PNG";
     private final RoomTypeDAO roomTypeDAO = new RoomTypeDAO();
 
     @Override
@@ -336,28 +338,54 @@ public class RoomTypeServlet extends HttpServlet {
         }
 
         String lowerName = submittedName.toLowerCase();
-        if (!(lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg") || lowerName.endsWith(".png") || lowerName.endsWith(".webp"))) {
-            throw new IOException("Only JPG, JPEG, PNG, WEBP are allowed");
+        String extension = null;
+        for (String allowedExtension : ALLOWED_IMAGE_EXTENSIONS) {
+            if (lowerName.endsWith(allowedExtension)) {
+                extension = allowedExtension;
+                break;
+            }
         }
-
-        String extension = lowerName.substring(lowerName.lastIndexOf('.'));
+        if (extension == null) {
+            throw new IOException("Only " + ALLOWED_IMAGE_LABEL + " files are allowed");
+        }
         String fileName = "rt_" + UUID.randomUUID().toString().replace("-", "") + extension;
 
         String relativeFolder = "assets/images/room_types";
-        String absoluteFolder = req.getServletContext().getRealPath("/" + relativeFolder);
-        if (absoluteFolder == null) {
-            absoluteFolder = System.getProperty("user.dir") + File.separator + "web" + File.separator + relativeFolder.replace("/", File.separator);
+        byte[] content = part.getInputStream().readAllBytes();
+        Set<Path> imageFolders = resolveImageFolders(req, relativeFolder);
+        if (imageFolders.isEmpty()) {
+            throw new IOException("Cannot resolve image directory");
         }
 
-        File folder = new File(absoluteFolder);
-        if (!folder.exists() && !folder.mkdirs()) {
-            throw new IOException("Cannot create image directory");
+        for (Path folder : imageFolders) {
+            Files.createDirectories(folder);
+            Files.write(folder.resolve(fileName), content);
         }
-
-        Path output = Path.of(folder.getAbsolutePath(), fileName);
-        Files.copy(part.getInputStream(), output, StandardCopyOption.REPLACE_EXISTING);
 
         return relativeFolder + "/" + fileName;
+    }
+
+    private Set<Path> resolveImageFolders(HttpServletRequest req, String relativeFolder) {
+        Set<Path> folders = new LinkedHashSet<>();
+        String normalizedRelativeFolder = relativeFolder.replace("/", java.io.File.separator);
+
+        String realPath = req.getServletContext().getRealPath("/" + relativeFolder);
+        if (realPath != null && !realPath.isBlank()) {
+            Path runtimeFolder = Path.of(realPath);
+            folders.add(runtimeFolder);
+
+            Path runtimePath = runtimeFolder.toAbsolutePath().normalize();
+            String runtimeText = runtimePath.toString().replace("/", "\\");
+            String marker = "\\build\\web\\";
+            int markerIndex = runtimeText.toLowerCase().indexOf(marker);
+            if (markerIndex >= 0) {
+                String projectRoot = runtimeText.substring(0, markerIndex);
+                folders.add(Path.of(projectRoot, "web", normalizedRelativeFolder));
+            }
+        }
+
+        folders.add(Path.of(System.getProperty("user.dir"), "web", normalizedRelativeFolder));
+        return folders;
     }
 
     private Integer toInt(String input, Integer defaultValue) {

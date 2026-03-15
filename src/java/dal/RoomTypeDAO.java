@@ -36,33 +36,6 @@ public class RoomTypeDAO {
     // - held_rooms is included.
     //
 
-    private static final String SQL_SEARCH_BOOKING_BASE =
-            "WITH inv AS ( " +
-            "   SELECT rti.room_type_id, " +
-            "          MIN(rti.total_rooms - rti.booked_rooms - rti.held_rooms) AS available_rooms " +
-            "   FROM dbo.room_type_inventory rti " +
-            "   WHERE rti.inventory_date >= ? " +
-            "     AND rti.inventory_date < ? " +
-            "   GROUP BY rti.room_type_id " +
-            ") " +
-            "SELECT TOP (%d) " +
-            "  rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, " +
-            "  rv.price AS price_today, " +
-            "  COALESCE(inv.available_rooms, 0) AS available_rooms " +
-            "FROM dbo.room_types rt " +
-            "LEFT JOIN inv ON inv.room_type_id = rt.room_type_id " +
-            "OUTER APPLY ( " +
-            "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id " +
-            "   FROM dbo.rate_versions " +
-            "   WHERE room_type_id = rt.room_type_id " +
-            "     AND ? BETWEEN valid_from AND valid_to " +
-            "   ORDER BY valid_from DESC, rate_version_id DESC " +
-            ") rv " +
-            "WHERE rt.status=1 " +
-            "  AND COALESCE(inv.available_rooms, 0) >= ? " +
-            "  AND ( ? = '' OR rt.name LIKE '%%' + ? + '%%' OR rt.description LIKE '%%' + ? + '%%' ) " +
-            "  AND ( ? <= rt.max_adult * ? ) " +
-            "  AND ( ? <= rt.max_children * ? ) ";
     private static final String SQL_SEARCH_BOOKING_BASE
             = "WITH booked AS ( "
             + "   SELECT brt.room_type_id, SUM(brt.quantity) AS booked_qty "
@@ -220,7 +193,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
                     rt.setDescription(rs.getString("description"));
                     rt.setMaxAdult(rs.getInt("max_adult"));
                     rt.setMaxChildren(rs.getInt("max_children"));
-                    rt.setImageUrl(rs.getString("image_url"));
+                    rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
                     rt.setStatus(rs.getInt("status"));
                     rt.setPriceToday(rs.getBigDecimal("price_today"));
                     rt.setAvailableQty(rs.getInt("available_rooms"));
@@ -337,7 +310,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
                 rt.setDescription(rs.getString("description"));
                 rt.setMaxAdult(rs.getInt("max_adult"));
                 rt.setMaxChildren(rs.getInt("max_children"));
-                rt.setImageUrl(rs.getString("image_url"));
+                rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
                 rt.setStatus(rs.getInt("status"));
 
                 if (withRate) {
@@ -385,7 +358,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
                     rt.setDescription(rs.getString("description"));
                     rt.setMaxAdult(rs.getInt("max_adult"));
                     rt.setMaxChildren(rs.getInt("max_children"));
-                    rt.setImageUrl(rs.getString("image_url"));
+                    rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
                     rt.setStatus(rs.getInt("status"));
                     rt.setPriceToday(rs.getBigDecimal("price_today"));
                     return rt;
@@ -446,7 +419,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
                     RoomTypeManagementView v = new RoomTypeManagementView();
                     v.setRoomTypeId(rs.getInt("room_type_id"));
                     v.setName(rs.getString("name"));
-                    v.setImageUrl(rs.getString("image_url"));
+                    v.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
                     v.setMaxAdult(rs.getInt("max_adult"));
                     v.setMaxChildren(rs.getInt("max_children"));
                     v.setStatus(rs.getInt("status"));
@@ -559,7 +532,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
                 ps.setString(2, form.toStoredDescription());
                 ps.setInt(3, form.getMaxAdult());
                 ps.setInt(4, form.getMaxChildren());
-                ps.setString(5, imageUrl);
+                ps.setString(5, normalizeImageUrl(imageUrl));
                 ps.setInt(6, form.getStatus());
                 int inserted = ps.executeUpdate();
                 if (inserted <= 0) {
@@ -635,7 +608,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
                 ps.setInt(4, form.getMaxChildren());
                 ps.setInt(5, form.getStatus());
                 ps.setInt(6, replaceImage ? 1 : 0);
-                ps.setString(7, imageUrl);
+                ps.setString(7, normalizeImageUrl(imageUrl));
                 ps.setInt(8, roomTypeId);
                 ps.executeUpdate();
             }
@@ -719,7 +692,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
                     RoomTypeImage image = new RoomTypeImage();
                     image.setImageId(rs.getInt("image_id"));
                     image.setRoomTypeId(rs.getInt("room_type_id"));
-                    image.setImageUrl(rs.getString("image_url"));
+                    image.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
                     image.setThumbnail(rs.getBoolean("is_thumbnail"));
                     image.setSortOrder(rs.getInt("sort_order"));
                     image.setCreatedAt(rs.getTimestamp("created_at"));
@@ -778,6 +751,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
     }
 
     private void upsertThumbnailImage(Connection con, int roomTypeId, String imageUrl) throws SQLException {
+        imageUrl = normalizeImageUrl(imageUrl);
         String clearThumbnail = "UPDATE dbo.room_type_images SET is_thumbnail = 0 WHERE room_type_id = ?";
         String updateExisting = """
                 UPDATE dbo.room_type_images
@@ -838,6 +812,7 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
 
         try (PreparedStatement psInsert = con.prepareStatement(insertSql)) {
             for (String imageUrl : imageUrls) {
+                imageUrl = normalizeImageUrl(imageUrl);
                 if (imageUrl == null || imageUrl.isBlank()) {
                     continue;
                 }
@@ -1003,6 +978,17 @@ if ("priceAsc".equalsIgnoreCase(sort)) {
         }
         String trimmed = text.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeImageUrl(String imageUrl) {
+        if (imageUrl == null) {
+            return null;
+        }
+        String normalized = imageUrl.trim().replace("\\", "/");
+        while (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        return normalized.isBlank() ? null : normalized;
     }
 
     private static class LegacyDescriptionParts {
