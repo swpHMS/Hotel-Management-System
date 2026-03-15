@@ -49,11 +49,6 @@ public class RoomTypeServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String action = trim(req.getParameter("action"));
-        if ("deleteImage".equals(action)) {
-            handleDeleteImage(req, resp);
-            return;
-        }
         loadViewData(req);
         renderPage(req, resp);
     }
@@ -63,14 +58,11 @@ public class RoomTypeServlet extends HttpServlet {
         req.setCharacterEncoding("UTF-8");
 
         String action = trim(req.getParameter("action"));
-        if ("deleteImage".equals(action)) {
-            handleDeleteImage(req, resp);
-            return;
-        }
 
         RoomTypeForm form = parseForm(req);
         List<String> errors = form.validate("create".equals(action));
         Integer roomTypeId = toInt(req.getParameter("roomTypeId"), null);
+        List<Integer> deletedGalleryImageIds = parseIntegerList(req.getParameterValues("deletedGalleryImageIds"));
 
         String thumbnailImageUrl = null;
         boolean hasNewThumbnail = false;
@@ -130,6 +122,7 @@ public class RoomTypeServlet extends HttpServlet {
             req.setAttribute("formValue", form);
             req.setAttribute("preservedThumbnailUrl", thumbnailImageUrl);
             req.setAttribute("preservedGalleryUrls", galleryImageUrls);
+            req.setAttribute("deletedGalleryImageIds", deletedGalleryImageIds);
             loadViewData(req);
             renderPage(req, resp);
             return;
@@ -141,7 +134,7 @@ public class RoomTypeServlet extends HttpServlet {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?error=Invalid+room+type+id");
                 return;
             }
-            ok = roomTypeDAO.updateRoomType(roomTypeId, form, thumbnailImageUrl, hasNewThumbnail, galleryImageUrls);
+            ok = roomTypeDAO.updateRoomType(roomTypeId, form, thumbnailImageUrl, hasNewThumbnail, galleryImageUrls, deletedGalleryImageIds);
             if (ok) {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?success=updated");
             } else {
@@ -152,6 +145,7 @@ public class RoomTypeServlet extends HttpServlet {
                 req.setAttribute("formValue", form);
                 req.setAttribute("preservedThumbnailUrl", thumbnailImageUrl);
                 req.setAttribute("preservedGalleryUrls", galleryImageUrls);
+                req.setAttribute("deletedGalleryImageIds", deletedGalleryImageIds);
                 loadViewData(req);
                 renderPage(req, resp);
             }
@@ -169,19 +163,6 @@ public class RoomTypeServlet extends HttpServlet {
                 renderPage(req, resp);
             }
         }
-    }
-
-    private void handleDeleteImage(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Integer roomTypeId = toInt(req.getParameter("roomTypeId"), null);
-        Integer imageId = toInt(req.getParameter("imageId"), null);
-        if (roomTypeId == null || imageId == null || roomTypeId <= 0 || imageId <= 0) {
-            resp.sendRedirect(req.getContextPath() + "/manager/room-types?error=Invalid+image+request");
-            return;
-        }
-
-        boolean ok = roomTypeDAO.deleteGalleryImage(roomTypeId, imageId);
-        String status = ok ? "imageDeleted" : "imageDeleteFailed";
-        resp.sendRedirect(req.getContextPath() + "/manager/room-types?editId=" + roomTypeId + "&success=" + status);
     }
 
     private void loadViewData(HttpServletRequest req) {
@@ -253,6 +234,20 @@ public class RoomTypeServlet extends HttpServlet {
                 if (id != null && id > 0) {
                     ids.add(id);
                 }
+            }
+        }
+        return ids;
+    }
+
+    private List<Integer> parseIntegerList(String[] values) {
+        List<Integer> ids = new ArrayList<>();
+        if (values == null) {
+            return ids;
+        }
+        for (String value : values) {
+            Integer id = toInt(value, null);
+            if (id != null && id > 0) {
+                ids.add(id);
             }
         }
         return ids;

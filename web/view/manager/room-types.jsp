@@ -18,7 +18,15 @@
     </div>
 
     <c:if test="${not empty param.success}">
-        <div class="rt-alert success" id="rtSuccessAlert">Action completed: ${param.success}</div>
+        <div class="rt-alert success" id="rtSuccessAlert">
+            <c:choose>
+                <c:when test="${param.success == 'created'}">Room type created successfully.</c:when>
+                <c:when test="${param.success == 'updated'}">Room type updated successfully.</c:when>
+                <c:when test="${param.success == 'imageDeleted'}">Image deleted successfully.</c:when>
+                <c:when test="${param.success == 'imageDeleteFailed'}">Could not delete image.</c:when>
+                <c:otherwise>Action completed successfully.</c:otherwise>
+            </c:choose>
+        </div>
     </c:if>
     <c:if test="${not empty param.error}">
         <div class="rt-alert error">${param.error}</div>
@@ -174,6 +182,11 @@
                         <c:forEach var="preservedGalleryUrl" items="${preservedGalleryUrls}">
                             <input type="hidden" name="existingGalleryUrls" value="${preservedGalleryUrl}"/>
                         </c:forEach>
+                        <div id="rtDeletedGalleryInputs">
+                            <c:forEach var="deletedImageId" items="${deletedGalleryImageIds}">
+                                <input type="hidden" name="deletedGalleryImageIds" value="${deletedImageId}"/>
+                            </c:forEach>
+                        </div>
 
                         <div class="rt-form-section">
                             <h3>Images</h3>
@@ -233,20 +246,31 @@
                                         </c:forEach>
                                         <c:if test="${mode == 'edit' && editing != null && not empty editing.galleryImages}">
                                             <c:forEach var="image" items="${editing.galleryImages}">
-                                                <div class="rt-gallery-item">
+                                                <c:set var="deletedClass" value="" />
+                                                <c:if test="${deletedGalleryImageIds != null && deletedGalleryImageIds.contains(image.imageId)}">
+                                                    <c:set var="deletedClass" value=" is-hidden" />
+                                                </c:if>
+                                                <div class="rt-gallery-item${deletedClass}" data-existing-gallery-item="true" data-image-id="${image.imageId}">
                                                     <img src="${pageContext.request.contextPath}/${image.imageUrl}"
                                                          alt="Room image"
                                                          onerror="this.onerror=null;this.src='${fallbackRoomImage}';"/>
-                                                    <a class="rt-delete-image"
-                                                       href="${pageContext.request.contextPath}/manager/room-types?action=deleteImage&roomTypeId=${editing.roomTypeId}&imageId=${image.imageId}"
-                                                       title="Delete image">
+                                                    <button class="rt-delete-image"
+                                                            type="button"
+                                                            data-delete-gallery
+                                                            data-image-id="${image.imageId}"
+                                                            title="Remove image">
                                                         <i class="bi bi-x-lg"></i>
-                                                    </a>
+                                                    </button>
                                                 </div>
                                             </c:forEach>
                                         </c:if>
                                     </div>
-                                    <div class="rt-gallery-empty ${(not empty preservedGalleryUrls) || (mode == 'edit' && editing != null && not empty editing.galleryImages) ? 'is-hidden' : ''}" id="rtGalleryEmpty">Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG. Files larger than 300 KB will be resized automatically.</div>
+                                    <div class="rt-gallery-empty ${(not empty preservedGalleryUrls) || (mode == 'edit' && editing != null && not empty editing.galleryImages) ? 'is-hidden' : ''}"
+                                         id="rtGalleryEmpty"
+                                         data-create-message="Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG. Files larger than 300 KB will be resized automatically."
+                                         data-edit-message="No gallery images will remain after saving. You can add new JPG, JPEG, or PNG images before clicking Save Changes.">
+                                        ${mode == 'edit' ? 'No gallery images will remain after saving. You can add new JPG, JPEG, or PNG images before clicking Save Changes.' : 'Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG. Files larger than 300 KB will be resized automatically.'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -348,6 +372,7 @@
     const galleryPreview = document.getElementById('rtGalleryPreview');
     const galleryEmpty = document.getElementById('rtGalleryEmpty');
     const clientImageError = document.getElementById('rtClientImageError');
+    const deletedGalleryInputs = document.getElementById('rtDeletedGalleryInputs');
     const allowedImageExtensions = ['jpg', 'jpeg', 'png'];
     let searchTimer;
 
@@ -436,6 +461,29 @@
         });
     }
 
+    document.querySelectorAll('[data-delete-gallery]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const imageId = button.dataset.imageId;
+            const item = button.closest('.rt-gallery-item');
+            if (!imageId || !item || !deletedGalleryInputs) {
+                return;
+            }
+
+            if (!deletedGalleryInputs.querySelector(`input[value="${imageId}"]`)) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'deletedGalleryImageIds';
+                hiddenInput.value = imageId;
+                deletedGalleryInputs.appendChild(hiddenInput);
+            }
+
+            item.remove();
+            toggleGalleryEmptyState();
+        });
+    });
+
+    toggleGalleryEmptyState();
+
     function isAllowedImage(file) {
         const name = (file && file.name ? file.name : '').toLowerCase();
         const extension = name.includes('.') ? name.split('.').pop() : '';
@@ -456,6 +504,21 @@
         }
         clientImageError.textContent = '';
         clientImageError.style.display = 'none';
+    }
+
+    function toggleGalleryEmptyState() {
+        if (!galleryEmpty || !galleryPreview) {
+            return;
+        }
+        const visibleItems = galleryPreview.querySelectorAll('.rt-gallery-item');
+        const hasVisibleItems = visibleItems.length > 0;
+        galleryEmpty.classList.toggle('is-hidden', hasVisibleItems);
+        if (!hasVisibleItems) {
+            const hasPendingDeletes = deletedGalleryInputs && deletedGalleryInputs.querySelector('input[name="deletedGalleryImageIds"]');
+            galleryEmpty.textContent = hasPendingDeletes
+                ? galleryEmpty.dataset.editMessage
+                : galleryEmpty.dataset.createMessage;
+        }
     }
 })();
 </script>
