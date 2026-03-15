@@ -36,7 +36,7 @@ public class AuthorizationFilter implements Filter {
                 || path.contains("/rooms/search");
     }
 
-private boolean isPublicPath(String path) {
+    private boolean isPublicPath(String path) {
     return path.startsWith("/login")
             || path.startsWith("/logout")
             || path.startsWith("/register")
