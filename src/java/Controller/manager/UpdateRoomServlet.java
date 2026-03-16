@@ -33,7 +33,6 @@ public class UpdateRoomServlet extends HttpServlet {
 
             request.setAttribute("room", room);
             request.setAttribute("roomTypeList", roomDAO.getAllRoomTypes());
-
             request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
 
         } catch (Exception e) {
@@ -60,9 +59,6 @@ public class UpdateRoomServlet extends HttpServlet {
         int floor = 0;
         int status = 0;
 
-        boolean validRoomNoFormat = false;
-        boolean validFloorFormat = false;
-
         Room room = new Room();
 
         try {
@@ -72,20 +68,15 @@ public class UpdateRoomServlet extends HttpServlet {
             return;
         }
 
-        // Validate roomNo
         if (roomNo == null || roomNo.trim().isEmpty()) {
             errorList.add("Room number is required.");
         } else {
             roomNo = roomNo.trim();
-
-            if (!roomNo.matches("\\d{1,4}")) {
+            if (!roomNo.matches("^\\d{1,4}$")) {
                 errorList.add("Room number must contain only digits and have at most 4 digits.");
-            } else {
-                validRoomNoFormat = true;
             }
         }
 
-        // Validate room type
         try {
             roomTypeId = Integer.parseInt(roomTypeIdRaw);
             if (!roomDAO.isRoomTypeExists(roomTypeId)) {
@@ -95,23 +86,15 @@ public class UpdateRoomServlet extends HttpServlet {
             errorList.add("Room type is invalid.");
         }
 
-        // Validate floor
-        if (floorRaw == null || floorRaw.trim().isEmpty()) {
-            errorList.add("Floor is required.");
-        } else {
-            try {
-                floor = Integer.parseInt(floorRaw.trim());
-                if (floor <= 0 || floor >= 99) {
-                    errorList.add("Floor must be greater than 0 and less than 99.");
-                } else {
-                    validFloorFormat = true;
-                }
-            } catch (Exception e) {
-                errorList.add("Floor is invalid.");
+        try {
+            floor = Integer.parseInt(floorRaw);
+            if (floor <= 0 || floor >= 99) {
+                errorList.add("Floor must be greater than 0 and less than 99.");
             }
+        } catch (Exception e) {
+            errorList.add("Floor is invalid.");
         }
 
-        // Validate status
         try {
             status = Integer.parseInt(statusRaw);
             if (status < 1 || status > 4) {
@@ -121,17 +104,14 @@ public class UpdateRoomServlet extends HttpServlet {
             errorList.add("Status is invalid.");
         }
 
-        // Check roomNo matches floor only when both formats are valid
-        if (validRoomNoFormat && validFloorFormat) {
-            int expectedFloor = Integer.parseInt(roomNo.substring(0, 1));
-
-            if (expectedFloor != floor) {
-                errorList.add("Room number does not match floor. For example, room "
-                        + roomNo + " must be on floor " + expectedFloor + ".");
+        if (roomNo != null && !roomNo.isEmpty() && floor > 0 && floor < 99 && roomNo.matches("^\\d{1,4}$")) {
+            if (!roomNo.startsWith(String.valueOf(floor))) {
+                errorList.add("Room number must match the floor. Example: floor " + floor
+                        + " should use room numbers starting with " + floor + ".");
             }
         }
-        // Check duplicate only when roomNo format is valid
-        if (validRoomNoFormat && roomDAO.isRoomNoExistsForOtherRoom(roomNo, roomId)) {
+
+        if (roomNo != null && !roomNo.isEmpty() && roomDAO.isRoomNoExistsForOtherRoom(roomNo, roomId)) {
             errorList.add("Room number already exists.");
         }
 
