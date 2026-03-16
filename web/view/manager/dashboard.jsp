@@ -60,9 +60,9 @@
                 <div>
                     <div style="font-weight:900; color:#0f172a;">OCCUPANCY TREND</div>
                 </div>
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-sm btn-light" id="btnDaily">DAILY</button>
-                    <button type="button" class="btn btn-sm btn-light" id="btnMonthly">MONTHLY</button>
+                <div class="btn-group occupancy-toggle" role="group">
+                    <button type="button" class="btn btn-sm occupancy-toggle-btn" id="btnDaily">DAILY</button>
+                    <button type="button" class="btn btn-sm occupancy-toggle-btn" id="btnMonthly">MONTHLY</button>
                 </div>
             </div>
 
@@ -134,6 +134,36 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+    .occupancy-toggle {
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 4px;
+        gap: 4px;
+    }
+
+    .occupancy-toggle-btn {
+        border: 0;
+        border-radius: 10px;
+        color: #64748b;
+        font-weight: 800;
+        letter-spacing: .06em;
+        padding: .45rem .9rem;
+        background: transparent;
+        transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
+    }
+
+    .occupancy-toggle-btn:hover {
+        color: #0f172a;
+        background: rgba(201, 162, 86, .12);
+    }
+
+    .occupancy-toggle-btn.active {
+        background: #c9a256;
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(201, 162, 86, .25);
+    }
+</style>
 <script>
     // âœ… Táº¤T Cáº¢ TREND Ä‘á»u tá»« DB (room_type_inventory) - servlet set
     const dailyLabels   = ${dailyLabelsJs};
@@ -141,10 +171,23 @@
 
     const monthlyLabels = ${monthlyLabelsJs};
     const monthlyData   = ${monthlyValuesJs};
+    const btnDaily = document.getElementById("btnDaily");
+    const btnMonthly = document.getElementById("btnMonthly");
     const sumValues = (values) => values.reduce((sum, value) => sum + Number(value || 0), 0);
+    const getTrendMax = (values) => {
+        const maxValue = Math.max(...values.map((value) => Number(value || 0)), 0);
+        if (maxValue <= 0) {
+            return 10;
+        }
+        return Math.min(100, Math.max(10, Math.ceil(maxValue / 5) * 5 + 5));
+    };
     const useDailyByDefault = sumValues(dailyData) >= sumValues(monthlyData);
     const initialLabels = useDailyByDefault ? dailyLabels : monthlyLabels;
     const initialData = useDailyByDefault ? dailyData : monthlyData;
+    const setActiveTrendMode = (mode) => {
+        btnDaily.classList.toggle("active", mode === "daily");
+        btnMonthly.classList.toggle("active", mode === "monthly");
+    };
 
     // Booking Velocity chart
     const ctxV = document.getElementById("velocityChart");
@@ -164,7 +207,8 @@
                 pointBorderWidth: 2,
                 borderWidth: 4,
                 borderColor: "#c9a256",
-                backgroundColor: "rgba(201,162,86,.18)"
+                backgroundColor: "rgba(201,162,86,.18)",
+                fill: true
             }]
         },
         options: {
@@ -175,8 +219,7 @@
                 x: { grid: { display: false } },
                 y: {
                     beginAtZero: true,
-                    grace: "10%",
-                    max: 100,
+                    suggestedMax: getTrendMax(initialData),
                     ticks: {
                         callback: function(value) {
                             return value + "%";
@@ -243,15 +286,22 @@
         plugins: [centerTextPlugin]
     });
 
-    document.getElementById("btnDaily").addEventListener("click", () => {
-        velocityChart.data.labels = dailyLabels;
-        velocityChart.data.datasets[0].data = dailyData;
+    const updateTrendChart = (labels, values) => {
+        velocityChart.data.labels = labels;
+        velocityChart.data.datasets[0].data = values;
+        velocityChart.options.scales.y.suggestedMax = getTrendMax(values);
         velocityChart.update();
+    };
+
+    setActiveTrendMode(useDailyByDefault ? "daily" : "monthly");
+
+    btnDaily.addEventListener("click", () => {
+        setActiveTrendMode("daily");
+        updateTrendChart(dailyLabels, dailyData);
     });
 
-    document.getElementById("btnMonthly").addEventListener("click", () => {
-        velocityChart.data.labels = monthlyLabels;
-        velocityChart.data.datasets[0].data = monthlyData;
-        velocityChart.update();
+    btnMonthly.addEventListener("click", () => {
+        setActiveTrendMode("monthly");
+        updateTrendChart(monthlyLabels, monthlyData);
     });
 </script>

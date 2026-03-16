@@ -43,17 +43,15 @@ public class ManagerDashboardServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        ManagerDashboardDAO dao = new ManagerDashboardDAO();
-
-        Map<String, Integer> kpi = dao.getRoomStatusCounts();
+        Map<String, Integer> kpi = new ManagerDashboardDAO().getRoomStatusCounts();
         req.setAttribute("totalInventory", kpi.getOrDefault("totalInventory", 0));
         req.setAttribute("liveSuites", kpi.getOrDefault("liveSuites", 0));
         req.setAttribute("guestStays", kpi.getOrDefault("guestStays", 0));
         req.setAttribute("servicing", kpi.getOrDefault("servicing", 0));
         req.setAttribute("outOfOrder", kpi.getOrDefault("outOfOrder", 0));
 
-        List<TrendPoint> daily = dao.getBookingVelocityDaily(7);
-        List<TrendPoint> monthly = dao.getBookingVelocityMonthly(7);
+        List<TrendPoint> daily = new ManagerDashboardDAO().getBookingVelocityDaily(7);
+        List<TrendPoint> monthly = new ManagerDashboardDAO().getBookingVelocityMonthly(7);
 
         List<String> dailyLabels = new ArrayList<>();
         List<Double> dailyValues = new ArrayList<>();
