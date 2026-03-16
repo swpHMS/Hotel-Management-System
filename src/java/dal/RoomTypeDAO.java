@@ -148,78 +148,108 @@ public class RoomTypeDAO {
      * Booking search with date range + keyword + capacity by roomQty + sort
      */
     public List<RoomType> searchForBooking(LocalDate checkIn,
-            LocalDate checkOut,
-            String q,
-            int adults,
-            int children,
-            int roomQty,
-            int limit,
-            String sort) {
+        LocalDate checkOut,
+        String q,
+        int adults,
+        int children,
+        int roomQty,
+        int limit,
+        String sort) {
 
-        List<RoomType> list = new ArrayList<>();
-        DBContext db = new DBContext();
+    List<RoomType> list = new ArrayList<>();
+    DBContext db = new DBContext();
 
-        String orderBy;
-        if ("priceAsc".equalsIgnoreCase(sort)) {
-            orderBy = " ORDER BY COALESCE(rv.price, 999999999) ASC, rt.room_type_id DESC";
-        } else if ("priceDesc".equalsIgnoreCase(sort)) {
-            orderBy = " ORDER BY COALESCE(rv.price, 0) DESC, rt.room_type_id DESC";
-        } else {
-            orderBy = " ORDER BY COALESCE(inv.available_rooms, 0) DESC, rt.room_type_id DESC";
-        }
+    String keyword = (q == null) ? "" : q.trim();
 
-        String sql = String.format(SQL_SEARCH_BOOKING_BASE, limit) + orderBy;
-        String keyword = (q == null) ? "" : q.trim();
+    // Số khách / 1 phòng
+    int adultsPerRoom = (int) Math.ceil(adults * 1.0 / Math.max(roomQty, 1));
+    int childrenPerRoom = (int) Math.ceil(children * 1.0 / Math.max(roomQty, 1));
 
-        try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-
-            int idx = 1;
-
-            // inventory range params
-            ps.setDate(idx++, Date.valueOf(checkIn));
-            ps.setDate(idx++, Date.valueOf(checkOut));
-
-            // rate at checkIn
-            ps.setDate(idx++, Date.valueOf(checkIn));
-
-            // availability >= roomQty
-            ps.setInt(idx++, roomQty);
-
-            // keyword
-            ps.setString(idx++, keyword);
-            ps.setString(idx++, keyword);
-            ps.setString(idx++, keyword);
-
-            // capacity adults
-            ps.setInt(idx++, adults);
-            ps.setInt(idx++, roomQty);
-
-            // capacity children
-            ps.setInt(idx++, children);
-            ps.setInt(idx++, roomQty);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    RoomType rt = new RoomType();
-                    rt.setRoomTypeId(rs.getInt("room_type_id"));
-                    rt.setName(rs.getString("name"));
-                    rt.setDescription(rs.getString("description"));
-                    rt.setMaxAdult(rs.getInt("max_adult"));
-                    rt.setMaxChildren(rs.getInt("max_children"));
-                    rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
-                    rt.setStatus(rs.getInt("status"));
-                    rt.setPriceToday(rs.getBigDecimal("price_today"));
-                    rt.setAvailableQty(rs.getInt("available_rooms"));
-                    list.add(rt);
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return list;
+    String orderBy;
+    if ("priceAsc".equalsIgnoreCase(sort)) {
+        orderBy = " ORDER BY COALESCE(rv.price, 999999999) ASC, rt.room_type_id DESC";
+    } else if ("priceDesc".equalsIgnoreCase(sort)) {
+        orderBy = " ORDER BY COALESCE(rv.price, 0) DESC, rt.room_type_id DESC";
+    } else {
+        orderBy = " ORDER BY "
+                + " CASE "
+                + "   WHEN rt.max_adult = ? AND rt.max_children = ? THEN 0 "
+                + "   WHEN rt.max_adult = ? AND rt.max_children > ? THEN 1 "
+                + "   WHEN rt.max_adult > ? THEN 2 "
+                + "   ELSE 3 "
+                + " END, "
+                + " (rt.max_adult - ?) ASC, "
+                + " (rt.max_children - ?) ASC, "
+                + " COALESCE(rv.price, 999999999) ASC, "
+                + " COALESCE(inv.available_rooms, 0) DESC, "
+                + " rt.room_type_id DESC";
     }
+
+    String sql = String.format(SQL_SEARCH_BOOKING_BASE, limit) + orderBy;
+
+    try (Connection con = db.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
+
+        int idx = 1;
+
+        // inventory range params
+        ps.setDate(idx++, Date.valueOf(checkIn));
+        ps.setDate(idx++, Date.valueOf(checkOut));
+
+        // rate at checkIn
+        ps.setDate(idx++, Date.valueOf(checkIn));
+
+        // availability >= roomQty
+        ps.setInt(idx++, roomQty);
+
+        // keyword
+        ps.setString(idx++, keyword);
+        ps.setString(idx++, keyword);
+        ps.setString(idx++, keyword);
+
+        // tổng sức chứa phải đủ cho tổng số khách
+        ps.setInt(idx++, adults);
+        ps.setInt(idx++, roomQty);
+
+        ps.setInt(idx++, children);
+        ps.setInt(idx++, roomQty);
+
+        // default sort: bind thêm param
+        if (!"priceAsc".equalsIgnoreCase(sort) && !"priceDesc".equalsIgnoreCase(sort)) {
+            ps.setInt(idx++, adultsPerRoom);    // rt.max_adult = ?
+            ps.setInt(idx++, childrenPerRoom);  // rt.max_children = ?
+
+            ps.setInt(idx++, adultsPerRoom);    // rt.max_adult = ?
+            ps.setInt(idx++, childrenPerRoom);  // rt.max_children > ?
+
+            ps.setInt(idx++, adultsPerRoom);    // rt.max_adult > ?
+
+            ps.setInt(idx++, adultsPerRoom);    // (rt.max_adult - ?)
+            ps.setInt(idx++, childrenPerRoom);  // (rt.max_children - ?)
+        }
+
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                RoomType rt = new RoomType();
+                rt.setRoomTypeId(rs.getInt("room_type_id"));
+                rt.setName(rs.getString("name"));
+                rt.setDescription(rs.getString("description"));
+                rt.setMaxAdult(rs.getInt("max_adult"));
+                rt.setMaxChildren(rs.getInt("max_children"));
+                rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
+                rt.setStatus(rs.getInt("status"));
+                rt.setPriceToday(rs.getBigDecimal("price_today"));
+                rt.setAvailableQty(rs.getInt("available_rooms"));
+                list.add(rt);
+            }
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return list;
+}
 
     /**
      * Overload có sort, limit mặc định = 200
@@ -526,9 +556,23 @@ public class RoomTypeDAO {
             if (item.getRoomTypeId() == roomTypeId) {
                 return item;
             }
+        } catch (Exception e) {
+            lastErrorMessage = describeError(e);
+            e.printStackTrace();
         }
-        return null;
+
+        return list;
     }
+
+public RoomTypeManagementView getRoomTypeForManagerById(int roomTypeId) {
+    List<RoomTypeManagementView> items = getRoomTypesForManager((String) null);
+    for (RoomTypeManagementView item : items) {
+        if (item.getRoomTypeId() == roomTypeId) {
+            return item;
+        }
+    }
+    return null;
+}
 
     public List<Amenity> getAllActiveAmenities() {
         String sql = "SELECT amenity_id, code, name, description, category, is_active FROM dbo.amenities WHERE is_active = 1 ORDER BY name";
@@ -594,17 +638,18 @@ public class RoomTypeDAO {
     }
 
     public boolean createRoomType(RoomTypeForm form, String imageUrl, List<String> galleryImageUrls) {
-        lastErrorMessage = null;
-        String insertRoomType = "INSERT INTO dbo.room_types(name, description, max_adult, max_children, image_url, status) VALUES (?, ?, ?, ?, ?, ?)";
-        String selectIdentity = "SELECT CAST(SCOPE_IDENTITY() AS int) AS room_type_id";
-        String insertAmenity = "INSERT INTO dbo.room_type_amenities(room_type_id, amenity_id) VALUES (?, ?)";
+    lastErrorMessage = null;
+    String insertRoomType = """
+        INSERT INTO dbo.room_types(name, description, max_adult, max_children, image_url, status)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """;
+    String insertAmenity = "INSERT INTO dbo.room_type_amenities(room_type_id, amenity_id) VALUES (?, ?)";
 
-        DBContext db = new DBContext();
-        try (Connection con = db.getConnection()) {
-            con.setAutoCommit(false);
+    DBContext db = new DBContext();
+    Connection con = null;
 
-            int roomTypeId;
-            try (PreparedStatement ps = con.prepareStatement(insertRoomType)) {
+            int roomTypeId = 0;
+            try (PreparedStatement ps = con.prepareStatement(insertRoomType, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, form.getName().trim());
                 ps.setString(2, form.toStoredDescription());
                 ps.setInt(3, form.getMaxAdult());
@@ -617,21 +662,61 @@ public class RoomTypeDAO {
                     con.rollback();
                     return false;
                 }
+                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                    if (generatedKeys != null && generatedKeys.next()) {
+                        roomTypeId = generatedKeys.getInt(1);
+                        if (generatedKeys.wasNull()) {
+                            roomTypeId = 0;
+                        }
+                    }
+                }
             }
 
-            try (PreparedStatement psIdentity = con.prepareStatement(selectIdentity);
-                 ResultSet key = psIdentity.executeQuery()) {
-                if (key == null || !key.next()) {
+            if (roomTypeId <= 0) {
+                try (PreparedStatement psIdentity = con.prepareStatement(selectIdentity);
+                     ResultSet key = psIdentity.executeQuery()) {
+                    if (key != null && key.next()) {
+                        roomTypeId = key.getInt("room_type_id");
+                        if (key.wasNull()) {
+                            roomTypeId = 0;
+                        }
+                    }
+                }
+    try {
+        con = db.getConnection();
+        con.setAutoCommit(false);
+
+        int roomTypeId;
+
+        try (PreparedStatement ps = con.prepareStatement(insertRoomType, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, form.getName().trim());
+            ps.setString(2, form.toStoredDescription());
+            ps.setInt(3, form.getMaxAdult());
+            ps.setInt(4, form.getMaxChildren());
+            ps.setString(5, normalizeImageUrl(imageUrl));
+            ps.setInt(6, form.getStatus());
+
+            int inserted = ps.executeUpdate();
+            if (inserted <= 0) {
+                lastErrorMessage = "Room type insert returned no affected rows.";
+                con.rollback();
+                return false;
+            }
+
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (!rs.next()) {
                     lastErrorMessage = "Could not read inserted room type ID.";
                     con.rollback();
                     return false;
                 }
-                roomTypeId = key.getInt("room_type_id");
-                if (roomTypeId <= 0) {
-                    lastErrorMessage = "Inserted room type ID was invalid.";
-                    con.rollback();
-                    return false;
-                }
+                roomTypeId = rs.getInt(1);
+            }
+        }
+
+            if (roomTypeId <= 0) {
+                lastErrorMessage = "Could not resolve inserted room type ID.";
+                con.rollback();
+                return false;
             }
 
             if (imageUrl != null && !imageUrl.isBlank()) {
@@ -660,9 +745,56 @@ public class RoomTypeDAO {
         } catch (Exception e) {
             lastErrorMessage = describeError(e);
             e.printStackTrace();
+        if (roomTypeId <= 0) {
+            lastErrorMessage = "Inserted room type ID was invalid.";
+            con.rollback();
             return false;
         }
+
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            upsertThumbnailImage(con, roomTypeId, imageUrl);
+        }
+
+        insertGalleryImages(con, roomTypeId, galleryImageUrls);
+
+        if (form.getAmenityIds() != null && !form.getAmenityIds().isEmpty()) {
+            try (PreparedStatement psAmenity = con.prepareStatement(insertAmenity)) {
+                for (Integer amenityId : uniqueAmenityIds(form.getAmenityIds())) {
+                    psAmenity.setInt(1, roomTypeId);
+                    psAmenity.setInt(2, amenityId);
+                    psAmenity.addBatch();
+                }
+                psAmenity.executeBatch();
+            }
+        }
+
+        if (form.getPrice() != null) {
+            upsertRateVersion(con, roomTypeId, form.getPrice(), LocalDate.now().plusDays(1));
+        }
+
+        con.commit();
+        return true;
+
+    } catch (Exception e) {
+        lastErrorMessage = describeError(e);
+        e.printStackTrace();
+        if (con != null) {
+            try {
+                con.rollback();
+            } catch (Exception ignore) {
+            }
+        }
+        return false;
+    } finally {
+        if (con != null) {
+            try {
+                con.setAutoCommit(true);
+                con.close();
+            } catch (Exception ignore) {
+            }
+        }
     }
+}
 
     public boolean updateRoomType(int roomTypeId, RoomTypeForm form, String imageUrl, boolean replaceImage) {
         return updateRoomType(roomTypeId, form, imageUrl, replaceImage, new ArrayList<>(), new ArrayList<>());
@@ -1101,4 +1233,73 @@ public class RoomTypeDAO {
         private String roomSize;
         private String plainDescription;
     }
+    public List<RoomTypeManagementView> getRoomTypesForManager(Integer statusFilter) {
+    List<RoomTypeManagementView> list = new ArrayList<>();
+
+    StringBuilder sql = new StringBuilder("""
+        SELECT
+            rt.room_type_id,
+            rt.name,
+            rt.description,
+            rt.max_adult,
+            rt.max_children,
+            rt.image_url,
+            rt.status,
+            rv.price AS current_price
+        FROM dbo.room_types rt
+        OUTER APPLY (
+            SELECT TOP 1 price
+            FROM dbo.rate_versions
+            WHERE room_type_id = rt.room_type_id
+              AND CAST(GETDATE() AS date) BETWEEN valid_from AND valid_to
+            ORDER BY valid_from DESC, rate_version_id DESC
+        ) rv
+        WHERE 1 = 1
+    """);
+
+    if (statusFilter != null) {
+        sql.append(" AND rt.status = ? ");
+    }
+
+    sql.append(" ORDER BY rt.room_type_id DESC ");
+
+    DBContext db = new DBContext();
+
+    try (Connection con = db.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+        if (statusFilter != null) {
+            ps.setInt(1, statusFilter);
+        }
+
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                RoomTypeManagementView view = new RoomTypeManagementView();
+
+                view.setRoomTypeId(rs.getInt("room_type_id"));
+                view.setName(rs.getString("name"));
+                view.setMaxAdult(rs.getInt("max_adult"));
+                view.setMaxChildren(rs.getInt("max_children"));
+                view.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
+                view.setStatus(rs.getInt("status"));
+
+                try {
+                    view.setCurrentPrice(rs.getBigDecimal("current_price"));
+                } catch (Exception ignore) {
+                }
+
+                fillMetadata(view, rs.getString("description"));
+                hydrateAmenities(con, view);
+                hydrateImages(con, view);
+
+                list.add(view);
+            }
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return list;
+}
+    
 }

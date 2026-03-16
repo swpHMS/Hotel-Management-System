@@ -63,7 +63,8 @@ public class ReceptionistDashboardServlet extends HttpServlet {
             throws ServletException, IOException {
         // 1. Lấy các tham số cơ bản từ Request
         LocalDate nowDate=LocalDate.now();
-        String currentDate=nowDate.toString();
+        
+        String currentDate= "2026/03/15";               //nowDate.toString();
         String search = request.getParameter("txtSearch");
         String status = request.getParameter("filterStatus");
         String sort = request.getParameter("filterSort");
