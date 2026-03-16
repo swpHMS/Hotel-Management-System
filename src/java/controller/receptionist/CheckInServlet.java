@@ -117,9 +117,7 @@ public class CheckInServlet extends HttpServlet {
         System.out.println("==========================================");
 
         if (success) {
-            // Cập nhật trạng thái No-show cho toàn hệ thống
-            String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date());
-            dao.updateNoShowStatus(today);
+           
             response.sendRedirect("dashboard?status=checkin_success");
         } else {
             response.sendRedirect("assign-room?bookingId=" + bookingId + "&error=finalize_failed");
