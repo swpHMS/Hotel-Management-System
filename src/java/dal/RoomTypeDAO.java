@@ -603,8 +603,8 @@ public class RoomTypeDAO {
         try (Connection con = db.getConnection()) {
             con.setAutoCommit(false);
 
-            int roomTypeId;
-            try (PreparedStatement ps = con.prepareStatement(insertRoomType)) {
+            int roomTypeId = 0;
+            try (PreparedStatement ps = con.prepareStatement(insertRoomType, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, form.getName().trim());
                 ps.setString(2, form.toStoredDescription());
                 ps.setInt(3, form.getMaxAdult());
@@ -617,21 +617,32 @@ public class RoomTypeDAO {
                     con.rollback();
                     return false;
                 }
+                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                    if (generatedKeys != null && generatedKeys.next()) {
+                        roomTypeId = generatedKeys.getInt(1);
+                        if (generatedKeys.wasNull()) {
+                            roomTypeId = 0;
+                        }
+                    }
+                }
             }
 
-            try (PreparedStatement psIdentity = con.prepareStatement(selectIdentity);
-                 ResultSet key = psIdentity.executeQuery()) {
-                if (key == null || !key.next()) {
-                    lastErrorMessage = "Could not read inserted room type ID.";
-                    con.rollback();
-                    return false;
+            if (roomTypeId <= 0) {
+                try (PreparedStatement psIdentity = con.prepareStatement(selectIdentity);
+                     ResultSet key = psIdentity.executeQuery()) {
+                    if (key != null && key.next()) {
+                        roomTypeId = key.getInt("room_type_id");
+                        if (key.wasNull()) {
+                            roomTypeId = 0;
+                        }
+                    }
                 }
-                roomTypeId = key.getInt("room_type_id");
-                if (roomTypeId <= 0) {
-                    lastErrorMessage = "Inserted room type ID was invalid.";
-                    con.rollback();
-                    return false;
-                }
+            }
+
+            if (roomTypeId <= 0) {
+                lastErrorMessage = "Could not resolve inserted room type ID.";
+                con.rollback();
+                return false;
             }
 
             if (imageUrl != null && !imageUrl.isBlank()) {
