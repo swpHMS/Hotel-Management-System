@@ -621,24 +621,31 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
             + "LEFT JOIN dbo.users u ON c.user_id = u.user_id "
             + "LEFT JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
             + "LEFT JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id "
-            + "WHERE b.status IN (2, 3, 4, 6) "
+            + "WHERE b.status IN (2, 3, 4) "
     );
 
     if (status == null || status.equals("0")) {
         sql.append(" AND ( ")
            .append("      (CONVERT(DATE, b.check_in_date) = ? AND b.status = 2) ")
            .append("   OR (b.status = 3) ")
-           .append("   OR (CONVERT(DATE, b.check_out_date) = ? AND b.status = 4) ")
-           .append("   OR (CONVERT(DATE, b.check_in_date) = ? AND b.status = 6) ")
+           .append("   OR (b.status = 4 AND EXISTS ( ")
+           .append("          SELECT 1 ")
+           .append("          FROM dbo.stay_room_assignments sraC ")
+           .append("          WHERE sraC.booking_id = b.booking_id ")
+           .append("            AND CONVERT(DATE, sraC.actual_check_out) = ? ")
+           .append("       )) ")
            .append(" ) ");
     } else if (status.equals("2")) {
         sql.append(" AND b.status = 2 AND CONVERT(DATE, b.check_in_date) = ? ");
     } else if (status.equals("3")) {
         sql.append(" AND b.status = 3 ");
     } else if (status.equals("4")) {
-        sql.append(" AND b.status = 4 AND CONVERT(DATE, b.check_out_date) = ? ");
-    } else if (status.equals("6")) {
-        sql.append(" AND b.status = 6 AND CONVERT(DATE, b.check_in_date) = ? ");
+        sql.append(" AND b.status = 4 AND EXISTS ( ")
+           .append("      SELECT 1 ")
+           .append("      FROM dbo.stay_room_assignments sraC ")
+           .append("      WHERE sraC.booking_id = b.booking_id ")
+           .append("        AND CONVERT(DATE, sraC.actual_check_out) = ? ")
+           .append(" ) ");
     }
 
     if (search != null && !search.trim().isEmpty()) {
@@ -666,8 +673,7 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
         if (status == null || status.equals("0")) {
             st.setString(paramIdx++, targetDate);
             st.setString(paramIdx++, targetDate);
-            st.setString(paramIdx++, targetDate);
-        } else if (status.equals("2") || status.equals("4") || status.equals("6")) {
+        } else if (status.equals("2") || status.equals("4")) {
             st.setString(paramIdx++, targetDate);
         }
 
@@ -710,61 +716,83 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
 }
 
     public DashboardStats getDashboardStats(String targetDate) {
-        DashboardStats stats = new DashboardStats();
+    DashboardStats stats = new DashboardStats();
 
-        String sql = "SELECT "
-                + "(SELECT COUNT(*) FROM stay_room_guests srg "
-                + " JOIN stay_room_assignments sra ON srg.assignment_id = sra.assignment_id "
-                + " WHERE sra.status = 2) AS total_guests, "
-                + "(SELECT COUNT(*) FROM bookings WHERE CAST(check_in_date AS DATE) = ? AND status = 2) AS pending_check_in, "
-                + "(SELECT COUNT(*) FROM stay_room_assignments WHERE CAST(actual_check_in AS DATE) = ? AND status = 2) AS check_in_today, "
-                + "(SELECT COUNT(*) FROM bookings WHERE CAST(check_out_date AS DATE) = ? AND status = 4) AS check_out_today, "
-                + "(SELECT COUNT(*) FROM bookings WHERE CAST(check_in_date AS DATE) = ? AND status IN (2, 3)) AS arrival_today";
+    String sql = "SELECT "
+            + "(SELECT COUNT(*) "
+            + "   FROM stay_room_guests srg "
+            + "   JOIN stay_room_assignments sra ON srg.assignment_id = sra.assignment_id "
+            + "   WHERE sra.status = 2) AS total_guests, "
 
-        try (PreparedStatement st = connection.prepareStatement(sql)) {
-            st.setString(1, targetDate);
-            st.setString(2, targetDate);
-            st.setString(3, targetDate);
-            st.setString(4, targetDate);
+            + "(SELECT COUNT(*) "
+            + "   FROM bookings "
+            + "   WHERE CAST(check_in_date AS DATE) = ? AND status = 2) AS pending_check_in, "
 
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) {
-                stats.setTotalGuests(rs.getInt("total_guests"));
-                stats.setPendingCheckIn(rs.getInt("pending_check_in"));
-                stats.setCheckInToday(rs.getInt("check_in_today"));
-                stats.setCheckOutToday(rs.getInt("check_out_today"));
-                stats.setArrivalToday(rs.getInt("arrival_today"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+            + "(SELECT COUNT(*) "
+            + "   FROM stay_room_assignments "
+            + "   WHERE CAST(actual_check_in AS DATE) = ? AND status = 2) AS check_in_today, "
+
+            + "(SELECT COUNT(DISTINCT b.booking_id) "
+            + "   FROM bookings b "
+            + "   JOIN stay_room_assignments sra ON b.booking_id = sra.booking_id "
+            + "   WHERE b.status = 4 "
+            + "     AND CAST(sra.actual_check_out AS DATE) = ?) AS check_out_today, "
+
+            + "(SELECT COUNT(*) "
+            + "   FROM bookings "
+            + "   WHERE CAST(check_in_date AS DATE) = ? AND status IN (2, 3)) AS arrival_today";
+
+    try (PreparedStatement st = connection.prepareStatement(sql)) {
+        st.setString(1, targetDate);
+        st.setString(2, targetDate);
+        st.setString(3, targetDate);
+        st.setString(4, targetDate);
+
+        ResultSet rs = st.executeQuery();
+        if (rs.next()) {
+            stats.setTotalGuests(rs.getInt("total_guests"));
+            stats.setPendingCheckIn(rs.getInt("pending_check_in"));
+            stats.setCheckInToday(rs.getInt("check_in_today"));
+            stats.setCheckOutToday(rs.getInt("check_out_today"));
+            stats.setArrivalToday(rs.getInt("arrival_today"));
         }
-        return stats;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+    return stats;
+}
 
 
-    public int getTotalTodayOperations(String targetDate, String search, String status) {
+   public int getTotalTodayOperations(String targetDate, String search, String status) {
     StringBuilder sql = new StringBuilder(
             "SELECT COUNT(*) "
             + "FROM dbo.bookings b "
             + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
-            + "WHERE b.status IN (2, 3, 4, 6) "
+            + "WHERE b.status IN (2, 3, 4) "
     );
 
     if (status == null || status.equals("0")) {
         sql.append(" AND ( ")
            .append("      (CAST(b.check_in_date AS DATE) = ? AND b.status = 2) ")
            .append("   OR (b.status = 3) ")
-           .append("   OR (CAST(b.check_out_date AS DATE) = ? AND b.status = 4) ")
-           .append("   OR (CAST(b.check_in_date AS DATE) = ? AND b.status = 6) ")
+           .append("   OR (b.status = 4 AND EXISTS ( ")
+           .append("          SELECT 1 ")
+           .append("          FROM dbo.stay_room_assignments sraC ")
+           .append("          WHERE sraC.booking_id = b.booking_id ")
+           .append("            AND CAST(sraC.actual_check_out AS DATE) = ? ")
+           .append("       )) ")
            .append(" ) ");
     } else if (status.equals("2")) {
         sql.append(" AND b.status = 2 AND CAST(b.check_in_date AS DATE) = ? ");
     } else if (status.equals("3")) {
         sql.append(" AND b.status = 3 ");
     } else if (status.equals("4")) {
-        sql.append(" AND b.status = 4 AND CAST(b.check_out_date AS DATE) = ? ");
-    } else if (status.equals("6")) {
-        sql.append(" AND b.status = 6 AND CAST(b.check_in_date AS DATE) = ? ");
+        sql.append(" AND b.status = 4 AND EXISTS ( ")
+           .append("      SELECT 1 ")
+           .append("      FROM dbo.stay_room_assignments sraC ")
+           .append("      WHERE sraC.booking_id = b.booking_id ")
+           .append("        AND CAST(sraC.actual_check_out AS DATE) = ? ")
+           .append(" ) ");
     }
 
     if (search != null && !search.trim().isEmpty()) {
@@ -787,8 +815,7 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
         if (status == null || status.equals("0")) {
             st.setString(paramIdx++, targetDate);
             st.setString(paramIdx++, targetDate);
-            st.setString(paramIdx++, targetDate);
-        } else if (status.equals("2") || status.equals("4") || status.equals("6")) {
+        } else if (status.equals("2") || status.equals("4")) {
             st.setString(paramIdx++, targetDate);
         }
 
@@ -808,6 +835,7 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
     }
     return 0;
 }
+
     public BookingDashboard getBookingById(int bookingId) {
         String sql = "SELECT b.booking_id, c.full_name, b.check_in_date, b.check_out_date, b.total_amount, "
                 + "ISNULL((SELECT SUM(amount) FROM payments WHERE booking_id = b.booking_id AND status = 1), 0) AS deposit_amount "

@@ -59,7 +59,7 @@
                     </a>
                 </div>
             </a>
-            <h1><a href="${pageContext.request.contextPath}/home" style="text-decoration: none; color: inherit">REGAL QUINTET</a></h1>
+            <h1><a href="${pageContext.request.contextPath}/home" style="text-decoration: none; color: inherit">${nameHotel}</a></h1>
             <p>HERITAGE OF EXCELLENCE</p>
         </div>
         <div class="quote">

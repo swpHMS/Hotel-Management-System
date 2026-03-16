@@ -25,7 +25,7 @@
 
                         </a>
                     </div>
-                        <h1><a href="${pageContext.request.contextPath}/home" style="text-decoration: none; color: inherit">REGAL QUINTET</a></h1>
+                        <h1><a href="${pageContext.request.contextPath}/home" style="text-decoration: none; color: inherit">${nameHotel}</a></h1>
                     <p class="subtitle">HOTEL & RESORTS</p>
                 </div>
                 <div class="quote-box">
@@ -107,7 +107,7 @@
         </div>
         
         <div class="page-footer">
-            <a href="#">PRIVACY POLICY</a>
+            <a href="${pageContext.request.contextPath}/policy">PRIVACY POLICY</a>
             <a href="#">SYSTEM STATUS</a>
             <a href="#">REGAL QUINTET V1.0</a>
         </div>

@@ -1,5 +1,6 @@
 package controller.auth;
 
+import dal.HotelInformationDAO;
 import dal.UserDAO;
 import model.User;
 import utils.EmailUtils;
@@ -17,6 +18,9 @@ public class RegisterServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        HotelInformationDAO hotel=new HotelInformationDAO();
+        String nameH=hotel.getSingleHotel().getName();
+         request.setAttribute("nameHotel", nameH);
         request.getRequestDispatcher("/view/auth/register-customer.jsp").forward(request, response);
     }
 
@@ -33,6 +37,7 @@ public class RegisterServlet extends HttpServlet {
 
         String error = null;
 
+        
 
         if (fullName == null || fullName.trim().isEmpty() || 
             email == null || email.trim().isEmpty() || 
@@ -101,6 +106,7 @@ public class RegisterServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("error", "System error: " + e.getMessage());
+           
             request.getRequestDispatcher("/view/auth/register-customer.jsp").forward(request, response);
         }
     }
