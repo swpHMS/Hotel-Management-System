@@ -33,7 +33,6 @@ public class UpdateRoomServlet extends HttpServlet {
 
             request.setAttribute("room", room);
             request.setAttribute("roomTypeList", roomDAO.getAllRoomTypes());
-
             request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
 
         } catch (Exception e) {
@@ -73,6 +72,9 @@ public class UpdateRoomServlet extends HttpServlet {
             errorList.add("Room number is required.");
         } else {
             roomNo = roomNo.trim();
+            if (!roomNo.matches("^\\d{1,4}$")) {
+                errorList.add("Room number must contain only digits and have at most 4 digits.");
+            }
         }
 
         try {
@@ -86,8 +88,8 @@ public class UpdateRoomServlet extends HttpServlet {
 
         try {
             floor = Integer.parseInt(floorRaw);
-            if (floor < 1) {
-                errorList.add("Floor must be greater than or equal to 1.");
+            if (floor <= 0 || floor >= 99) {
+                errorList.add("Floor must be greater than 0 and less than 99.");
             }
         } catch (Exception e) {
             errorList.add("Floor is invalid.");
@@ -100,6 +102,13 @@ public class UpdateRoomServlet extends HttpServlet {
             }
         } catch (Exception e) {
             errorList.add("Status is invalid.");
+        }
+
+        if (roomNo != null && !roomNo.isEmpty() && floor > 0 && floor < 99 && roomNo.matches("^\\d{1,4}$")) {
+            if (!roomNo.startsWith(String.valueOf(floor))) {
+                errorList.add("Room number must match the floor. Example: floor " + floor
+                        + " should use room numbers starting with " + floor + ".");
+            }
         }
 
         if (roomNo != null && !roomNo.isEmpty() && roomDAO.isRoomNoExistsForOtherRoom(roomNo, roomId)) {

@@ -645,7 +645,6 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
         sql.append(" AND (")
            .append(" c.full_name LIKE ? ")
            .append(" OR CAST(b.booking_id AS VARCHAR(20)) LIKE ? ")
-           .append(" OR c.phone LIKE ? ")
            .append(" OR EXISTS ( ")
            .append("      SELECT 1 ")
            .append("      FROM dbo.stay_room_assignments sraS ")
@@ -674,7 +673,6 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
 
         if (search != null && !search.trim().isEmpty()) {
             String keyword = "%" + search.trim() + "%";
-            st.setString(paramIdx++, keyword);
             st.setString(paramIdx++, keyword);
             st.setString(paramIdx++, keyword);
             st.setString(paramIdx++, keyword);
@@ -773,7 +771,6 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
         sql.append(" AND (")
            .append(" c.full_name LIKE ? ")
            .append(" OR CAST(b.booking_id AS VARCHAR(20)) LIKE ? ")
-           .append(" OR c.phone LIKE ? ")
            .append(" OR EXISTS ( ")
            .append("      SELECT 1 ")
            .append("      FROM dbo.stay_room_assignments sraS ")
@@ -797,7 +794,6 @@ public List<BookingDashboard> getTodayOperations(String targetDate, String searc
 
         if (search != null && !search.trim().isEmpty()) {
             String p = "%" + search.trim() + "%";
-            st.setString(paramIdx++, p);
             st.setString(paramIdx++, p);
             st.setString(paramIdx++, p);
             st.setString(paramIdx++, p);
