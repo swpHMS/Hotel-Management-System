@@ -28,10 +28,10 @@
             </c:choose>
         </div>
     </c:if>
-    <c:if test="${not empty param.error}">
+    <c:if test="${not empty param.error && mode != 'create' && mode != 'edit'}">
         <div class="rt-alert error">${param.error}</div>
     </c:if>
-    <c:if test="${not empty errors}">
+    <c:if test="${not empty errors && mode != 'create' && mode != 'edit'}">
         <div class="rt-alert error">
             <ul>
                 <c:forEach var="err" items="${errors}"><li>${err}</li></c:forEach>
