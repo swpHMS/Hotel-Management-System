@@ -3,9 +3,7 @@
   const wrapper = document.getElementById("roomsWrapper");
   if (!btn || !wrapper) return;
 
-  btn.addEventListener("click", function (e) {
-    e.preventDefault();
-
+  btn.addEventListener("click", function () {
     wrapper.classList.toggle("rooms-collapsed");
     const expanded = !wrapper.classList.contains("rooms-collapsed");
 

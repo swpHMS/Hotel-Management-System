@@ -10,7 +10,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.time.temporal.ChronoUnit;
+
 import model.HotelInformation;
 
 import java.io.IOException;
@@ -74,7 +74,7 @@ public class HomeServlet extends HttpServlet {
         String roomQtyStr = req.getParameter("roomQty");
         String adultsStr = req.getParameter("adults");
         String childrenStr = req.getParameter("children");
-        String view = req.getParameter("view");
+
         String q = normalize(qStr);
 
         LocalDate checkIn = parseDateOrDefault(checkInStr, defaultIn);
@@ -83,10 +83,7 @@ public class HomeServlet extends HttpServlet {
         if (!checkOut.isAfter(checkIn)) {
             checkOut = checkIn.plusDays(1);
         }
-        long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
-        if (nights > 30) {
-            req.setAttribute("dateError", "You can only book up to 30 nights.");
-        }
+
         // guests + rooms
         int roomQty = clamp(parseIntOrDefault(roomQtyStr, 1), 1, 20);
         int adults = clamp(parseIntOrDefault(adultsStr, 2), 1, 30);
@@ -111,8 +108,8 @@ public class HomeServlet extends HttpServlet {
         req.setAttribute("totalRoomTypes", totalRoomTypes);
 
         // ✅ Search khi user bấm FIND ROOMS hoặc có bất kỳ param filter nào
-        boolean isSearching
-                = (qStr != null && !qStr.isBlank())
+        boolean isSearching =
+                (qStr != null && !qStr.isBlank())
                 || (checkInStr != null && !checkInStr.isBlank())
                 || (checkOutStr != null && !checkOutStr.isBlank())
                 || (roomQtyStr != null && !roomQtyStr.isBlank())
@@ -120,46 +117,46 @@ public class HomeServlet extends HttpServlet {
                 || (childrenStr != null && !childrenStr.isBlank());
 
         List<model.RoomType> roomTypes;
-
         if (isSearching) {
-            roomTypes = roomTypeRepo.searchForBooking(checkIn, checkOut, q, adults, children, roomQty, 200);
+            // ✅ NEW: lọc availability theo date range + capacity theo roomQty + keyword
+            roomTypes = roomTypeRepo.searchForBooking(checkIn, checkOut, q, adults, children, roomQty, DEFAULT_LIMIT);
         } else {
-            roomTypes = roomTypeRepo.getAllActiveRoomTypesForHome();
+            roomTypes = roomTypeRepo.getActiveRoomTypesForHome(DEFAULT_LIMIT);
         }
 
         // ✅ Map lưu nhiều ảnh cho từng room type
         Map<Integer, List<String>> imagesMap = new HashMap<>();
 
         if (roomTypes != null) {
-            for (var rt : roomTypes) {
+    for (var rt : roomTypes) {
 
-                rt.setAmenityNames(
-                        amenityRepo.getAmenityNamesByRoomType(rt.getRoomTypeId())
-                );
+        rt.setAmenityNames(
+                amenityRepo.getAmenityNamesByRoomType(rt.getRoomTypeId())
+        );
 
-                try {
-                    List<String> urls = roomTypeImageRepo.getImageUrlsByRoomTypeId(rt.getRoomTypeId());
+        try {
+            List<String> urls = roomTypeImageRepo.getImageUrlsByRoomTypeId(rt.getRoomTypeId());
 
-                    imagesMap.put(rt.getRoomTypeId(), urls);
+            imagesMap.put(rt.getRoomTypeId(), urls);
 
-                    System.out.println("=== HOME DEBUG ===");
-                    System.out.println("ROOM TYPE ID = " + rt.getRoomTypeId());
-                    System.out.println("ROOM TYPE NAME = " + rt.getName());
+            System.out.println("=== HOME DEBUG ===");
+            System.out.println("ROOM TYPE ID = " + rt.getRoomTypeId());
+            System.out.println("ROOM TYPE NAME = " + rt.getName());
 
-                    if (urls == null || urls.isEmpty()) {
-                        System.out.println("NO IMAGES");
-                    } else {
-                        for (int i = 0; i < urls.size(); i++) {
-                            System.out.println("IMG[" + i + "] = " + urls.get(i));
-                        }
-                    }
-
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    imagesMap.put(rt.getRoomTypeId(), new ArrayList<>());
+            if (urls == null || urls.isEmpty()) {
+                System.out.println("NO IMAGES");
+            } else {
+                for (int i = 0; i < urls.size(); i++) {
+                    System.out.println("IMG[" + i + "] = " + urls.get(i));
                 }
             }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            imagesMap.put(rt.getRoomTypeId(), new ArrayList<>());
         }
+    }
+}
 
         req.setAttribute("roomTypes", roomTypes);
         req.setAttribute("imagesMap", imagesMap);

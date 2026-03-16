@@ -1,14 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
-<%@ page import="model.User" %>
-
 <%
-User user = (User) session.getAttribute("userAccount");
-
-String userName = "Staff";
-if (user != null && user.getFullName() != null && !user.getFullName().trim().isEmpty()) {
-    userName = user.getFullName().trim();
-}
+String userName = (String) session.getAttribute("staffName");
+if (userName == null || userName.trim().isEmpty()) userName = "Staff";
 
 String active = (String) pageContext.findAttribute("currentPage");
 if (active == null) active = "";
@@ -18,6 +12,7 @@ String initials = parts.length >= 2
         ? ("" + parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
         : ("" + userName.charAt(0)).toUpperCase();
 %>
+
 <aside class="sb">
 
     <div class="sb-brand">
