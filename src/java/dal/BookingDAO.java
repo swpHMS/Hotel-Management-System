@@ -27,9 +27,9 @@ public class BookingDAO extends DBContext {
     // GET CUSTOMER ID
     // =========================================================
     public int countCurrentBookingsByCustomerId(int customerId) {
-        updateNoShowBookings();
+    updateNoShowBookings();
 
-        String sql = """
+    String sql = """
         SELECT COUNT(*)
         FROM (
             SELECT
@@ -47,22 +47,22 @@ public class BookingDAO extends DBContext {
         ) x
     """;
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, customerId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
         }
-        return 0;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    return 0;
+}
 
-    public List<BookingCardView> getCurrentBookingsByCustomerIdPaging(int customerId, int page, int pageSize) {
-        updateNoShowBookings();
+public List<BookingCardView> getCurrentBookingsByCustomerIdPaging(int customerId, int page, int pageSize) {
+    updateNoShowBookings();
 
-        String sql = """
+    String sql = """
         SELECT
             b.booking_id       AS bookingId,
             b.status           AS bookingStatus,
@@ -112,24 +112,24 @@ public class BookingDAO extends DBContext {
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """;
 
-        List<BookingCardView> list = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ps.setInt(2, (page - 1) * pageSize);
-            ps.setInt(3, pageSize);
+    List<BookingCardView> list = new ArrayList<>();
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, customerId);
+        ps.setInt(2, (page - 1) * pageSize);
+        ps.setInt(3, pageSize);
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapBookingCard(rs));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            list.add(mapBookingCard(rs));
         }
-        return list;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    return list;
+}
 
-    public int countPastStaysByCustomerId(int customerId) {
-        String sql = """
+public int countPastStaysByCustomerId(int customerId) {
+    String sql = """
         SELECT COUNT(*)
         FROM (
             SELECT
@@ -146,20 +146,20 @@ public class BookingDAO extends DBContext {
         ) x
     """;
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, customerId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
         }
-        return 0;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    return 0;
+}
 
-    public List<BookingCardView> getPastStaysByCustomerIdPaging(int customerId, int page, int pageSize) {
-        String sql = """
+public List<BookingCardView> getPastStaysByCustomerIdPaging(int customerId, int page, int pageSize) {
+    String sql = """
         SELECT
             b.booking_id       AS bookingId,
             b.status           AS bookingStatus,
@@ -208,22 +208,22 @@ public class BookingDAO extends DBContext {
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """;
 
-        List<BookingCardView> list = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ps.setInt(2, (page - 1) * pageSize);
-            ps.setInt(3, pageSize);
+    List<BookingCardView> list = new ArrayList<>();
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, customerId);
+        ps.setInt(2, (page - 1) * pageSize);
+        ps.setInt(3, pageSize);
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapBookingCard(rs));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            list.add(mapBookingCard(rs));
         }
-        return list;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
-
+    return list;
+}
+    
     public Integer getCustomerIdByUserId(int userId) {
 
         String sql = """
@@ -573,107 +573,141 @@ public class BookingDAO extends DBContext {
         return executeBookingQuery(sql, customerId);
     }
 
-    public List<BookingDashboard> getTodayOperations(String targetDate, String search, String status, String sort, int index, int pageSize) {
-        List<BookingDashboard> list = new ArrayList<>();
+public List<BookingDashboard> getTodayOperations(String targetDate, String search, String status, String sort, int index, int pageSize) {
+    List<BookingDashboard> list = new ArrayList<>();
 
-        StringBuilder sql = new StringBuilder(
-                "SELECT "
-                + " b.booking_id, "
-                + " c.full_name, "
-                + " rt.name AS room_type_name, "
-                + " b.check_in_date, "
-                + " b.check_out_date, "
-                + " b.status AS booking_status, "
-                + " brt.quantity, "
-                // Lấy tất cả số phòng đã assign của booking, ghép thành chuỗi
-                + " (SELECT STRING_AGG(CAST(r2.room_no AS VARCHAR(20)), ', ') "
-                + "    FROM dbo.stay_room_assignments sra2 "
-                + "    JOIN dbo.rooms r2 ON sra2.room_id = r2.room_id "
-                + "   WHERE sra2.booking_id = b.booking_id) AS room_no, "
-                // Đếm tổng guest thực tế của cả booking
-                + " (SELECT COUNT(*) "
-                + "    FROM dbo.stay_room_guests srg "
-                + "    JOIN dbo.stay_room_assignments sra3 ON srg.assignment_id = sra3.assignment_id "
-                + "   WHERE sra3.booking_id = b.booking_id) AS num_person, "
-                // Lấy assignment status tổng quát:
-                // nếu có ít nhất 1 assignment status=2 thì coi là checked-in
-                + " CASE "
-                + "     WHEN EXISTS (SELECT 1 FROM dbo.stay_room_assignments sra4 WHERE sra4.booking_id = b.booking_id AND sra4.status = 2) THEN 2 "
-                + "     WHEN EXISTS (SELECT 1 FROM dbo.stay_room_assignments sra4 WHERE sra4.booking_id = b.booking_id AND sra4.status = 3) THEN 3 "
-                + "     ELSE NULL "
-                + "   END AS assignment_status "
-                + "FROM dbo.bookings b "
-                + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
-                + "LEFT JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
-                + "LEFT JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id "
-                + "WHERE b.status IN (2, 3, 4) "
-        );
+    StringBuilder sql = new StringBuilder();
+    sql.append(
+            "SELECT "
+            + " b.booking_id, "
+            + " c.full_name, "
+            + " c.phone, "
+            + " u.email, "
+            + " rt.name AS room_type_name, "
+            + " b.check_in_date, "
+            + " b.check_out_date, "
+            + " b.status AS booking_status, "
+            + " brt.quantity, "
+            + " N'' AS note, "
 
-        // Filter status
+            + " ISNULL(( "
+            + "     SELECT STRING_AGG(CAST(r2.room_no AS VARCHAR(20)), ', ') "
+            + "     FROM dbo.stay_room_assignments sra2 "
+            + "     JOIN dbo.rooms r2 ON sra2.room_id = r2.room_id "
+            + "     WHERE sra2.booking_id = b.booking_id "
+            + " ), N'—') AS assigned_room_nos, "
+
+            + " ISNULL(( "
+            + "     SELECT STRING_AGG( "
+            + "         CAST(r2.room_no AS VARCHAR(20)) "
+            + "         + N' - Floor ' + CAST(r2.floor AS NVARCHAR(10)) "
+            + "         + N' - ' + rt2.name "
+            + "     , N', ') "
+            + "     FROM dbo.stay_room_assignments sra3 "
+            + "     JOIN dbo.rooms r2 ON sra3.room_id = r2.room_id "
+            + "     JOIN dbo.room_types rt2 ON r2.room_type_id = rt2.room_type_id "
+            + "     WHERE sra3.booking_id = b.booking_id "
+            + " ), N'—') AS assigned_room_details, "
+
+            + " ISNULL(( "
+            + "     SELECT COUNT(*) "
+            + "     FROM dbo.stay_room_guests srg "
+            + "     JOIN dbo.stay_room_assignments sra4 ON srg.assignment_id = sra4.assignment_id "
+            + "     WHERE sra4.booking_id = b.booking_id "
+            + " ), 0) AS num_person "
+
+            + "FROM dbo.bookings b "
+            + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
+            + "LEFT JOIN dbo.users u ON c.user_id = u.user_id "
+            + "LEFT JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
+            + "LEFT JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id "
+            + "WHERE b.status IN (2, 3, 4, 6) "
+    );
+
+    if (status == null || status.equals("0")) {
+        sql.append(" AND ( ")
+           .append("      (CONVERT(DATE, b.check_in_date) = ? AND b.status = 2) ")
+           .append("   OR (b.status = 3) ")
+           .append("   OR (CONVERT(DATE, b.check_out_date) = ? AND b.status = 4) ")
+           .append("   OR (CONVERT(DATE, b.check_in_date) = ? AND b.status = 6) ")
+           .append(" ) ");
+    } else if (status.equals("2")) {
+        sql.append(" AND b.status = 2 AND CONVERT(DATE, b.check_in_date) = ? ");
+    } else if (status.equals("3")) {
+        sql.append(" AND b.status = 3 ");
+    } else if (status.equals("4")) {
+        sql.append(" AND b.status = 4 AND CONVERT(DATE, b.check_out_date) = ? ");
+    } else if (status.equals("6")) {
+        sql.append(" AND b.status = 6 AND CONVERT(DATE, b.check_in_date) = ? ");
+    }
+
+    if (search != null && !search.trim().isEmpty()) {
+        sql.append(" AND (")
+           .append(" c.full_name LIKE ? ")
+           .append(" OR CAST(b.booking_id AS VARCHAR(20)) LIKE ? ")
+           .append(" OR EXISTS ( ")
+           .append("      SELECT 1 ")
+           .append("      FROM dbo.stay_room_assignments sraS ")
+           .append("      JOIN dbo.rooms rS ON sraS.room_id = rS.room_id ")
+           .append("      WHERE sraS.booking_id = b.booking_id ")
+           .append("        AND CAST(rS.room_no AS VARCHAR(20)) LIKE ? ")
+           .append(" ) ")
+           .append(") ");
+    }
+
+    String orderBy = "Oldest".equalsIgnoreCase(sort) ? "ASC" : "DESC";
+    sql.append(" ORDER BY b.check_in_date ").append(orderBy)
+       .append(", b.booking_id DESC ")
+       .append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+
+    try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+        int paramIdx = 1;
+
         if (status == null || status.equals("0")) {
-            sql.append(" AND ( ")
-                    .append("      (CONVERT(DATE, b.check_in_date) = ? AND b.status = 2) ")
-                    .append("   OR (b.status = 3) ")
-                    .append("   OR (CONVERT(DATE, b.check_out_date) = ? AND b.status = 4) ")
-                    .append(" ) ");
-        } else if (status.equals("1")) {
-            sql.append(" AND b.status = 2 AND CONVERT(DATE, b.check_in_date) = ? ");
-        } else if (status.equals("2")) {
-            sql.append(" AND b.status = 3 ");
-        } else if (status.equals("3")) {
-            sql.append(" AND b.status = 4 AND CONVERT(DATE, b.check_out_date) = ? ");
+            st.setString(paramIdx++, targetDate);
+            st.setString(paramIdx++, targetDate);
+            st.setString(paramIdx++, targetDate);
+        } else if (status.equals("2") || status.equals("4") || status.equals("6")) {
+            st.setString(paramIdx++, targetDate);
         }
 
         if (search != null && !search.trim().isEmpty()) {
-            sql.append(" AND (c.full_name LIKE ? OR CAST(b.booking_id AS VARCHAR) LIKE ? OR c.phone LIKE ?) ");
+            String keyword = "%" + search.trim() + "%";
+            st.setString(paramIdx++, keyword);
+            st.setString(paramIdx++, keyword);
+            st.setString(paramIdx++, keyword);
         }
 
-        String orderBy = "Oldest".equals(sort) ? "ASC" : "DESC";
-        sql.append(" ORDER BY b.check_in_date ").append(orderBy)
-                .append(", b.booking_id DESC ")
-                .append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+        st.setInt(paramIdx++, (index - 1) * pageSize);
+        st.setInt(paramIdx, pageSize);
 
-        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            int paramIdx = 1;
+        ResultSet rs = st.executeQuery();
+        while (rs.next()) {
+            BookingDashboard d = new BookingDashboard();
 
-            if (status == null || status.equals("0")) {
-                st.setString(paramIdx++, targetDate);
-                st.setString(paramIdx++, targetDate);
-            } else if (status.equals("1") || status.equals("3")) {
-                st.setString(paramIdx++, targetDate);
-            }
+            d.setBookingId(rs.getInt("booking_id"));
+            d.setGuestName(rs.getNString("full_name"));
+            d.setPhone(rs.getString("phone"));
+            d.setEmail(rs.getString("email"));
+            d.setRoomTypeName(rs.getNString("room_type_name"));
+            d.setCheckInDate(rs.getDate("check_in_date"));
+            d.setCheckOutDate(rs.getDate("check_out_date"));
+            d.setNumRooms(rs.getInt("quantity"));
+            d.setNumPersons(rs.getInt("num_person"));
+            d.setBookingStatus(rs.getInt("booking_status"));
+            d.setAssignedRoomNos(rs.getString("assigned_room_nos"));
+            d.setAssignedRoomDetails(rs.getString("assigned_room_details"));
+            d.setRoomNo(rs.getString("assigned_room_nos"));
+            d.setNote(rs.getNString("note"));
 
-            if (search != null && !search.trim().isEmpty()) {
-                String p = "%" + search + "%";
-                st.setString(paramIdx++, p);
-                st.setString(paramIdx++, p);
-                st.setString(paramIdx++, p);
-            }
-
-            st.setInt(paramIdx++, (index - 1) * pageSize);
-            st.setInt(paramIdx, pageSize);
-
-            ResultSet rs = st.executeQuery();
-            while (rs.next()) {
-                BookingDashboard d = new BookingDashboard();
-                d.setBookingId(rs.getInt("booking_id"));
-                d.setGuestName(rs.getNString("full_name"));
-                d.setRoomTypeName(rs.getNString("room_type_name"));
-                d.setNumRooms(rs.getInt("quantity"));
-                d.setNumPersons(rs.getInt("num_person"));
-                d.setCheckInDate(rs.getDate("check_in_date"));
-                d.setCheckOutDate(rs.getDate("check_out_date"));
-                d.setBookingStatus(rs.getInt("booking_status"));
-                d.setAssignmentStatus(rs.getInt("assignment_status"));
-                d.setRoomNo(rs.getString("room_no"));
-                list.add(d);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+            list.add(d);
         }
-
-        return list;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+
+    return list;
+}
 
     public DashboardStats getDashboardStats(String targetDate) {
         DashboardStats stats = new DashboardStats();
@@ -707,74 +741,73 @@ public class BookingDAO extends DBContext {
         return stats;
     }
 
-    public void updateNoShowStatus(String targetDate) {
-
-        java.time.LocalTime now = java.time.LocalTime.now();
-        int currentHour = now.getHour();
-
-        if (currentHour >= 18) {
-
-            String sql = "UPDATE bookings SET status = 4 "
-                    + "WHERE CAST(check_in_date AS DATE) = ? AND status = 1";
-
-            try (PreparedStatement st = connection.prepareStatement(sql)) {
-                st.setString(1, targetDate);
-                st.executeUpdate();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-
-    }
 
     public int getTotalTodayOperations(String targetDate, String search, String status) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM bookings b "
-                + "JOIN customers c ON b.customer_id = c.customer_id "
-                + "LEFT JOIN stay_room_assignments sra ON b.booking_id = sra.booking_id "
-                + "WHERE 1=1 ");
+    StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) "
+            + "FROM dbo.bookings b "
+            + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
+            + "WHERE b.status IN (2, 3, 4, 6) "
+    );
 
-        if (status == null || status.equals("0")) {
-            sql.append(" AND ((CAST(b.check_in_date AS DATE) = ? AND b.status = 1) ")
-                    .append(" OR (CAST(b.check_in_date AS DATE) <= ? AND CAST(b.check_out_date AS DATE) >= ? AND sra.status IN (2, 3))) ");
-        }
-
-        if (search != null && !search.isEmpty()) {
-            sql.append(" AND (c.full_name LIKE ? OR CAST(b.booking_id AS VARCHAR) LIKE ? OR c.phone LIKE ?) ");
-        }
-
-        if (status != null && !status.equals("0")) {
-            if (status.equals("1")) {
-                sql.append(" AND b.status = 1 AND (sra.status IS NULL OR sra.status = 1) ");
-            } else if (status.equals("2")) {
-                sql.append(" AND sra.status = 2 ");
-            } else if (status.equals("3")) {
-                sql.append(" AND sra.status = 3 ");
-            }
-        }
-
-        try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
-            int paramIdx = 1;
-            if (status == null || status.equals("0")) {
-                st.setString(paramIdx++, targetDate);
-                st.setString(paramIdx++, targetDate);
-                st.setString(paramIdx++, targetDate);
-            }
-            if (search != null && !search.isEmpty()) {
-                String p = "%" + search + "%";
-                st.setString(paramIdx++, p);
-                st.setString(paramIdx++, p);
-                st.setString(paramIdx++, p);
-            }
-            ResultSet rs = st.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
+    if (status == null || status.equals("0")) {
+        sql.append(" AND ( ")
+           .append("      (CAST(b.check_in_date AS DATE) = ? AND b.status = 2) ")
+           .append("   OR (b.status = 3) ")
+           .append("   OR (CAST(b.check_out_date AS DATE) = ? AND b.status = 4) ")
+           .append("   OR (CAST(b.check_in_date AS DATE) = ? AND b.status = 6) ")
+           .append(" ) ");
+    } else if (status.equals("2")) {
+        sql.append(" AND b.status = 2 AND CAST(b.check_in_date AS DATE) = ? ");
+    } else if (status.equals("3")) {
+        sql.append(" AND b.status = 3 ");
+    } else if (status.equals("4")) {
+        sql.append(" AND b.status = 4 AND CAST(b.check_out_date AS DATE) = ? ");
+    } else if (status.equals("6")) {
+        sql.append(" AND b.status = 6 AND CAST(b.check_in_date AS DATE) = ? ");
     }
 
+    if (search != null && !search.trim().isEmpty()) {
+        sql.append(" AND (")
+           .append(" c.full_name LIKE ? ")
+           .append(" OR CAST(b.booking_id AS VARCHAR(20)) LIKE ? ")
+           .append(" OR EXISTS ( ")
+           .append("      SELECT 1 ")
+           .append("      FROM dbo.stay_room_assignments sraS ")
+           .append("      JOIN dbo.rooms rS ON sraS.room_id = rS.room_id ")
+           .append("      WHERE sraS.booking_id = b.booking_id ")
+           .append("        AND CAST(rS.room_no AS VARCHAR(20)) LIKE ? ")
+           .append(" ) ")
+           .append(") ");
+    }
+
+    try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
+        int paramIdx = 1;
+
+        if (status == null || status.equals("0")) {
+            st.setString(paramIdx++, targetDate);
+            st.setString(paramIdx++, targetDate);
+            st.setString(paramIdx++, targetDate);
+        } else if (status.equals("2") || status.equals("4") || status.equals("6")) {
+            st.setString(paramIdx++, targetDate);
+        }
+
+        if (search != null && !search.trim().isEmpty()) {
+            String p = "%" + search.trim() + "%";
+            st.setString(paramIdx++, p);
+            st.setString(paramIdx++, p);
+            st.setString(paramIdx++, p);
+        }
+
+        ResultSet rs = st.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return 0;
+}
     public BookingDashboard getBookingById(int bookingId) {
         String sql = "SELECT b.booking_id, c.full_name, b.check_in_date, b.check_out_date, b.total_amount, "
                 + "ISNULL((SELECT SUM(amount) FROM payments WHERE booking_id = b.booking_id AND status = 1), 0) AS deposit_amount "
