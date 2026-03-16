@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
 <div class="dash-topbar mb-3">
     <div>
@@ -27,7 +28,7 @@
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon-wrapper bg-indigo-soft"><i class="bi bi-crown-fill"></i></div>
+        <div class="stat-icon-wrapper bg-indigo-soft"><i class="bi bi-person-check-fill"></i></div>
         <div>
             <span class="stat-label">OCCUPIED</span>
             <div class="stat-value">${guestStays}</div>
@@ -84,16 +85,13 @@
             </div>
 
             <c:set var="fullHousePercent"
-                   value="${totalInventory == 0 ? 0 : (guestStays * 100 / totalInventory)}"/>
+                   value="${totalInventory == 0 ? 0 : (guestStays * 100.0 / totalInventory)}"/>
 
-            <div class="text-center mt-2">
-                <div style="font-size: 40px; font-weight: 900; color:#0f172a;">${fullHousePercent}%</div>
-                <div style="font-size:.75rem; font-weight: 900; letter-spacing: 3px; color:#c9a256; margin-top:-8px;">
-                    FULL HOUSE
-                </div>
-            </div>
+            <c:set var="fullHousePercentText">
+                <fmt:formatNumber value="${fullHousePercent}" type="number" minFractionDigits="2" maxFractionDigits="2"/>%
+            </c:set>
 
-            <!-- ✅ Legend trạng thái phòng (theo schema rooms.status) -->
+            <!-- âœ… Legend tráº¡ng thÃ¡i phÃ²ng (theo schema rooms.status) -->
             <div class="mt-3">
                 <div class="d-flex justify-content-between align-items-center py-2 px-3"
                      style="background:#f8fafc;border-radius:14px;">
@@ -137,7 +135,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-    // ✅ TẤT CẢ TREND đều từ DB (room_type_inventory) - servlet set
+    // âœ… Táº¤T Cáº¢ TREND Ä‘á»u tá»« DB (room_type_inventory) - servlet set
     const dailyLabels   = ${dailyLabelsJs};
     const dailyData     = ${dailyValuesJs};
 
@@ -172,8 +170,35 @@
         }
     });
 
-    // Composition chart từ dbo.rooms.status
+    // Composition chart tá»« dbo.rooms.status
     const ctxC = document.getElementById("compositionChart");
+    const fullHouseText = "${fullHousePercentText}";
+    const centerTextPlugin = {
+        id: "centerTextPlugin",
+        afterDatasetsDraw(chart) {
+            const {ctx} = chart;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data || !meta.data.length) return;
+
+            const x = meta.data[0].x;
+            const y = meta.data[0].y;
+
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            ctx.fillStyle = "#0f172a";
+            ctx.font = "900 36px sans-serif";
+            ctx.fillText(fullHouseText, x, y - 8);
+
+            ctx.fillStyle = "#c9a256";
+            ctx.font = "900 12px sans-serif";
+            ctx.letterSpacing = "3px";
+            ctx.fillText("FULL HOUSE", x, y + 28);
+            ctx.restore();
+        }
+    };
+
     new Chart(ctxC, {
         type: "doughnut",
         data: {
@@ -185,8 +210,9 @@
                     Number("${servicing}"),
                     Number("${outOfOrder}")
                 ],
-                borderWidth: 10,
-                borderColor: "#ffffff",
+                borderWidth: 0,
+                spacing: 0,
+                borderRadius: 0,
                 backgroundColor: ["#c9a256", "#0f172a", "#f59e0b", "#94a3b8"]
             }]
         },
@@ -195,7 +221,8 @@
             maintainAspectRatio: false,
             cutout: "72%",
             plugins: { legend: { display: false } }
-        }
+        },
+        plugins: [centerTextPlugin]
     });
 
     document.getElementById("btnDaily").addEventListener("click", () => {
