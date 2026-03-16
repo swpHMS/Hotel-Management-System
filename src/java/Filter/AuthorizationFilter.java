@@ -37,7 +37,7 @@ public class AuthorizationFilter implements Filter {
     }
 
     private boolean isPublicPath(String path) {
-    return path.startsWith("/login")
+    return path.contains("/login")
             || path.startsWith("/logout")
             || path.startsWith("/register")
             || path.startsWith("/reset-password")
@@ -129,7 +129,7 @@ public class AuthorizationFilter implements Filter {
                     || path.contains("staff-profile")) {
                 chain.doFilter(request, response);
             } else {
-                res.sendRedirect(contextPath + "/staff");
+                res.sendRedirect(contextPath + "/staff/room-operations");
             }
             return;
         }
@@ -139,7 +139,7 @@ public class AuthorizationFilter implements Filter {
             boolean customerAllowed = isPublicPath(path)
                     || mustLogin(path);
 
-            if (customerAllowed) {
+            if (customerAllowed || uri.contains("/customer") || uri.contains("/current_bookings")){
                 chain.doFilter(request, response);
             } else {
                 res.sendRedirect(contextPath + "/home");
