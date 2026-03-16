@@ -16,7 +16,6 @@ public class ReceptCheckoutDAO extends DBContext {
     public CheckoutBill getCheckoutBill(int bookingId) {
         CheckoutBill bill = new CheckoutBill();
         
-        // Query 1: Lấy thông tin (Đã bỏ c.email vì bảng customers không có cột này)
         String sqlBooking = 
             "SELECT b.booking_id, c.full_name, c.phone, " +
             "       b.check_in_date, b.check_out_date, b.total_amount AS room_charges, " +
@@ -27,7 +26,6 @@ public class ReceptCheckoutDAO extends DBContext {
             "JOIN dbo.customers c ON b.customer_id = c.customer_id " +
             "WHERE b.booking_id = ?";
 
-        // Query 2: Lấy các dịch vụ đã chốt (POSTED - status = 1)
         String sqlServices = 
             "SELECT s.name AS service_name, soi.quantity, soi.unit_price_snapshot, " +
             "       (soi.quantity * soi.unit_price_snapshot) AS total_price " +
@@ -36,17 +34,15 @@ public class ReceptCheckoutDAO extends DBContext {
             "JOIN dbo.services s ON soi.service_id = s.service_id " +
             "WHERE so.booking_id = ? AND so.status = 1";
 
-        try (Connection con = connection) {
-            // Thực thi Query 1
-            try (PreparedStatement ps = con.prepareStatement(sqlBooking)) {
+        // ĐÃ SỬA: Bỏ "Connection con = connection" ra khỏi try()
+        try {
+            try (PreparedStatement ps = connection.prepareStatement(sqlBooking)) {
                 ps.setInt(1, bookingId);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         bill.setBookingId(rs.getInt("booking_id"));
                         bill.setCustomerName(rs.getString("full_name"));
                         bill.setPhone(rs.getString("phone"));
-                        // bill.setEmail(...) -> Đã loại bỏ
-                        
                         bill.setCheckInDate(rs.getDate("check_in_date"));
                         bill.setCheckOutDate(rs.getDate("check_out_date"));
                         
@@ -68,11 +64,10 @@ public class ReceptCheckoutDAO extends DBContext {
                 }
             }
 
-            // Thực thi Query 2
             List<CheckoutServiceItem> usedServices = new ArrayList<>();
             long totalServiceCharges = 0;
             
-            try (PreparedStatement ps = con.prepareStatement(sqlServices)) {
+            try (PreparedStatement ps = connection.prepareStatement(sqlServices)) {
                 ps.setInt(1, bookingId);
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -87,14 +82,13 @@ public class ReceptCheckoutDAO extends DBContext {
                 }
             }
             
-            // Tổng hợp tài chính
             bill.setUsedServices(usedServices);
             bill.setServiceCharges(totalServiceCharges);
             bill.setTotalAmount(bill.getRoomCharges() + totalServiceCharges);
             bill.setBalanceDue(bill.getTotalAmount() - bill.getDepositPaid());
 
         } catch (SQLException e) {
-            e.printStackTrace(); // Nếu còn lỗi khác, nó sẽ in đỏ ở log của NetBeans
+            e.printStackTrace(); 
         }
         return bill;
     }

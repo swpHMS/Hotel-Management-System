@@ -1,25 +1,26 @@
 package dal;
 
 import context.DBContext;
-
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ManagerDashboardDAO extends DBContext {
 
     public static class TrendPoint {
         public final String label;
-        public final int value;
-        public TrendPoint(String label, int value) {
+        public final double value;
+
+        public TrendPoint(String label, double value) {
             this.label = label;
             this.value = value;
         }
     }
 
-    /**
-     * KPI theo dbo.rooms.status:
-     * 1:AVAILABLE, 2:OCCUPIED, 3:MAINTENANCE, 4:DIRTY
-     */
     public Map<String, Integer> getRoomStatusCounts() {
         String sql = """
             SELECT
@@ -38,10 +39,10 @@ public class ManagerDashboardDAO extends DBContext {
 
             if (rs.next()) {
                 m.put("totalInventory", rs.getInt("total"));
-                m.put("liveSuites", rs.getInt("available"));     // Available
-                m.put("guestStays", rs.getInt("occupied"));      // Occupied
-                m.put("servicing", rs.getInt("dirty"));          // DIRTY ≈ servicing/housekeeping
-                m.put("outOfOrder", rs.getInt("maintenance"));   // MAINTENANCE ≈ out-of-order
+                m.put("liveSuites", rs.getInt("available"));
+                m.put("guestStays", rs.getInt("occupied"));
+                m.put("servicing", rs.getInt("dirty"));
+                m.put("outOfOrder", rs.getInt("maintenance"));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -49,20 +50,33 @@ public class ManagerDashboardDAO extends DBContext {
         return m;
     }
 
-    /**
-     * Booking Velocity DAILY: lấy từ dbo.room_type_inventory
-     * SUM(booked_rooms) theo inventory_date trong N ngày gần nhất
-     */
     public List<TrendPoint> getBookingVelocityDaily(int daysBack) {
         String sql = """
+            WITH Days AS (
+                SELECT CAST(DATEADD(DAY, 1 - ?, CAST(GETDATE() AS date)) AS date) AS d
+                UNION ALL
+                SELECT DATEADD(DAY, 1, d)
+                FROM Days
+                WHERE d < CAST(GETDATE() AS date)
+            ),
+            TotalRooms AS (
+                SELECT COUNT(*) AS total_rooms
+                FROM dbo.rooms
+            )
             SELECT
-              CONVERT(varchar(10), inventory_date, 120) AS d,
-              SUM(booked_rooms) AS v
-            FROM dbo.room_type_inventory
-            WHERE inventory_date >= DATEADD(DAY, 1 - ?, CAST(GETDATE() AS date))
-              AND inventory_date <= CAST(GETDATE() AS date)
-            GROUP BY CONVERT(varchar(10), inventory_date, 120)
-            ORDER BY d
+                CONVERT(varchar(10), d.d, 120) AS d,
+                CAST(
+                    COALESCE(COUNT(DISTINCT sra.room_id), 0) * 100.0 / NULLIF(tr.total_rooms, 0)
+                    AS decimal(10, 2)
+                ) AS v
+            FROM Days d
+            CROSS JOIN TotalRooms tr
+            LEFT JOIN dbo.stay_room_assignments sra
+                ON sra.actual_check_in < DATEADD(DAY, 1, d.d)
+               AND (sra.actual_check_out IS NULL OR sra.actual_check_out >= d.d)
+            GROUP BY d.d, tr.total_rooms
+            ORDER BY d.d
+            OPTION (MAXRECURSION 400)
         """;
 
         List<TrendPoint> list = new ArrayList<>();
@@ -73,7 +87,7 @@ public class ManagerDashboardDAO extends DBContext {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(new TrendPoint(rs.getString("d"), rs.getInt("v")));
+                    list.add(new TrendPoint(rs.getString("d"), rs.getDouble("v")));
                 }
             }
         } catch (Exception e) {
@@ -82,24 +96,44 @@ public class ManagerDashboardDAO extends DBContext {
         return list;
     }
 
-    /**
-     * Booking Velocity MONTHLY: lấy từ dbo.room_type_inventory
-     * SUM(booked_rooms) theo tháng trong N tháng gần nhất
-     */
     public List<TrendPoint> getBookingVelocityMonthly(int monthsBack) {
         String sql = """
+            WITH Days AS (
+                SELECT DATEFROMPARTS(
+                           YEAR(DATEADD(MONTH, 1 - ?, CAST(GETDATE() AS date))),
+                           MONTH(DATEADD(MONTH, 1 - ?, CAST(GETDATE() AS date))),
+                           1
+                       ) AS d
+                UNION ALL
+                SELECT DATEADD(DAY, 1, d)
+                FROM Days
+                WHERE d < CAST(GETDATE() AS date)
+            ),
+            TotalRooms AS (
+                SELECT COUNT(*) AS total_rooms
+                FROM dbo.rooms
+            ),
+            DailyOccupancy AS (
+                SELECT
+                    d.d AS occupancy_date,
+                    CAST(
+                        COALESCE(COUNT(DISTINCT sra.room_id), 0) * 100.0 / NULLIF(tr.total_rooms, 0)
+                        AS decimal(10, 2)
+                    ) AS daily_rate
+                FROM Days d
+                CROSS JOIN TotalRooms tr
+                LEFT JOIN dbo.stay_room_assignments sra
+                    ON sra.actual_check_in < DATEADD(DAY, 1, d.d)
+                   AND (sra.actual_check_out IS NULL OR sra.actual_check_out >= d.d)
+                GROUP BY d.d, tr.total_rooms
+            )
             SELECT
-              FORMAT(inventory_date, 'yyyy-MM') AS ym,
-              SUM(booked_rooms) AS v
-            FROM dbo.room_type_inventory
-            WHERE inventory_date >= DATEFROMPARTS(
-                    YEAR(DATEADD(MONTH, 1 - ?, CAST(GETDATE() AS date))),
-                    MONTH(DATEADD(MONTH, 1 - ?, CAST(GETDATE() AS date))),
-                    1
-                  )
-              AND inventory_date <= CAST(GETDATE() AS date)
-            GROUP BY FORMAT(inventory_date, 'yyyy-MM')
+                FORMAT(occupancy_date, 'yyyy-MM') AS ym,
+                CAST(AVG(daily_rate) AS decimal(10, 2)) AS v
+            FROM DailyOccupancy
+            GROUP BY FORMAT(occupancy_date, 'yyyy-MM')
             ORDER BY ym
+            OPTION (MAXRECURSION 400)
         """;
 
         List<TrendPoint> list = new ArrayList<>();
@@ -111,7 +145,7 @@ public class ManagerDashboardDAO extends DBContext {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    list.add(new TrendPoint(rs.getString("ym"), rs.getInt("v")));
+                    list.add(new TrendPoint(rs.getString("ym"), rs.getDouble("v")));
                 }
             }
         } catch (Exception e) {
