@@ -59,8 +59,8 @@ public class RoomTypeForm {
             errors.add("Base price is required.");
         }
 
-        if (price != null && price.compareTo(BigDecimal.ZERO) < 0) {
-            errors.add("Price must be >= 0.");
+        if (price != null && price.compareTo(BigDecimal.ZERO) <= 0) {
+            errors.add("Price must be greater than 0.");
         }
 
         if (amenityIds == null) {
