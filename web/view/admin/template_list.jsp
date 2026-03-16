@@ -6,6 +6,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+
 <!doctype html>
 <html lang="vi">
     <head>
@@ -15,39 +16,46 @@
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
         <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/app.css"/>
 
         <style>
-            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
             :root {
-                --bg:        #f5f0e8;
-                --bg2:       #ede7da;
-                --paper:     #faf7f2;
-                --border:    #e0d8cc;
-                --border2:   #cfc6b8;
                 --ink:       #2c2416;
                 --ink-mid:   #5a4e3c;
                 --ink-soft:  #9c8e7a;
+                --cream:     #f5f0e8;
+                --bg2:       #ede7da;
+                --paper:     #faf7f2;
                 --gold:      #b5832a;
                 --gold-lt:   #f0ddb8;
                 --gold-bg:   rgba(181,131,42,.09);
+                --border:    #e0d8cc;
+                --border2:   #cfc6b8;
                 --sage:      #5a7a5c;
-                --sage-lt:   #d4e6d4;
+                --sage-lt:   #dcead9;
                 --sidebar-w: 280px;
+                --radius:    20px;
             }
 
             body {
                 font-family: 'DM Sans', sans-serif;
-                background: var(--bg);
+                background: var(--cream);
                 color: var(--ink);
+                overflow-x: hidden;
             }
 
             .hms-sidebar, aside.hms-sidebar, aside {
                 position: fixed !important;
-                top: 0; left: 0;
+                top: 0;
+                left: 0;
                 width: var(--sidebar-w) !important;
                 height: 100vh !important;
                 overflow-y: auto !important;
@@ -56,11 +64,10 @@
 
             .wrap {
                 margin-left: var(--sidebar-w);
-                padding: 40px 44px 64px;
+                padding: 40px 44px;
                 min-height: 100vh;
             }
 
-            /* ── PAGE HEADER ── */
             .page-header {
                 display: flex;
                 align-items: flex-end;
@@ -68,11 +75,13 @@
                 margin-bottom: 28px;
                 animation: fadeDown .4s ease both;
             }
+
             @keyframes fadeDown {
                 from { opacity:0; transform:translateY(-10px); }
                 to   { opacity:1; transform:translateY(0); }
             }
-            .page-eyebrow {
+
+            .eyebrow {
                 font-size: 11px;
                 font-weight: 700;
                 letter-spacing: .2em;
@@ -83,12 +92,15 @@
                 align-items: center;
                 gap: 10px;
             }
-            .page-eyebrow::before {
+
+            .eyebrow::before {
                 content: '';
                 display: block;
-                width: 22px; height: 1.5px;
+                width: 22px;
+                height: 1.5px;
                 background: var(--gold);
             }
+
             .page-title {
                 font-family: 'Fraunces', serif;
                 font-size: 38px;
@@ -97,25 +109,18 @@
                 line-height: 1;
                 letter-spacing: -1px;
             }
-            .page-sub {
-                margin-top: 7px;
-                font-size: 13px;
-                color: var(--ink-soft);
-            }
 
-            /* ── TABS ── */
-            .tabs {
+            .tab-nav {
                 display: flex;
                 gap: 4px;
                 background: var(--paper);
                 border: 1px solid var(--border);
                 padding: 5px;
                 border-radius: 14px;
-                width: fit-content;
                 box-shadow: 0 2px 10px rgba(44,36,22,.05);
-                flex-shrink: 0;
             }
-            .tab {
+
+            .tab-link {
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
@@ -127,98 +132,307 @@
                 color: var(--ink-mid);
                 transition: all .18s ease;
             }
-            .tab:hover { background: var(--bg2); color: var(--ink); }
-            .tab.active {
+
+            .tab-link:hover {
+                background: var(--bg2);
+                color: var(--ink);
+            }
+
+            .tab-link.is-active {
                 background: var(--ink);
                 color: #fff;
                 box-shadow: 0 4px 14px rgba(44,36,22,.22);
             }
 
-            /* ── MAIN CARD ── */
+            .tab-link .tab-icon {
+                width: 15px;
+                height: 15px;
+                opacity: .75;
+            }
+
             .card {
                 background: var(--paper);
                 border: 1px solid var(--border);
-                border-radius: 22px;
+                border-radius: var(--radius);
                 box-shadow: 0 4px 24px rgba(44,36,22,.07);
                 overflow: hidden;
-                animation: slideUp .4s .08s ease both;
+                animation: slideUp .4s ease both;
             }
+
             @keyframes slideUp {
                 from { opacity:0; transform:translateY(16px); }
                 to   { opacity:1; transform:translateY(0); }
             }
 
-            /* ── LAYOUT (same 2-column grid) ── */
             .layout {
                 display: grid;
                 grid-template-columns: 280px 1fr;
-                min-height: 650px;
+                min-height: 680px;
             }
 
-            /* ── LEFT ── */
-            .left {
+            .left-panel {
                 background: var(--bg2);
                 border-right: 1px solid var(--border);
-                padding: 24px 16px;
+                padding: 20px 14px 24px;
                 display: flex;
                 flex-direction: column;
-                gap: 4px;
+                gap: 0;
             }
-            .left h4 {
-                font-size: 10.5px;
+
+            .panel-label-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 4px 14px;
+                border-bottom: 1px solid var(--border);
+                margin-bottom: 14px;
+            }
+
+            .panel-label {
+                font-size: 10px;
                 font-weight: 800;
-                letter-spacing: .18em;
+                letter-spacing: .2em;
                 text-transform: uppercase;
                 color: var(--ink-soft);
-                padding: 0 12px 10px;
-                border-bottom: 1px solid var(--border);
-                margin-bottom: 8px;
-            }
-            .item {
                 display: flex;
-                justify-content: space-between;
                 align-items: center;
-                padding: 13px 14px;
-                border-radius: 13px;
+                gap: 6px;
+            }
+
+            .panel-label::before {
+                content: '';
+                display: block;
+                width: 14px;
+                height: 1.5px;
+                background: var(--ink-soft);
+                border-radius: 2px;
+            }
+
+            .add-policy-btn {
+                width: 30px;
+                height: 30px;
+                border: 0;
+                border-radius: 50%;
+                background: var(--ink);
+                color: #fff;
+                font-size: 19px;
+                font-weight: 300;
+                line-height: 1;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background .18s ease, transform .28s ease;
+                flex-shrink: 0;
+            }
+
+            .add-policy-btn:hover {
+                background: var(--gold);
+                color: var(--ink);
+                transform: scale(1.08) rotate(90deg);
+            }
+
+            .add-policy-form,
+            .rename-policy-form {
+                background: var(--paper);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 10px;
+                margin: 0 2px 10px;
+            }
+
+            .policy-input {
+                width: 100%;
+                border: 1px solid var(--border2);
+                border-radius: 10px;
+                padding: 10px 12px;
+                font-size: 13px;
+                outline: none;
+                background: #fff;
+                color: var(--ink);
+                font-family: 'DM Sans', sans-serif;
+            }
+
+            .policy-input:focus {
+                border-color: var(--gold);
+                box-shadow: 0 0 0 3px rgba(181,131,42,.12);
+            }
+
+            .policy-form-actions {
+                margin-top: 8px;
+                display: flex;
+                gap: 8px;
+            }
+
+            .mini-btn {
+                border: 0;
+                border-radius: 9px;
+                padding: 7px 10px;
+                font-size: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                font-family: 'DM Sans', sans-serif;
+            }
+
+            .mini-btn-save {
+                background: var(--ink);
+                color: #fff;
+            }
+
+            .mini-btn-save:hover {
+                opacity: .9;
+            }
+
+            .mini-btn-cancel {
+                background: var(--bg2);
+                color: var(--ink-mid);
+            }
+
+            .mini-btn-cancel:hover {
+                background: var(--border);
+            }
+
+            .template-list {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+            }
+
+            .template-row {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 4px 4px 2px;
+                border-radius: 14px;
+            }
+
+            .template-link {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 11px 13px;
+                border-radius: 12px;
                 text-decoration: none;
                 color: var(--ink-mid);
                 font-weight: 600;
-                font-size: 13.5px;
-                transition: all .18s ease;
+                font-size: 13px;
+                transition: background .18s ease, color .16s ease, transform .16s ease;
             }
-            .item:hover {
+
+            .template-link:hover {
                 background: var(--paper);
                 color: var(--ink);
                 transform: translateX(2px);
             }
-            .item .arrow { opacity: .5; transition: transform .18s; }
-            .item:hover .arrow { transform: translateX(3px); opacity: .8; }
-            .item.active {
+
+            .template-row.active .template-link {
                 background: var(--ink);
                 color: #fff;
-                box-shadow: 0 4px 16px rgba(44,36,22,.2);
+                box-shadow: 0 4px 18px rgba(44,36,22,.18);
             }
-            .item.active .arrow { color: var(--gold); opacity: 1; }
 
-            /* ── RIGHT ── */
-            .right {
+            .nav-name {
+                flex: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 140px;
+            }
+
+            .nav-arrow {
+                font-size: 15px;
+                opacity: 0;
+                transition: opacity .16s ease, transform .16s ease;
+                flex-shrink: 0;
+            }
+
+            .template-link:hover .nav-arrow {
+                opacity: .5;
+                transform: translateX(2px);
+            }
+
+            .template-row.active .template-link .nav-arrow {
+                opacity: .65;
+                color: var(--gold-lt);
+            }
+
+            .policy-actions {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                opacity: 0;
+                transition: opacity .18s ease;
+                flex-shrink: 0;
+            }
+
+            .template-row:hover .policy-actions {
+                opacity: 1;
+            }
+
+            .icon-btn {
+                width: 28px;
+                height: 28px;
+                border: 1px solid var(--border);
+                background: var(--paper);
+                color: var(--ink-soft);
+                border-radius: 9px;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background .16s ease, color .16s ease, border-color .16s ease;
+                flex-shrink: 0;
+            }
+
+            .icon-btn:hover {
+                background: var(--bg2);
+                color: var(--ink);
+            }
+
+            .icon-btn.danger:hover {
+                background: #fbe9e9;
+                color: #b42318;
+                border-color: #f2b8b5;
+            }
+
+            .right-panel {
                 padding: 32px 36px;
                 display: flex;
                 flex-direction: column;
             }
 
-            .template-title {
+            .section-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                margin-bottom: 6px;
+            }
+
+            .section-title {
                 font-family: 'Fraunces', serif;
                 font-size: 26px;
                 font-weight: 700;
                 color: var(--ink);
-                margin-bottom: 6px;
+                line-height: 1.2;
+                word-break: break-word;
             }
-            .template-meta {
+
+            .section-meta-wrap {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 4px;
+            }
+
+            .section-badge {
                 display: inline-flex;
                 align-items: center;
                 gap: 5px;
-                padding: 4px 12px;
+                padding: 5px 12px;
                 background: var(--gold-bg);
                 color: var(--gold);
                 border: 1px solid var(--gold-lt);
@@ -226,37 +440,73 @@
                 font-size: 11px;
                 font-weight: 800;
                 letter-spacing: .08em;
-                margin-bottom: 20px;
             }
-            .meta-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; }
 
-            .divider { height: 1px; background: var(--border); margin-bottom: 22px; }
+            .badge-dot {
+                width: 6px;
+                height: 6px;
+                background: var(--gold);
+                border-radius: 50%;
+            }
 
-            /* ── EDITOR ── */
-            .editor {
+            .status-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 5px 12px;
+                border-radius: 999px;
+                font-size: 11px;
+                font-weight: 800;
+                letter-spacing: .08em;
+                text-transform: uppercase;
+                border: 1px solid var(--border);
+                color: var(--ink-soft);
+                background: #fff;
+            }
+
+            .status-pill.active {
+                border-color: #b7d7b8;
+                background: var(--sage-lt);
+                color: var(--sage);
+            }
+
+            .status-pill.inactive {
+                border-color: #e5d8c5;
+                background: #f7efe3;
+                color: #9b6b2f;
+            }
+
+            .divider {
+                height: 1px;
+                background: var(--border);
+                margin: 20px 0;
+            }
+
+            .editor-shell {
                 flex: 1;
+                display: flex;
+                flex-direction: column;
                 border: 1.5px solid var(--border);
                 border-radius: 16px;
                 overflow: hidden;
-                display: flex;
-                flex-direction: column;
                 transition: border-color .2s, box-shadow .2s;
             }
-            .editor:focus-within {
+
+            .editor-shell:focus-within {
                 border-color: var(--gold);
                 box-shadow: 0 0 0 3px rgba(181,131,42,.12);
             }
 
-            /* Subject + Status row */
-            .row {
+            .editor-top {
                 display: grid;
-                grid-template-columns: 1fr 200px;
+                grid-template-columns: 1fr 220px;
                 gap: 14px;
                 align-items: end;
-                padding: 18px 18px 16px;
+                padding: 18px;
                 background: var(--bg2);
                 border-bottom: 1px solid var(--border);
             }
+
             .field label {
                 display: block;
                 font-size: 10px;
@@ -266,11 +516,12 @@
                 color: var(--ink-soft);
                 margin-bottom: 7px;
             }
+
             .field input[type="text"] {
                 width: 100%;
                 height: 44px;
                 padding: 0 14px;
-                border: 1.5px solid var(--border);
+                border: 1.5px solid var(--border2);
                 border-radius: 11px;
                 background: var(--paper);
                 font-family: 'DM Sans', sans-serif;
@@ -279,108 +530,135 @@
                 outline: none;
                 transition: border-color .18s, box-shadow .18s;
             }
+
             .field input[type="text"]:focus {
                 border-color: var(--gold);
                 box-shadow: 0 0 0 3px rgba(181,131,42,.12);
             }
 
-            /* Toggle */
-            .toggle {
+            .toggle-box {
                 height: 44px;
                 padding: 0 14px;
-                border: 1.5px solid var(--border);
+                border: 1.5px solid var(--border2);
                 border-radius: 11px;
                 background: var(--paper);
                 display: flex;
                 align-items: center;
                 gap: 10px;
-                cursor: pointer;
-                transition: all .18s;
+                transition: all .18s ease;
             }
-            .toggle label {
-                font-size: 13.5px !important;
-                font-weight: 700 !important;
-                color: var(--ink-mid) !important;
-                letter-spacing: 0 !important;
-                text-transform: none !important;
-                margin: 0 !important;
-                cursor: pointer;
-            }
-            .toggle.is-active {
+
+            .toggle-box.is-active {
                 border-color: var(--sage);
                 background: var(--sage-lt);
             }
-            .toggle.is-active label { color: var(--sage) !important; }
-            .toggle input[type="checkbox"] {
-                width: 16px; height: 16px;
+
+            .toggle-box input[type="checkbox"] {
+                width: 16px;
+                height: 16px;
                 accent-color: var(--sage);
                 cursor: pointer;
                 flex-shrink: 0;
             }
 
-            /* Content body */
+            .toggle-box label {
+                margin: 0 !important;
+                letter-spacing: 0 !important;
+                text-transform: none !important;
+                font-size: 13.5px !important;
+                font-weight: 700 !important;
+                color: var(--ink-mid) !important;
+                cursor: pointer;
+            }
+
+            .toggle-box.is-active label {
+                color: var(--sage) !important;
+            }
+
             .editor-body {
                 flex: 1;
-                padding: 16px 18px 18px;
-                background: var(--paper);
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
+                background: var(--paper);
             }
-            .editor-body label {
+
+            .editor-toolbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 12px 16px;
+                background: var(--paper);
+                border-bottom: 1px solid var(--border);
+            }
+
+            .editor-label {
                 font-size: 10px;
                 font-weight: 800;
-                letter-spacing: .18em;
+                letter-spacing: .2em;
                 text-transform: uppercase;
                 color: var(--ink-soft);
                 display: flex;
                 align-items: center;
-                gap: 7px;
+                gap: 8px;
             }
-            .editor-body label::before {
+
+            .editor-label::before {
                 content: '';
                 display: inline-block;
-                width: 7px; height: 7px;
+                width: 8px;
+                height: 8px;
                 background: var(--gold);
                 border-radius: 50%;
             }
+
+            .char-count {
+                font-size: 11px;
+                color: var(--ink-soft);
+                font-weight: 500;
+            }
+
             textarea {
                 flex: 1;
                 width: 100%;
-                min-height: 340px;
-                padding: 14px 16px;
-                border: 1.5px solid var(--border);
-                border-radius: 11px;
-                background: var(--bg);
-                font-family: 'DM Sans', sans-serif;
-                font-size: 14px;
-                line-height: 1.7;
-                color: var(--ink);
+                min-height: 360px;
+                padding: 20px 22px;
+                border: 0;
                 outline: none;
                 resize: vertical;
-                transition: border-color .18s, box-shadow .18s, background .18s;
-            }
-            textarea:focus {
-                border-color: var(--gold);
-                box-shadow: 0 0 0 3px rgba(181,131,42,.12);
+                font-family: 'DM Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.75;
+                color: var(--ink);
                 background: var(--paper);
             }
-            textarea::placeholder { color: var(--ink-soft); }
 
-            /* ── FOOTER ── */
-            .footer {
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-                padding: 18px 22px;
-                border-top: 1px solid var(--border);
-                background: var(--bg2);
+            textarea::placeholder {
+                color: var(--ink-soft);
             }
+
+            .actions {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding-top: 20px;
+            }
+
+            .last-edited {
+                font-size: 12px;
+                color: var(--ink-soft);
+                font-weight: 500;
+            }
+
+            .btn-group {
+                display: flex;
+                gap: 10px;
+            }
+
             .btn {
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                padding: 11px 22px;
+                padding: 12px 22px;
                 border-radius: 12px;
                 font-family: 'DM Sans', sans-serif;
                 font-weight: 700;
@@ -389,208 +667,418 @@
                 border: 0;
                 transition: all .18s ease;
             }
-            .btn.ghost {
+
+            .btn-ghost {
                 background: transparent;
                 color: var(--ink-mid);
                 border: 1.5px solid var(--border);
             }
-            .btn.ghost:hover { background: var(--bg); border-color: var(--border2); color: var(--ink); }
-            .btn.primary {
+
+            .btn-ghost:hover {
+                background: var(--bg2);
+                border-color: var(--border2);
+                color: var(--ink);
+            }
+
+            .btn-primary {
                 background: var(--ink);
                 color: #fff;
                 box-shadow: 0 4px 16px rgba(44,36,22,.2);
             }
-            .btn.primary:hover {
+
+            .btn-primary:hover {
                 opacity: .88;
                 transform: translateY(-1px);
                 box-shadow: 0 8px 24px rgba(44,36,22,.28);
             }
 
-            /* ── TOAST ── */
+            .btn-primary:active {
+                transform: translateY(0);
+            }
+
+            .empty-state {
+                padding: 24px 8px;
+                color: var(--ink-soft);
+                font-size: 14px;
+            }
+
             #toast {
                 position: fixed;
-                bottom: 32px; right: 32px;
+                bottom: 32px;
+                right: 32px;
                 background: var(--ink);
                 color: #fff;
-                padding: 13px 20px;
-                border-radius: 13px;
+                padding: 14px 22px;
+                border-radius: 14px;
                 font-size: 13px;
                 font-weight: 600;
-                box-shadow: 0 8px 28px rgba(44,36,22,.25);
-                transform: translateY(16px);
+                box-shadow: 0 8px 30px rgba(44,36,22,.25);
+                transform: translateY(20px);
                 opacity: 0;
                 pointer-events: none;
                 transition: all .3s cubic-bezier(.22,.68,0,1.2);
                 display: flex;
                 align-items: center;
-                gap: 9px;
+                gap: 10px;
                 z-index: 99999;
             }
-            #toast.show { opacity: 1; transform: translateY(0); }
-            #toast .t-icon { color: var(--gold); }
 
-            @media (max-width: 980px) { .wrap { margin-left: 0; } }
+            #toast.show {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            #toast .toast-icon {
+                color: var(--gold);
+                font-size: 16px;
+            }
+
+            @media (max-width: 1100px) {
+                .layout {
+                    grid-template-columns: 240px 1fr;
+                }
+
+                .editor-top {
+                    grid-template-columns: 1fr;
+                }
+            }
         </style>
     </head>
 
     <body>
+
         <jsp:include page="/view/admin_layout/sidebar.jsp"/>
 
         <div class="wrap">
 
-            <!-- Page Header -->
             <div class="page-header">
-                <div>
-                    <div class="page-eyebrow">⚙ System Configuration</div>
+                <div class="page-header-left">
+                    <div class="eyebrow">System Configuration</div>
                     <h1 class="page-title">Email Templates</h1>
                 </div>
 
-                <!-- Tabs -->
-                <div class="tabs">
-                <a class="tab" href="${pageContext.request.contextPath}/admin/policies">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    Terms &amp; Policies
-                </a>
-                <a class="tab active" href="${pageContext.request.contextPath}/admin/templates">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                        <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
-                    Email Templates
-                </a>
-                </div>
+                <nav class="tab-nav">
+                    <a class="tab-link"
+                       href="${pageContext.request.contextPath}/admin/policies">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Terms and Policies
+                    </a>
+                    <a class="tab-link is-active"
+                       href="${pageContext.request.contextPath}/admin/templates">
+                        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        Email Templates
+                    </a>
+                </nav>
             </div>
 
-            <!-- Main Card -->
             <div class="card">
                 <div class="layout">
 
-                    <!-- LEFT: template list -->
-                    <div class="left">
-                        <h4>Templates</h4>
-                        <c:forEach var="t" items="${templates}">
-                            <a class="item ${t.templateId == selectedId ? 'active' : ''}"
-                               href="${pageContext.request.contextPath}/admin/templates?id=${t.templateId}">
-                                <span class="item-name">${t.code}</span>
-                                <span class="arrow">›</span>
-                            </a>
-                        </c:forEach>
-                    </div>
+                    <div class="left-panel">
 
-                    <!-- RIGHT: editor -->
-                    <div class="right">
-                        <div class="template-title">${selectedTemplate.code}</div>
-                        <div class="template-meta">
-                            <span class="meta-dot"></span>
-                            Template ID: ${selectedTemplate.templateId}
+                        <div class="panel-label-row">
+                            <span class="panel-label">Templates</span>
+                            <button type="button" class="add-policy-btn" onclick="toggleAddTemplateForm()" title="Add Template">+</button>
                         </div>
 
-                        <div class="divider"></div>
+                        <div id="addTemplateForm" class="add-policy-form" style="display:none;">
+                            <form method="post" action="${pageContext.request.contextPath}/admin/templates">
+                                <input type="hidden" name="action" value="addTemplate"/>
+                                <input type="text"
+                                       name="newTemplateCode"
+                                       class="policy-input"
+                                       placeholder="New template code…"
+                                       required />
+                                <div class="policy-form-actions">
+                                    <button type="submit" class="mini-btn mini-btn-save">Add</button>
+                                    <button type="button" class="mini-btn mini-btn-cancel" onclick="toggleAddTemplateForm(false)">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
 
-                        <form method="post" action="${pageContext.request.contextPath}/admin/templates"
-                              style="flex:1;display:flex;flex-direction:column;">
-                            <input type="hidden" name="templateId" value="${selectedTemplate.templateId}"/>
+                        <div class="template-list">
+                            <c:choose>
+                                <c:when test="${not empty templates}">
+                                    <c:forEach var="t" items="${templates}">
 
-                            <div class="editor">
+                                        <div class="template-row ${t.templateId == selectedId ? 'active' : ''}">
+                                            <a class="template-link"
+                                               href="${pageContext.request.contextPath}/admin/templates?id=${t.templateId}">
+                                                <span class="nav-name template-code-raw"><c:out value="${t.code}"/></span>
+                                                <span class="nav-arrow">›</span>
+                                            </a>
 
-                                <div class="row">
-                                    <div class="field">
-                                        <label>Subject</label>
-                                        <input type="text" name="subject"
-                                               value="${fn:escapeXml(selectedTemplate.subject)}"
-                                               placeholder="Email subject line…"/>
-                                    </div>
-                                    <div class="field">
-                                        <label>Status</label>
-                                        <div class="toggle">
-                                            <input type="checkbox" id="isActive" name="isActive"
-                                                   ${selectedTemplate.active ? 'checked' : ''}/>
-                                            <label for="isActive">Active</label>
+                                            <div class="policy-actions">
+                                                <button type="button"
+                                                        class="icon-btn"
+                                                        title="Rename"
+                                                        onclick="toggleRenameTemplateForm('${t.templateId}')">
+                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                    </svg>
+                                                </button>
+
+                                                <form method="post"
+                                                      action="${pageContext.request.contextPath}/admin/templates"
+                                                      style="display:inline;"
+                                                      onsubmit="return confirm('Are you sure you want to delete this template?');">
+                                                    <input type="hidden" name="action" value="deleteTemplate"/>
+                                                    <input type="hidden" name="templateId" value="${t.templateId}"/>
+                                                    <button type="submit" class="icon-btn danger" title="Delete">
+                                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                            <polyline points="3 6 5 6 21 6"/>
+                                                            <path d="M19 6l-1 14H6L5 6"/>
+                                                            <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </div>
+
+                                        <div id="renameTemplateForm-${t.templateId}" class="rename-policy-form" style="display:none;">
+                                            <form method="post" action="${pageContext.request.contextPath}/admin/templates">
+                                                <input type="hidden" name="action" value="renameTemplate"/>
+                                                <input type="hidden" name="templateId" value="${t.templateId}"/>
+                                                <input type="text"
+                                                       name="renameValue"
+                                                       class="policy-input"
+                                                       value="${t.code}"
+                                                       required />
+                                                <div class="policy-form-actions">
+                                                    <button type="submit" class="mini-btn mini-btn-save">Save</button>
+                                                    <button type="button" class="mini-btn mini-btn-cancel"
+                                                            onclick="toggleRenameTemplateForm('${t.templateId}', false)">Cancel</button>
+                                                </div>
+                                            </form>
+                                        </div>
+
+                                    </c:forEach>
+                                </c:when>
+
+                                <c:otherwise>
+                                    <div class="empty-state">
+                                        No email templates found.
                                     </div>
-                                </div>
-
-                                <div class="editor-body">
-                                    <label>Content</label>
-                                    <textarea name="content"
-                                              placeholder="Write your email template content here…"><c:out value="${selectedTemplate.content}"/></textarea>
-                                </div>
-
-                            </div>
-
-                            <div class="footer">
-                                <button type="button" class="btn ghost"
-                                        onclick="window.location='${pageContext.request.contextPath}/admin/templates?id=${selectedTemplate.templateId}'">
-                                    Discard
-                                </button>
-                                <button type="submit" class="btn primary">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                                        <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
-                                    </svg>
-                                    Save Changes
-                                </button>
-                            </div>
-                        </form>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
                     </div>
 
+                    <div class="right-panel">
+
+                        <c:choose>
+                            <c:when test="${selectedTemplate != null}">
+
+                                <div class="section-header">
+                                    <h2 class="section-title">
+                                        <c:out value="${selectedTemplate.code}"/>
+                                    </h2>
+                                </div>
+
+                                <div class="section-meta-wrap">
+                                    <div class="section-badge">
+                                        <span class="badge-dot"></span>
+                                        TEMPLATE ID: <c:out value="${selectedTemplate.templateId}"/>
+                                    </div>
+
+                                    <div class="status-pill ${selectedTemplate.active ? 'active' : 'inactive'}">
+                                        <span class="badge-dot"></span>
+                                        <c:out value="${selectedTemplate.active ? 'ACTIVE' : 'INACTIVE'}"/>
+                                    </div>
+                                </div>
+
+                                <div class="divider"></div>
+
+                                <form id="templateForm"
+                                      method="post"
+                                      action="${pageContext.request.contextPath}/admin/templates"
+                                      style="flex:1;display:flex;flex-direction:column;gap:0;">
+                                    <input type="hidden" name="action" value="updateTemplate"/>
+                                    <input type="hidden" name="templateId" value="${selectedTemplate.templateId}"/>
+
+                                    <div class="editor-shell">
+                                        <div class="editor-top">
+                                            <div class="field">
+                                                <label>Subject</label>
+                                                <input type="text"
+                                                       name="subject"
+                                                       value="<c:out value='${selectedTemplate.subject}'/>"
+                                                       placeholder="Email subject line…"/>
+                                            </div>
+
+                                            <div class="field">
+                                                <label>Status</label>
+                                                <div class="toggle-box" id="toggleBox">
+                                                    <input type="checkbox"
+                                                           id="isActive"
+                                                           name="isActive"
+                                                           ${selectedTemplate.active ? 'checked' : ''}/>
+                                                    <label for="isActive">Active</label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="editor-body">
+                                            <div class="editor-toolbar">
+                                                <span class="editor-label">Template Content</span>
+                                                <span class="char-count" id="charCount">0 characters</span>
+                                            </div>
+
+                                            <textarea name="content"
+                                                      id="editor"
+                                                      placeholder="Write your email template content here…"><c:out value="${selectedTemplate.content}"/></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="actions">
+                                        <span class="last-edited">
+                                            Code: <c:out value="${selectedTemplate.code}"/>
+                                        </span>
+
+                                        <div class="btn-group">
+                                            <button type="button"
+                                                    class="btn btn-ghost"
+                                                    onclick="window.location='${pageContext.request.contextPath}/admin/templates?id=${selectedTemplate.templateId}'">
+                                                Discard
+                                            </button>
+
+                                            <button type="submit" class="btn btn-primary">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                                                    <polyline points="17 21 17 13 7 13 7 21"/>
+                                                    <polyline points="7 3 7 8 15 8"/>
+                                                </svg>
+                                                Save Changes
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+
+                            </c:when>
+
+                            <c:otherwise>
+                                <div class="empty-state">
+                                    No template selected or no template data available in database.
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+
+                    </div>
                 </div>
             </div>
         </div>
 
         <div id="toast">
-            <span class="t-icon">✦</span>
-            Template saved successfully
+            <span class="toast-icon">✦</span>
+            Changes saved successfully
         </div>
 
         <script>
-            // Format template code labels: BOOKING_CONFIRM -> Booking Confirm
-            document.addEventListener('DOMContentLoaded', function() {
-                document.querySelectorAll('.item .item-name').forEach(function(el) {
-                    el.textContent = el.textContent.trim()
-                        .toLowerCase()
-                        .replace(/_/g, ' ')
-                        .replace(/(^|\s)\S/g, function(c){ return c.toUpperCase(); });
-                });
-            });
+            const editor = document.getElementById('editor');
+            const charCount = document.getElementById('charCount');
+            const form = document.getElementById('templateForm');
 
-            // Toggle active class on checkbox change (replaces :has() for JSP compat)
-            document.addEventListener('DOMContentLoaded', function() {
+            function updateCount() {
+                if (!editor || !charCount) return;
+                const n = editor.value.length;
+                charCount.textContent = n.toLocaleString() + ' character' + (n !== 1 ? 's' : '');
+            }
+
+            function showToast(message) {
+                const t = document.getElementById('toast');
+                if (!t) return;
+                t.lastChild.textContent = ' ' + message;
+                t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 2800);
+            }
+
+            function syncToggle() {
                 const cb = document.getElementById('isActive');
-                const toggle = cb ? cb.closest('.toggle') : null;
-                if (cb && toggle) {
-                    function syncToggle() {
-                        toggle.classList.toggle('is-active', cb.checked);
-                    }
+                const toggleBox = document.getElementById('toggleBox');
+                if (!cb || !toggleBox) return;
+                toggleBox.classList.toggle('is-active', cb.checked);
+            }
+
+            function toggleAddTemplateForm(force) {
+                const box = document.getElementById('addTemplateForm');
+                if (!box) return;
+                if (force === false) {
+                    box.style.display = 'none';
+                    return;
+                }
+                box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'block' : 'none';
+            }
+
+            function toggleRenameTemplateForm(templateId, force) {
+                const el = document.getElementById('renameTemplateForm-' + templateId);
+                if (!el) return;
+                if (force === false) {
+                    el.style.display = 'none';
+                    return;
+                }
+                el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('.template-code-raw').forEach(function (el) {
+                    const raw = el.textContent.trim();
+                    el.textContent = raw
+                            .toLowerCase()
+                            .replace(/_/g, ' ')
+                            .replace(/(^|\s)\S/g, function (c) {
+                                return c.toUpperCase();
+                            });
+                });
+
+                if (editor) {
+                    editor.addEventListener('input', updateCount);
+                    updateCount();
+                }
+
+                const cb = document.getElementById('isActive');
+                if (cb) {
                     cb.addEventListener('change', syncToggle);
                     syncToggle();
                 }
-            });
-            
-            // Kiểm tra tham số trên URL khi trang load xong
-            document.addEventListener('DOMContentLoaded', function() {
+
                 const urlParams = new URLSearchParams(window.location.search);
+
                 if (urlParams.get('saved') === '1') {
-                    showToast();
-                    // Xóa tham số ?saved=1 trên URL để tránh hiện lại khi F5
-                    const newUrl = window.location.pathname + "?id=" + urlParams.get('id');
+                    showToast('Template saved successfully');
+                } else if (urlParams.get('created') === '1') {
+                    showToast('Template created successfully');
+                } else if (urlParams.get('renamed') === '1') {
+                    showToast('Template renamed successfully');
+                } else if (urlParams.get('deleted') === '1') {
+                    showToast('Template deleted successfully');
+                } else if (urlParams.get('error') === 'duplicate') {
+                    showToast('Template code already exists');
+                }
+
+                if (urlParams.has('saved') || urlParams.has('created') || urlParams.has('renamed')
+                        || urlParams.has('deleted') || urlParams.has('error')) {
+                    const id = urlParams.get('id');
+                    let newUrl = window.location.pathname;
+                    if (id) {
+                        newUrl += '?id=' + encodeURIComponent(id);
+                    }
                     window.history.replaceState({}, document.title, newUrl);
                 }
             });
 
-            function showToast() {
-                const t = document.getElementById('toast');
-                t.classList.add('show');
-                setTimeout(() => t.classList.remove('show'), 2800);
-            }
-            document.addEventListener('keydown', e => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            document.addEventListener('keydown', function (e) {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                    if (!form) return;
                     e.preventDefault();
-                    document.querySelector('form').submit();
-                    showToast();
+                    form.submit();
                 }
             });
         </script>
+
     </body>
 </html>
