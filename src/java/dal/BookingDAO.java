@@ -27,9 +27,9 @@ public class BookingDAO extends DBContext {
     // GET CUSTOMER ID
     // =========================================================
     public int countCurrentBookingsByCustomerId(int customerId) {
-        updateNoShowBookings();
+    updateNoShowBookings();
 
-        String sql = """
+    String sql = """
         SELECT COUNT(*)
         FROM (
             SELECT
@@ -47,22 +47,22 @@ public class BookingDAO extends DBContext {
         ) x
     """;
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, customerId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
         }
-        return 0;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    return 0;
+}
 
-    public List<BookingCardView> getCurrentBookingsByCustomerIdPaging(int customerId, int page, int pageSize) {
-        updateNoShowBookings();
+public List<BookingCardView> getCurrentBookingsByCustomerIdPaging(int customerId, int page, int pageSize) {
+    updateNoShowBookings();
 
-        String sql = """
+    String sql = """
         SELECT
             b.booking_id       AS bookingId,
             b.status           AS bookingStatus,
@@ -112,24 +112,24 @@ public class BookingDAO extends DBContext {
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """;
 
-        List<BookingCardView> list = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ps.setInt(2, (page - 1) * pageSize);
-            ps.setInt(3, pageSize);
+    List<BookingCardView> list = new ArrayList<>();
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, customerId);
+        ps.setInt(2, (page - 1) * pageSize);
+        ps.setInt(3, pageSize);
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapBookingCard(rs));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            list.add(mapBookingCard(rs));
         }
-        return list;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    return list;
+}
 
-    public int countPastStaysByCustomerId(int customerId) {
-        String sql = """
+public int countPastStaysByCustomerId(int customerId) {
+    String sql = """
         SELECT COUNT(*)
         FROM (
             SELECT
@@ -146,20 +146,20 @@ public class BookingDAO extends DBContext {
         ) x
     """;
 
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, customerId);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            return rs.getInt(1);
         }
-        return 0;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    return 0;
+}
 
-    public List<BookingCardView> getPastStaysByCustomerIdPaging(int customerId, int page, int pageSize) {
-        String sql = """
+public List<BookingCardView> getPastStaysByCustomerIdPaging(int customerId, int page, int pageSize) {
+    String sql = """
         SELECT
             b.booking_id       AS bookingId,
             b.status           AS bookingStatus,
@@ -208,22 +208,22 @@ public class BookingDAO extends DBContext {
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """;
 
-        List<BookingCardView> list = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, customerId);
-            ps.setInt(2, (page - 1) * pageSize);
-            ps.setInt(3, pageSize);
+    List<BookingCardView> list = new ArrayList<>();
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        ps.setInt(1, customerId);
+        ps.setInt(2, (page - 1) * pageSize);
+        ps.setInt(3, pageSize);
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapBookingCard(rs));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            list.add(mapBookingCard(rs));
         }
-        return list;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
-
+    return list;
+}
+    
     public Integer getCustomerIdByUserId(int userId) {
 
         String sql = """
@@ -573,8 +573,8 @@ public class BookingDAO extends DBContext {
         return executeBookingQuery(sql, customerId);
     }
 
-    public List<BookingDashboard> getTodayOperations(String targetDate, String search, String status, String sort, int index, int pageSize) {
-        List<BookingDashboard> list = new ArrayList<>();
+public List<BookingDashboard> getTodayOperations(String targetDate, String search, String status, String sort, int index, int pageSize) {
+    List<BookingDashboard> list = new ArrayList<>();
 
     StringBuilder sql = new StringBuilder();
     sql.append(
@@ -663,7 +663,6 @@ public class BookingDAO extends DBContext {
     try (PreparedStatement st = connection.prepareStatement(sql.toString())) {
         int paramIdx = 1;
 
-        // Filter status
         if (status == null || status.equals("0")) {
             st.setString(paramIdx++, targetDate);
             st.setString(paramIdx++, targetDate);
@@ -679,10 +678,8 @@ public class BookingDAO extends DBContext {
             st.setString(paramIdx++, keyword);
         }
 
-        String orderBy = "Oldest".equals(sort) ? "ASC" : "DESC";
-        sql.append(" ORDER BY b.check_in_date ").append(orderBy)
-                .append(", b.booking_id DESC ")
-                .append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+        st.setInt(paramIdx++, (index - 1) * pageSize);
+        st.setInt(paramIdx, pageSize);
 
         ResultSet rs = st.executeQuery();
         while (rs.next()) {
@@ -705,9 +702,12 @@ public class BookingDAO extends DBContext {
 
             list.add(d);
         }
-
-        return list;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+
+    return list;
+}
 
     public DashboardStats getDashboardStats(String targetDate) {
         DashboardStats stats = new DashboardStats();

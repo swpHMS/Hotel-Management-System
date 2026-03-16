@@ -59,9 +59,6 @@ public class UpdateRoomServlet extends HttpServlet {
         int floor = 0;
         int status = 0;
 
-        boolean validRoomNoFormat = false;
-        boolean validFloorFormat = false;
-
         Room room = new Room();
 
         try {
@@ -71,7 +68,6 @@ public class UpdateRoomServlet extends HttpServlet {
             return;
         }
 
-        // Validate roomNo
         if (roomNo == null || roomNo.trim().isEmpty()) {
             errorList.add("Room number is required.");
         } else {
@@ -81,7 +77,6 @@ public class UpdateRoomServlet extends HttpServlet {
             }
         }
 
-        // Validate room type
         try {
             roomTypeId = Integer.parseInt(roomTypeIdRaw);
             if (!roomDAO.isRoomTypeExists(roomTypeId)) {
@@ -96,9 +91,10 @@ public class UpdateRoomServlet extends HttpServlet {
             if (floor <= 0 || floor >= 99) {
                 errorList.add("Floor must be greater than 0 and less than 99.");
             }
+        } catch (Exception e) {
+            errorList.add("Floor is invalid.");
         }
 
-        // Validate status
         try {
             status = Integer.parseInt(statusRaw);
             if (status < 1 || status > 4) {
