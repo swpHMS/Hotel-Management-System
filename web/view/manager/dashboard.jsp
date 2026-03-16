@@ -141,19 +141,27 @@
 
     const monthlyLabels = ${monthlyLabelsJs};
     const monthlyData   = ${monthlyValuesJs};
+    const sumValues = (values) => values.reduce((sum, value) => sum + Number(value || 0), 0);
+    const useDailyByDefault = sumValues(dailyData) >= sumValues(monthlyData);
+    const initialLabels = useDailyByDefault ? dailyLabels : monthlyLabels;
+    const initialData = useDailyByDefault ? dailyData : monthlyData;
 
     // Booking Velocity chart
     const ctxV = document.getElementById("velocityChart");
     const velocityChart = new Chart(ctxV, {
         type: "line",
         data: {
-            labels: monthlyLabels,
+            labels: initialLabels,
             datasets: [{
-                label: "Booked Rooms",
-                data: monthlyData,
+                label: "Occupancy Rate",
+                data: initialData,
                 tension: 0.35,
-                fill: true,
-                pointRadius: 0,
+                fill: false,
+                pointRadius: 4,
+                pointHoverRadius: 5,
+                pointBackgroundColor: "#c9a256",
+                pointBorderColor: "#ffffff",
+                pointBorderWidth: 2,
                 borderWidth: 4,
                 borderColor: "#c9a256",
                 backgroundColor: "rgba(201,162,86,.18)"
@@ -165,7 +173,17 @@
             plugins: { legend: { display: false } },
             scales: {
                 x: { grid: { display: false } },
-                y: { grid: { color: "rgba(15,23,42,.08)" } }
+                y: {
+                    beginAtZero: true,
+                    grace: "10%",
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + "%";
+                        }
+                    },
+                    grid: { color: "rgba(15,23,42,.08)" }
+                }
             }
         }
     });
