@@ -550,15 +550,15 @@ public class RoomTypeDAO {
         return list;
     }
 
-    public RoomTypeManagementView getRoomTypeForManagerById(int roomTypeId) {
-        List<RoomTypeManagementView> items = getRoomTypesForManager(null);
-        for (RoomTypeManagementView item : items) {
-            if (item.getRoomTypeId() == roomTypeId) {
-                return item;
-            }
+public RoomTypeManagementView getRoomTypeForManagerById(int roomTypeId) {
+    List<RoomTypeManagementView> items = getRoomTypesForManager((String) null);
+    for (RoomTypeManagementView item : items) {
+        if (item.getRoomTypeId() == roomTypeId) {
+            return item;
         }
-        return null;
     }
+    return null;
+}
 
     public List<Amenity> getAllActiveAmenities() {
         String sql = "SELECT amenity_id, code, name, description, category, is_active FROM dbo.amenities WHERE is_active = 1 ORDER BY name";

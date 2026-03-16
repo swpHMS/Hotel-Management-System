@@ -10,7 +10,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import java.time.temporal.ChronoUnit;
 import model.HotelInformation;
 
 import java.io.IOException;
@@ -83,7 +83,10 @@ public class HomeServlet extends HttpServlet {
         if (!checkOut.isAfter(checkIn)) {
             checkOut = checkIn.plusDays(1);
         }
-
+        long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
+        if (nights > 30) {
+            req.setAttribute("dateError", "You can only book up to 30 nights.");
+        }
         // guests + rooms
         int roomQty = clamp(parseIntOrDefault(roomQtyStr, 1), 1, 20);
         int adults = clamp(parseIntOrDefault(adultsStr, 2), 1, 30);
@@ -118,11 +121,11 @@ public class HomeServlet extends HttpServlet {
 
         List<model.RoomType> roomTypes;
 
-if (isSearching) {
-    roomTypes = roomTypeRepo.searchForBooking(checkIn, checkOut, q, adults, children, roomQty, 200);
-} else {
-    roomTypes = roomTypeRepo.getAllActiveRoomTypesForHome();
-}
+        if (isSearching) {
+            roomTypes = roomTypeRepo.searchForBooking(checkIn, checkOut, q, adults, children, roomQty, 200);
+        } else {
+            roomTypes = roomTypeRepo.getAllActiveRoomTypesForHome();
+        }
 
         // ✅ Map lưu nhiều ảnh cho từng room type
         Map<Integer, List<String>> imagesMap = new HashMap<>();
