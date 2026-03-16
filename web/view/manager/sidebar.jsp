@@ -51,9 +51,14 @@
 
         <div class="sb-section">ACCOMMODATIONS</div>
 
-<a class="sb-item <%= "roomTypes".equals(active) ? "active" : "" %>" 
+<a class="sb-item <%= "rooms".equals(active) ? "active" : "" %>"
+   href="${pageContext.request.contextPath}/manager/rooms">
+    <i class="bi bi-door-open-fill"></i><span>Rooms</span>
+</a>
+
+<a class="sb-item <%= "roomTypes".equals(active) ? "active" : "" %>"
    href="<%=request.getContextPath()%>/manager/room-types">
-    <i class="bi bi-building"></i> <span>Room Types</span>
+    <i class="bi bi-building"></i><span>Room Types</span>
 </a>
 
         <a class="sb-item <%= "roomRegistry".equals(active)?"active":"" %>" href="${pageContext.request.contextPath}/manager/room-registry">
@@ -62,14 +67,19 @@
 
         <div class="sb-section">OPERATIONS</div>
 
-        <a class="sb-item <%= "services".equals(active) ? "active" : "" %>" href="#">
-            <i class="bi bi-gem"></i> <span>Services</span>
+        <a class="sb-item <%= "services".equals(active) ? "active" : "" %>" 
+           href="${pageContext.request.contextPath}/manager/services">
+            <i class="bi bi-gem"></i><span>Services</span>
+        </a>
+
+        <a class="sb-item <%= "finance".equals(active) ? "active" : "" %>" href="#">
+            <i class="bi bi-bar-chart-fill"></i><span>Finance</span>
         </a>
 
         <a class="sb-item <%= "propertyInfo".equals(active) ? "active" : "" %>"
-   href="${pageContext.request.contextPath}/manager/property-info">
-    <i class="bi bi-info-circle-fill"></i> <span>Property Info</span>
-</a>
+           href="${pageContext.request.contextPath}/manager/property-info">
+            <i class="bi bi-crown-fill"></i><span>Property Info</span>
+        </a>
     </nav>
 
     <div class="sb-userwrap" id="sbUserWrap">
