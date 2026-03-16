@@ -303,73 +303,75 @@ public class Staff_ServiceOrderDAO {
 
     // ========== ADD ITEM TO DRAFT (snapshot price) ==========
     public boolean addItemToDraft2(int serviceOrderId, int serviceId, int quantity) {
-    String checkDraftSql = """
+        String checkDraftSql = """
         SELECT 1
         FROM service_orders
         WHERE service_order_id = ? AND status = 0
     """;
 
-    String updateSql = """
+        String updateSql = """
         UPDATE service_order_items
         SET quantity = quantity + ?
         WHERE service_order_id = ? AND service_id = ?
     """;
 
-    String insertSql = """
+        String insertSql = """
         INSERT INTO service_order_items (service_order_id, service_id, quantity, unit_price_snapshot)
         SELECT ?, s.service_id, ?, s.unit_price
         FROM services s
         WHERE s.service_id = ?
     """;
 
-    try (Connection con = new DBContext().getConnection()) {
-        con.setAutoCommit(false);
+        try (Connection con = new DBContext().getConnection()) {
+            con.setAutoCommit(false);
 
-        try (PreparedStatement ps = con.prepareStatement(checkDraftSql)) {
-            ps.setInt(1, serviceOrderId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    con.rollback(); //ko đc thêm item vì đang ở POSTED
-                    return false;
+            try (PreparedStatement ps = con.prepareStatement(checkDraftSql)) {
+                ps.setInt(1, serviceOrderId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        con.rollback(); //ko đc thêm item vì đang ở POSTED
+                        return false;
+                    }
                 }
             }
-        }
 
-        try (PreparedStatement ps = con.prepareStatement(updateSql)) {
-            ps.setInt(1, quantity);
-            ps.setInt(2, serviceOrderId);
-            ps.setInt(3, serviceId);
+            try (PreparedStatement ps = con.prepareStatement(updateSql)) {
+                ps.setInt(1, quantity);
+                ps.setInt(2, serviceOrderId);
+                ps.setInt(3, serviceId);
 
-            int updated = ps.executeUpdate();
-            if (updated > 0) {
-                con.commit();
-                return true;
+                int updated = ps.executeUpdate();
+                if (updated > 0) {
+                    con.commit();
+                    return true;
+                }
             }
+
+            try (PreparedStatement ps = con.prepareStatement(insertSql)) {
+                ps.setInt(1, serviceOrderId);
+                ps.setInt(2, quantity);
+                ps.setInt(3, serviceId);
+
+                int inserted = ps.executeUpdate();
+                con.commit();
+                return inserted > 0;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        try (PreparedStatement ps = con.prepareStatement(insertSql)) {
-            ps.setInt(1, serviceOrderId);
-            ps.setInt(2, quantity);
-            ps.setInt(3, serviceId);
-
-            int inserted = ps.executeUpdate();
-            con.commit();
-            return inserted > 0;
-        }
-
-    } catch (Exception e) {
-        e.printStackTrace();
+        return false;
     }
-    return false;
-}
-    
+
     //========lấy services theo type=========
     public List<Service> listServicesByType(int serviceType) {
         List<Service> list = new ArrayList<>();
 
         String sql = "SELECT service_id, code, name, service_type, unit_price "
-                + "FROM services WHERE service_type = ? ORDER BY name ASC";
-
+                + "FROM services "
+                + "WHERE service_type = ? AND status = 1 "
+                + "ORDER BY name ASC";
+        
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, serviceType);
@@ -476,7 +478,9 @@ public class Staff_ServiceOrderDAO {
 
     //nhập Room trước → auto ra Booking ID
     public static record BookingLookup(int bookingId, int roomId, int assignmentId) {
+
     }
+
     public BookingLookup findActiveBookingByRoomNo(String roomNo) {
         final int BOOKING_ACTIVE = 3;
         final int SRA_IN_HOUSE = 2;
@@ -514,6 +518,7 @@ public class Staff_ServiceOrderDAO {
         return null;
     }
 //Room đấy phải dam bao đk là Inhouse chứ ko phải Upgrade, Initial
+
     public boolean isRoomInHouseForBooking(int bookingId, int roomId) {
         String sql
                 = "SELECT 1 "
