@@ -78,6 +78,7 @@ public class RoomRegistryServlet extends HttpServlet {
         request.setAttribute("keyword", keyword);
         request.setAttribute("status", status);
         request.setAttribute("roomType", roomType);
+        request.setAttribute("active", "roomRegistry");
 
         request.getRequestDispatcher("/view/manager/room-registry.jsp").forward(request, response);
     }
