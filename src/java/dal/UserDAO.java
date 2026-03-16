@@ -30,7 +30,7 @@ public class UserDAO extends DBContext {
         FROM users u
         LEFT JOIN staff s ON s.user_id = u.user_id
         LEFT JOIN customers c ON c.user_id = u.user_id
-        WHERE u.email = ?
+        WHERE u.email COLLATE Latin1_General_CS_AS = ?
     """;
 
     try (PreparedStatement st = connection.prepareStatement(sql)) {
