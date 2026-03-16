@@ -14,36 +14,43 @@ import model.Room;
 @WebServlet(name = "UpdateRoomServlet", urlPatterns = {"/manager/room-registry/update"})
 public class UpdateRoomServlet extends HttpServlet {
 
-    private final RoomDAO roomDAO = new RoomDAO();
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+   @Override
+protected void doGet(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    RoomDAO roomDAO = new RoomDAO();
+    String roomIdRaw = request.getParameter("id");
+    System.out.println("DEBUG roomIdRaw = " + roomIdRaw);
 
-        String roomIdRaw = request.getParameter("id");
+    try {
+        int roomId = Integer.parseInt(roomIdRaw);
+        System.out.println("DEBUG parsed roomId = " + roomId);
 
-        try {
-            int roomId = Integer.parseInt(roomIdRaw);
+        Room room = roomDAO.getRoomById(roomId);
+        System.out.println("DEBUG room found = " + (room != null));
 
-            Room room = roomDAO.getRoomById(roomId);
-            if (room == null) {
-                response.sendRedirect(request.getContextPath() + "/manager/room-registry");
-                return;
-            }
-
-            request.setAttribute("room", room);
-            request.setAttribute("roomTypeList", roomDAO.getAllRoomTypes());
-            request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
-
-        } catch (Exception e) {
+        if (room == null) {
             response.sendRedirect(request.getContextPath() + "/manager/room-registry");
+            return;
         }
+
+        List<Room> roomTypeList = roomDAO.getAllRoomTypes();
+        System.out.println("DEBUG roomTypeList size = " + roomTypeList.size());
+
+        request.setAttribute("room", room);
+        request.setAttribute("roomTypeList", roomTypeList);
+        request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        throw new ServletException(e);
     }
+}
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+RoomDAO roomDAO = new RoomDAO();
         request.setCharacterEncoding("UTF-8");
 
         List<String> errorList = new ArrayList<>();
@@ -136,9 +143,11 @@ public class UpdateRoomServlet extends HttpServlet {
         } else {
             errorList.add("Update room failed. Please try again.");
             request.setAttribute("errorList", errorList);
-            request.setAttribute("room", room);
-            request.setAttribute("roomTypeList", roomDAO.getAllRoomTypes());
-            request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
+            List<Room> roomTypeList = roomDAO.getAllRoomTypes();
+
+request.setAttribute("room", room);
+request.setAttribute("roomTypeList", roomTypeList);
+request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
         }
     }
 }

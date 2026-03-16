@@ -110,7 +110,6 @@
                                 <th>Room</th>
                                 <th>Room Type</th>
                                 <th>Status</th>
-                                <th>Notes</th>
                                 <th style="text-align:right;">Actions</th>
                             </tr>
                         </thead>
@@ -132,17 +131,6 @@
                                         <span class="badge status-${r.status}">
                                             ${r.statusText}
                                         </span>
-                                    </td>
-
-                                    <td>
-                                        <c:choose>
-                                            <c:when test="${not empty r.note}">
-                                                ${r.note}
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="muted">No notes</span>
-                                            </c:otherwise>
-                                        </c:choose>
                                     </td>
 
                                     <td>
@@ -260,11 +248,6 @@
                                 <div class="choice-sub">Blocked for repair</div>
                             </div>
                         </div>
-
-                        <div class="section-label">Notes</div>
-                        <textarea class="note-box"
-                                  name="note"
-                                  placeholder="e.g., Room deep cleaned, or AC unit needs repair..."></textarea>
 
                         <div class="modal-actions">
                             <button type="button" class="btn btn-light" id="cancelModalBtn">Cancel</button>
