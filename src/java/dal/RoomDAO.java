@@ -16,7 +16,31 @@ import model.Room;
  * @author ASUS
  */
 public class RoomDAO extends DBContext {
+private static final int STATUS_MAINTENANCE = 3;
+private void decreaseInventoryByRoomTypeTx(int roomTypeId) throws Exception {
+    String sql = "UPDATE room_type_inventory "
+            + "SET total_rooms = total_rooms - 1 "
+            + "WHERE room_type_id = ? "
+            + "AND inventory_date >= CAST(GETDATE() AS DATE) "
+            + "AND total_rooms > 0";
 
+    try (PreparedStatement st = connection.prepareStatement(sql)) {
+        st.setInt(1, roomTypeId);
+        st.executeUpdate();
+    }
+}
+
+private void increaseInventoryByRoomTypeTx(int roomTypeId) throws Exception {
+    String sql = "UPDATE room_type_inventory "
+            + "SET total_rooms = total_rooms + 1 "
+            + "WHERE room_type_id = ? "
+            + "AND inventory_date >= CAST(GETDATE() AS DATE)";
+
+    try (PreparedStatement st = connection.prepareStatement(sql)) {
+        st.setInt(1, roomTypeId);
+        st.executeUpdate();
+    }
+}
     public List<Room> searchRoom(String keyword, String status, String roomType, int pageIndex, int pageSize) {
         List<Room> listRoom = new ArrayList<>();
 
@@ -128,27 +152,28 @@ public class RoomDAO extends DBContext {
         return 0;
     }
 
-    public List<Room> getAllRoomTypes() {
-        List<Room> list = new ArrayList<>();
-        String sql = "SELECT room_type_id, name FROM room_types ORDER BY name";
+public List<Room> getAllRoomTypes() {
+    List<Room> list = new ArrayList<>();
+    String sql = "SELECT room_type_id, name FROM room_types ORDER BY name";
 
-        try {
-            connection = getConnection();
-            PreparedStatement st = connection.prepareStatement(sql);
-            ResultSet rs = st.executeQuery();
+    try {
+        connection = getConnection();
+        PreparedStatement st = connection.prepareStatement(sql);
+        ResultSet rs = st.executeQuery();
 
-            while (rs.next()) {
-                Room r = new Room();
-                r.setRoomTypeId(rs.getInt("room_type_id"));
-                r.setRoomTypeName(rs.getString("name"));
-                list.add(r);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        while (rs.next()) {
+            Room r = new Room();
+            r.setRoomTypeId(rs.getInt("room_type_id"));
+            r.setRoomTypeName(rs.getString("name"));
+            list.add(r);
         }
 
-        return list;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+
+    return list;
+}
 
     public boolean isRoomNoExists(String roomNo) {
         String sql = "SELECT COUNT(*) FROM rooms WHERE room_no = ?";
@@ -216,93 +241,102 @@ public class RoomDAO extends DBContext {
      *
      * Sau này nếu có status "inactive" thì sửa COUNT(*) thành WHERE status <> ...
      */
-    public void syncInventoryTotalRoomsByRoomType(int roomTypeId) {
-        String sqlCount = "SELECT COUNT(*) FROM rooms WHERE room_type_id = ?";
-        String sqlUpdateInventory = "UPDATE room_type_inventory "
-                + "SET total_rooms = ? "
-                + "WHERE room_type_id = ? "
-                + "AND inventory_date >= CAST(GETDATE() AS DATE)";
+//    public void syncInventoryTotalRoomsByRoomType(int roomTypeId) {
+//        String sqlCount = "SELECT COUNT(*) FROM rooms WHERE room_type_id = ?";
+//        String sqlUpdateInventory = "UPDATE room_type_inventory "
+//                + "SET total_rooms = ? "
+//                + "WHERE room_type_id = ? "
+//                + "AND inventory_date >= CAST(GETDATE() AS DATE)";
+//
+//        try {
+//            connection = getConnection();
+//
+//            int totalRooms = 0;
+//
+//            try (PreparedStatement stCount = connection.prepareStatement(sqlCount)) {
+//                stCount.setInt(1, roomTypeId);
+//                try (ResultSet rs = stCount.executeQuery()) {
+//                    if (rs.next()) {
+//                        totalRooms = rs.getInt(1);
+//                    }
+//                }
+//            }
+//
+//            try (PreparedStatement stUpdate = connection.prepareStatement(sqlUpdateInventory)) {
+//                stUpdate.setInt(1, totalRooms);
+//                stUpdate.setInt(2, roomTypeId);
+//                stUpdate.executeUpdate();
+//            }
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
-        try {
-            connection = getConnection();
+public boolean createRoom(Room room) {
+    String sqlInsert = "INSERT INTO rooms (room_no, room_type_id, status, floor) VALUES (?, ?, ?, ?)";
 
-            int totalRooms = 0;
+    try {
+        connection = getConnection();
+        connection.setAutoCommit(false);
 
-            try (PreparedStatement stCount = connection.prepareStatement(sqlCount)) {
-                stCount.setInt(1, roomTypeId);
-                try (ResultSet rs = stCount.executeQuery()) {
-                    if (rs.next()) {
-                        totalRooms = rs.getInt(1);
-                    }
-                }
-            }
+        try (PreparedStatement stInsert = connection.prepareStatement(sqlInsert)) {
+            stInsert.setString(1, room.getRoomNo());
+            stInsert.setInt(2, room.getRoomTypeId());
+            stInsert.setInt(3, room.getStatus());
+            stInsert.setInt(4, room.getFloor());
 
-            try (PreparedStatement stUpdate = connection.prepareStatement(sqlUpdateInventory)) {
-                stUpdate.setInt(1, totalRooms);
-                stUpdate.setInt(2, roomTypeId);
-                stUpdate.executeUpdate();
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public boolean createRoom(Room room) {
-        String sqlInsert = "INSERT INTO rooms (room_no, room_type_id, status, floor) VALUES (?, ?, ?, ?)";
-
-        try {
-            connection = getConnection();
-            connection.setAutoCommit(false);
-
-            try (PreparedStatement stInsert = connection.prepareStatement(sqlInsert)) {
-                stInsert.setString(1, room.getRoomNo());
-                stInsert.setInt(2, room.getRoomTypeId());
-                stInsert.setInt(3, room.getStatus());
-                stInsert.setInt(4, room.getFloor());
-                stInsert.executeUpdate();
-
-                // Đồng bộ total_rooms theo COUNT(*) thực tế
-                syncInventoryTotalRoomsByRoomTypeTx(room.getRoomTypeId());
-
-                connection.commit();
-                return true;
-            } catch (Exception e) {
+            if (stInsert.executeUpdate() == 0) {
                 connection.rollback();
-                e.printStackTrace();
+                return false;
+            }
+
+            // Nếu tạo mới 1 phòng mà không phải maintenance thì tăng inventory
+            if (room.getStatus() != STATUS_MAINTENANCE) {
+                increaseInventoryByRoomTypeTx(room.getRoomTypeId());
+            }
+
+            connection.commit();
+            return true;
+        } catch (Exception e) {
+            connection.rollback();
+            e.printStackTrace();
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    } finally {
+        try {
+            if (connection != null) {
+                connection.setAutoCommit(true);
+                connection.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (Exception e) {
-            }
         }
-
-        return false;
     }
 
-    public Room getRoomById(int roomId) {
-        String sql = "SELECT r.room_id, r.room_no, r.room_type_id, r.status, r.floor, "
-                + "       rt.name AS room_type_name, "
-                + "       pricePick.price "
-                + "FROM rooms r "
-                + "JOIN room_types rt ON r.room_type_id = rt.room_type_id "
-                + "OUTER APPLY ( "
-                + "    SELECT TOP 1 rv.price "
-                + "    FROM rate_versions rv "
-                + "    WHERE rv.room_type_id = rt.room_type_id "
-                + "    ORDER BY rv.valid_from DESC "
-                + ") pricePick "
-                + "WHERE r.room_id = ?";
+    return false;
+}
 
-        try {
-            connection = getConnection();
-            PreparedStatement st = connection.prepareStatement(sql);
-            st.setInt(1, roomId);
-            ResultSet rs = st.executeQuery();
+public Room getRoomById(int roomId) {
+    String sql = "SELECT r.room_id, r.room_no, r.room_type_id, r.status, r.floor, "
+            + "       rt.name AS room_type_name, "
+            + "       pricePick.price "
+            + "FROM rooms r "
+            + "JOIN room_types rt ON r.room_type_id = rt.room_type_id "
+            + "OUTER APPLY ( "
+            + "    SELECT TOP 1 rv.price "
+            + "    FROM rate_versions rv "
+            + "    WHERE rv.room_type_id = rt.room_type_id "
+            + "    ORDER BY rv.valid_from DESC "
+            + ") pricePick "
+            + "WHERE r.room_id = ?";
 
+    try (java.sql.Connection conn = getConnection();
+         PreparedStatement st = conn.prepareStatement(sql)) {
+
+        st.setInt(1, roomId);
+
+        try (ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
                 Room room = new Room();
                 room.setRoomId(rs.getInt("room_id"));
@@ -314,12 +348,13 @@ public class RoomDAO extends DBContext {
                 room.setRoomTypeName(rs.getString("room_type_name"));
                 return room;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
-        return null;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+
+    return null;
+}
 
     public boolean isRoomNoExistsForOtherRoom(String roomNo, int roomId) {
         String sql = "SELECT COUNT(*) FROM rooms WHERE room_no = ? AND room_id <> ?";
@@ -342,93 +377,118 @@ public class RoomDAO extends DBContext {
     }
 
     public boolean updateRoom(Room room) {
-        String sqlGetOld = "SELECT room_type_id FROM rooms WHERE room_id = ?";
-        String sqlUpdate = "UPDATE rooms SET room_no = ?, room_type_id = ?, status = ?, floor = ? WHERE room_id = ?";
+    String sqlGetOld = "SELECT room_type_id, status FROM rooms WHERE room_id = ?";
+    String sqlUpdate = "UPDATE rooms SET room_no = ?, room_type_id = ?, status = ?, floor = ? WHERE room_id = ?";
 
-        try {
-            connection = getConnection();
-            connection.setAutoCommit(false);
+    try {
+        connection = getConnection();
+        connection.setAutoCommit(false);
 
-            int oldTypeId = -1;
+        int oldTypeId = -1;
+        int oldStatus = -1;
 
-            try (PreparedStatement stOld = connection.prepareStatement(sqlGetOld)) {
-                stOld.setInt(1, room.getRoomId());
-                ResultSet rs = stOld.executeQuery();
-                if (rs.next()) {
-                    oldTypeId = rs.getInt("room_type_id");
-                }
+        try (PreparedStatement stOld = connection.prepareStatement(sqlGetOld)) {
+            stOld.setInt(1, room.getRoomId());
+            ResultSet rs = stOld.executeQuery();
+            if (rs.next()) {
+                oldTypeId = rs.getInt("room_type_id");
+                oldStatus = rs.getInt("status");
             }
+        }
 
-            if (oldTypeId == -1) {
+        if (oldTypeId == -1 || oldStatus == -1) {
+            connection.rollback();
+            return false;
+        }
+
+        try (PreparedStatement stUpd = connection.prepareStatement(sqlUpdate)) {
+            stUpd.setString(1, room.getRoomNo());
+            stUpd.setInt(2, room.getRoomTypeId());
+            stUpd.setInt(3, room.getStatus());
+            stUpd.setInt(4, room.getFloor());
+            stUpd.setInt(5, room.getRoomId());
+
+            int affected = stUpd.executeUpdate();
+            if (affected == 0) {
                 connection.rollback();
                 return false;
             }
+        }
 
-            try (PreparedStatement stUpd = connection.prepareStatement(sqlUpdate)) {
-                stUpd.setString(1, room.getRoomNo());
-                stUpd.setInt(2, room.getRoomTypeId());
-                stUpd.setInt(3, room.getStatus());
-                stUpd.setInt(4, room.getFloor());
-                stUpd.setInt(5, room.getRoomId());
+        int newTypeId = room.getRoomTypeId();
+        int newStatus = room.getStatus();
 
-                int affected = stUpd.executeUpdate();
-                if (affected == 0) {
-                    connection.rollback();
-                    return false;
-                }
+        boolean oldIsMaintenance = (oldStatus == STATUS_MAINTENANCE);
+        boolean newIsMaintenance = (newStatus == STATUS_MAINTENANCE);
+
+        if (oldTypeId == newTypeId) {
+            // Cùng room type, chỉ xét việc vào/ra maintenance
+            if (!oldIsMaintenance && newIsMaintenance) {
+                decreaseInventoryByRoomTypeTx(newTypeId);
+            } else if (oldIsMaintenance && !newIsMaintenance) {
+                increaseInventoryByRoomTypeTx(newTypeId);
+            }
+        } else {
+            // Đổi sang room type khác
+            // Trả inventory lại cho type cũ nếu phòng cũ không phải maintenance
+            if (!oldIsMaintenance) {
+                decreaseInventoryByRoomTypeTx(oldTypeId);
             }
 
-            // Đồng bộ inventory theo COUNT(*) thực tế
-            syncInventoryTotalRoomsByRoomTypeTx(oldTypeId);
-
-            if (oldTypeId != room.getRoomTypeId()) {
-                syncInventoryTotalRoomsByRoomTypeTx(room.getRoomTypeId());
-            }
-
-            connection.commit();
-            return true;
-
-        } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (Exception ex) {
-            }
-            e.printStackTrace();
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (Exception e) {
+            // Cộng inventory cho type mới nếu phòng mới không phải maintenance
+            if (!newIsMaintenance) {
+                increaseInventoryByRoomTypeTx(newTypeId);
             }
         }
 
-        return false;
+        connection.commit();
+        return true;
+
+    } catch (Exception e) {
+        try {
+            if (connection != null) {
+                connection.rollback();
+            }
+        } catch (Exception ex) {
+        }
+        e.printStackTrace();
+    } finally {
+        try {
+            if (connection != null) {
+                connection.setAutoCommit(true);
+                connection.close();
+            }
+        } catch (Exception e) {
+        }
     }
 
+    return false;
+}
     /**
      * Hàm sync dùng bên trong transaction hiện tại
      */
-    private void syncInventoryTotalRoomsByRoomTypeTx(int roomTypeId) throws Exception {
-        String sqlCount = "SELECT COUNT(*) FROM rooms WHERE room_type_id = ?";
-        String sqlUpdateInventory = "UPDATE room_type_inventory "
-                + "SET total_rooms = ? "
-                + "WHERE room_type_id = ? "
-                + "AND inventory_date >= CAST(GETDATE() AS DATE)";
-
-        int totalRooms = 0;
-
-        try (PreparedStatement stCount = connection.prepareStatement(sqlCount)) {
-            stCount.setInt(1, roomTypeId);
-            try (ResultSet rs = stCount.executeQuery()) {
-                if (rs.next()) {
-                    totalRooms = rs.getInt(1);
-                }
-            }
-        }
-
-        try (PreparedStatement stUpdate = connection.prepareStatement(sqlUpdateInventory)) {
-            stUpdate.setInt(1, totalRooms);
-            stUpdate.setInt(2, roomTypeId);
-            stUpdate.executeUpdate();
-        }
-    }
+//    private void syncInventoryTotalRoomsByRoomTypeTx(int roomTypeId) throws Exception {
+//        String sqlCount = "SELECT COUNT(*) FROM rooms WHERE room_type_id = ?";
+//        String sqlUpdateInventory = "UPDATE room_type_inventory "
+//                + "SET total_rooms = ? "
+//                + "WHERE room_type_id = ? "
+//                + "AND inventory_date >= CAST(GETDATE() AS DATE)";
+//
+//        int totalRooms = 0;
+//
+//        try (PreparedStatement stCount = connection.prepareStatement(sqlCount)) {
+//            stCount.setInt(1, roomTypeId);
+//            try (ResultSet rs = stCount.executeQuery()) {
+//                if (rs.next()) {
+//                    totalRooms = rs.getInt(1);
+//                }
+//            }
+//        }
+//
+//        try (PreparedStatement stUpdate = connection.prepareStatement(sqlUpdateInventory)) {
+//            stUpdate.setInt(1, totalRooms);
+//            stUpdate.setInt(2, roomTypeId);
+//            stUpdate.executeUpdate();
+//        }
+//    }
 }

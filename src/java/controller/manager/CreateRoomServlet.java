@@ -242,10 +242,10 @@ public class CreateRoomServlet extends HttpServlet {
             }
         }
 
-        // Sync lại 1 lần nữa cho chắc theo COUNT(*) thực tế
-        if (!createdRooms.isEmpty()) {
-            dao.syncInventoryTotalRoomsByRoomType(roomTypeId);
-        }
+//        // Sync lại 1 lần nữa cho chắc theo COUNT(*) thực tế
+//        if (!createdRooms.isEmpty()) {
+//            dao.syncInventoryTotalRoomsByRoomType(roomTypeId);
+//        }
 
         request.setAttribute("activeMode", "bulk");
         request.setAttribute("successMessage", "Created " + createdRooms.size() + " room(s) successfully.");
