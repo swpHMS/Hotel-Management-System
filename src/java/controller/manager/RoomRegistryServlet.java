@@ -78,8 +78,10 @@ public class RoomRegistryServlet extends HttpServlet {
         request.setAttribute("keyword", keyword);
         request.setAttribute("status", status);
         request.setAttribute("roomType", roomType);
-
-        request.getRequestDispatcher("/view/manager/room-registry.jsp").forward(request, response);
+        request.setAttribute("active", "roomRegistry");
+        request.setAttribute("pageTitle", "Room Registry");
+        request.setAttribute("contentPage", "/view/manager/room-registry.jsp");
+        request.getRequestDispatcher("/view/manager/layout.jsp").forward(request, response);
     }
 
     /**
