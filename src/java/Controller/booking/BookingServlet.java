@@ -7,7 +7,7 @@ import dal.RoomTypeImageDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-
+import java.time.temporal.ChronoUnit;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +18,8 @@ import model.RoomTypeImage;
 
 @WebServlet(name = "BookingServlet", urlPatterns = {"/booking"})
 public class BookingServlet extends HttpServlet {
+
+    private static final int MAX_STAY_NIGHTS = 30;
 
     private int parseIntOrDefault(String s, int def) {
         try {
@@ -104,7 +106,11 @@ public class BookingServlet extends HttpServlet {
         if (!checkOut.isAfter(checkIn)) {
             checkOut = checkIn.plusDays(1);
         }
-
+        long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
+        if (nights > MAX_STAY_NIGHTS) {
+            checkOut = checkIn.plusDays(MAX_STAY_NIGHTS);
+            request.setAttribute("dateError", "Maximum stay is " + MAX_STAY_NIGHTS + " nights.");
+        }
         RoomTypeDAO roomTypeDAO = new RoomTypeDAO();
         RoomTypeImageDAO imageDAO = new RoomTypeImageDAO();
         AmenityDAO amenityDAO = new AmenityDAO();
@@ -128,45 +134,45 @@ public class BookingServlet extends HttpServlet {
         int maxAvailableQty = 1;
 
         if (roomTypes != null) {
-    for (RoomType rt : roomTypes) {
-        try {
-            List<RoomTypeImage> images = imageDAO.getImagesByRoomTypeId(rt.getRoomTypeId());
-            rt.setImages(images);
+            for (RoomType rt : roomTypes) {
+                try {
+                    List<RoomTypeImage> images = imageDAO.getImagesByRoomTypeId(rt.getRoomTypeId());
+                    rt.setImages(images);
 
-            if (images != null && !images.isEmpty()) {
-                rt.setImageUrl(rt.getThumbnailUrl());
+                    if (images != null && !images.isEmpty()) {
+                        rt.setImageUrl(rt.getThumbnailUrl());
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    rt.setImages(null);
+                }
+
+                List<String> names = amenityDAO.getAmenityNamesByRoomType(rt.getRoomTypeId());
+                rt.setAmenityNames(names);
+
+                try {
+                    int availableQty = roomTypeDAO.getAvailableRoomQty(
+                            rt.getRoomTypeId(),
+                            checkIn,
+                            checkOut
+                    );
+
+                    if (availableQty < 0) {
+                        availableQty = 0;
+                    }
+
+                    rt.setAvailableQty(availableQty);
+
+                    if (availableQty > maxAvailableQty) {
+                        maxAvailableQty = availableQty;
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    rt.setAvailableQty(0);
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            rt.setImages(null);
         }
-
-        List<String> names = amenityDAO.getAmenityNamesByRoomType(rt.getRoomTypeId());
-        rt.setAmenityNames(names);
-
-        try {
-            int availableQty = roomTypeDAO.getAvailableRoomQty(
-                    rt.getRoomTypeId(),
-                    checkIn,
-                    checkOut
-            );
-
-            if (availableQty < 0) {
-                availableQty = 0;
-            }
-
-            rt.setAvailableQty(availableQty);
-
-            if (availableQty > maxAvailableQty) {
-                maxAvailableQty = availableQty;
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            rt.setAvailableQty(0);
-        }
-    }
-}
 
         // ✅ THÊM: clamp lại roomQty nếu user nhập vượt quá số lớn nhất đang còn
         if (maxAvailableQty <= 0) {

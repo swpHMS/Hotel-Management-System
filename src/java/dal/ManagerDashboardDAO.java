@@ -59,7 +59,8 @@ public class ManagerDashboardDAO extends DBContext {
               CONVERT(varchar(10), inventory_date, 120) AS d,
               SUM(booked_rooms) AS v
             FROM dbo.room_type_inventory
-            WHERE inventory_date >= DATEADD(DAY, -?, CAST(GETDATE() AS date))
+            WHERE inventory_date >= DATEADD(DAY, 1 - ?, CAST(GETDATE() AS date))
+              AND inventory_date <= CAST(GETDATE() AS date)
             GROUP BY CONVERT(varchar(10), inventory_date, 120)
             ORDER BY d
         """;
@@ -91,7 +92,12 @@ public class ManagerDashboardDAO extends DBContext {
               FORMAT(inventory_date, 'yyyy-MM') AS ym,
               SUM(booked_rooms) AS v
             FROM dbo.room_type_inventory
-            WHERE inventory_date >= DATEADD(MONTH, -?, CAST(GETDATE() AS date))
+            WHERE inventory_date >= DATEFROMPARTS(
+                    YEAR(DATEADD(MONTH, 1 - ?, CAST(GETDATE() AS date))),
+                    MONTH(DATEADD(MONTH, 1 - ?, CAST(GETDATE() AS date))),
+                    1
+                  )
+              AND inventory_date <= CAST(GETDATE() AS date)
             GROUP BY FORMAT(inventory_date, 'yyyy-MM')
             ORDER BY ym
         """;
@@ -101,6 +107,7 @@ public class ManagerDashboardDAO extends DBContext {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, monthsBack);
+            ps.setInt(2, monthsBack);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

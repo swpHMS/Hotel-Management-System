@@ -71,7 +71,7 @@ public class ReceptionistBookingCustomerServlet extends HttpServlet {
         java.util.List<String> errors = new java.util.ArrayList<>();
 
         // ===== 2. Kiểm tra lỗi (Validate) =====
-        if (fullName == null) errors.add("Full Name is required.");
+if (fullName == null) errors.add("Full Name is required.");
         else if (!utils.Validation.isValidFullNameNoNumber(fullName)) errors.add("Full Name is invalid (no numbers).");
         if (phone == null) errors.add("Phone is required.");
         else if (!utils.Validation.isPhoneVN(phone)) errors.add("Phone number is invalid (VN format: 0xxxxxxxxx).");
