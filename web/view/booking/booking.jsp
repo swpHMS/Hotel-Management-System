@@ -115,7 +115,11 @@
 
             </div>
         </section>
-
+        <c:if test="${not empty dateError}">
+            <div style="margin:12px auto; padding:12px 14px; border-radius:12px; background:#fff7e6; border:1px solid #f3d19c; color:#9a6700; font-weight:700; max-width:1200px;">
+                ${dateError}
+            </div>
+        </c:if>
         <!-- capacity error (giữ nguyên) -->
         <c:if test="${param.err == 'capacity'}">
             <div style="margin:12px 0; padding:12px 14px; border-radius:12px; background:#fff1f2; border:1px solid #ffe4e6; color:#991b1b; font-weight:700;">
