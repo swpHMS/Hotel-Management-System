@@ -68,13 +68,95 @@ public class StaffRoomDAO extends DBContext {
         return rs.next() ? rs.getInt(1) : 0;
     }
 
-    public void updateRoomStatus(int roomId, int newStatus) throws Exception {
-        String sql = "UPDATE rooms SET status = ? WHERE room_id = ?";
-        PreparedStatement ps = connection.prepareStatement(sql);
-        ps.setInt(1, newStatus);
-        ps.setInt(2, roomId);
-        ps.executeUpdate();
+public boolean updateRoomStatus(int roomId, int newStatus) {
+    final int STATUS_MAINTENANCE = 3;
+
+    String sqlGet = "SELECT room_type_id, status FROM rooms WHERE room_id = ?";
+    String sqlUpdateRoom = "UPDATE rooms SET status = ? WHERE room_id = ?";
+
+    String sqlDecreaseInventory = "UPDATE room_type_inventory "
+            + "SET total_rooms = total_rooms - 1 "
+            + "WHERE room_type_id = ? "
+            + "AND inventory_date >= CAST(GETDATE() AS DATE) "
+            + "AND total_rooms > 0";
+
+    String sqlIncreaseInventory = "UPDATE room_type_inventory "
+            + "SET total_rooms = total_rooms + 1 "
+            + "WHERE room_type_id = ? "
+            + "AND inventory_date >= CAST(GETDATE() AS DATE)";
+
+    try {
+        connection = getConnection();
+        connection.setAutoCommit(false);
+
+        int roomTypeId = -1;
+        int oldStatus = -1;
+
+        try (PreparedStatement stGet = connection.prepareStatement(sqlGet)) {
+            stGet.setInt(1, roomId);
+            try (ResultSet rs = stGet.executeQuery()) {
+                if (rs.next()) {
+                    roomTypeId = rs.getInt("room_type_id");
+                    oldStatus = rs.getInt("status");
+                }
+            }
+        }
+
+        if (roomTypeId == -1 || oldStatus == -1) {
+            connection.rollback();
+            return false;
+        }
+
+        try (PreparedStatement stUpdate = connection.prepareStatement(sqlUpdateRoom)) {
+            stUpdate.setInt(1, newStatus);
+            stUpdate.setInt(2, roomId);
+
+            if (stUpdate.executeUpdate() == 0) {
+                connection.rollback();
+                return false;
+            }
+        }
+
+        boolean oldIsMaintenance = (oldStatus == STATUS_MAINTENANCE);
+        boolean newIsMaintenance = (newStatus == STATUS_MAINTENANCE);
+
+        if (!oldIsMaintenance && newIsMaintenance) {
+            try (PreparedStatement stDec = connection.prepareStatement(sqlDecreaseInventory)) {
+                stDec.setInt(1, roomTypeId);
+                stDec.executeUpdate();
+            }
+        } else if (oldIsMaintenance && !newIsMaintenance) {
+            try (PreparedStatement stInc = connection.prepareStatement(sqlIncreaseInventory)) {
+                stInc.setInt(1, roomTypeId);
+                stInc.executeUpdate();
+            }
+        }
+
+        connection.commit();
+        return true;
+
+    } catch (Exception e) {
+        try {
+            if (connection != null) {
+                connection.rollback();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        e.printStackTrace();
+    } finally {
+        try {
+            if (connection != null) {
+                connection.setAutoCommit(true);
+                connection.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
+    return false;
+}
     public List<StaffRoomItem> getRooms(String keyword, Integer status, int page, int pageSize) throws Exception {
 
     List<StaffRoomItem> list = new ArrayList<>();

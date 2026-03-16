@@ -6,7 +6,8 @@ import model.RoomTypeManagementView;
 import context.DBContext;
 import model.Amenity;
 import model.RoomTypeImage;
-
+import java.util.HashMap;
+import java.util.Map;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,6 +18,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RoomTypeDAO {
+    private static final String SQL_GET_MAX_INVENTORY_DATE
+        = "SELECT MAX(inventory_date) AS max_date FROM dbo.room_type_inventory";
+
+private static final String SQL_GET_LAST_TOTAL_ROOMS_BY_ROOM_TYPE
+        = "SELECT rti.room_type_id, rti.total_rooms "
+        + "FROM dbo.room_type_inventory rti "
+        + "JOIN ( "
+        + "    SELECT room_type_id, MAX(inventory_date) AS max_date "
+        + "    FROM dbo.room_type_inventory "
+        + "    GROUP BY room_type_id "
+        + ") x ON x.room_type_id = rti.room_type_id "
+        + "   AND x.max_date = rti.inventory_date";
+
+private static final String SQL_GET_ACTIVE_ROOM_TYPES
+        = "SELECT room_type_id FROM dbo.room_types WHERE status = 1";
+
+private static final String SQL_INSERT_INVENTORY_DAY
+        = "INSERT INTO dbo.room_type_inventory "
+        + "(room_type_id, inventory_date, total_rooms, booked_rooms, held_rooms) "
+        + "VALUES (?, ?, ?, 0, 0)";
 
     private volatile String lastErrorMessage;
     private static final LocalDate OPEN_ENDED_RATE_DATE = LocalDate.of(9999, 12, 31);
@@ -155,6 +176,7 @@ public class RoomTypeDAO {
         int roomQty,
         int limit,
         String sort) {
+        ensureInventoryUntil(checkOut);
 
     List<RoomType> list = new ArrayList<>();
     DBContext db = new DBContext();
@@ -305,7 +327,7 @@ public class RoomTypeDAO {
         if (roomTypeId <= 0 || checkIn == null || checkOut == null || !checkOut.isAfter(checkIn)) {
             return 0;
         }
-
+ensureInventoryUntil(checkOut);
         DBContext db = new DBContext();
 
         try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_GET_AVAILABLE_ROOM_QTY)) {
@@ -1142,4 +1164,78 @@ public class RoomTypeDAO {
         private String roomSize;
         private String plainDescription;
     }
+    public void ensureInventoryUntil(LocalDate targetDateExclusive) {
+    if (targetDateExclusive == null) {
+        return;
+    }
+
+    DBContext db = new DBContext();
+
+    try (Connection con = db.getConnection()) {
+        con.setAutoCommit(false);
+
+        LocalDate maxDate = null;
+
+        try (PreparedStatement ps = con.prepareStatement(SQL_GET_MAX_INVENTORY_DATE);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                Date d = rs.getDate("max_date");
+                if (d != null) {
+                    maxDate = d.toLocalDate();
+                }
+            }
+        }
+
+        // Nếu bảng chưa có dữ liệu hoặc đã đủ đến targetDateExclusive - 1 thì không cần làm gì thêm
+        if (maxDate == null || !maxDate.isBefore(targetDateExclusive.minusDays(1))) {
+            con.commit();
+            return;
+        }
+
+        // Lấy total_rooms gần nhất của từng room type
+        Map<Integer, Integer> lastTotalRoomsByType = new HashMap<>();
+
+        try (PreparedStatement ps = con.prepareStatement(SQL_GET_LAST_TOTAL_ROOMS_BY_ROOM_TYPE);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                lastTotalRoomsByType.put(
+                        rs.getInt("room_type_id"),
+                        rs.getInt("total_rooms")
+                );
+            }
+        }
+
+        // Nếu có room type active nhưng chưa có inventory trước đó, fallback = 0
+        List<Integer> activeRoomTypeIds = new ArrayList<>();
+        try (PreparedStatement ps = con.prepareStatement(SQL_GET_ACTIVE_ROOM_TYPES);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                activeRoomTypeIds.add(rs.getInt("room_type_id"));
+            }
+        }
+
+        LocalDate d = maxDate.plusDays(1);
+
+        try (PreparedStatement psInsert = con.prepareStatement(SQL_INSERT_INVENTORY_DAY)) {
+            while (d.isBefore(targetDateExclusive)) {
+                for (Integer roomTypeId : activeRoomTypeIds) {
+                    int totalRooms = lastTotalRoomsByType.getOrDefault(roomTypeId, 0);
+
+                    psInsert.setInt(1, roomTypeId);
+                    psInsert.setDate(2, Date.valueOf(d));
+                    psInsert.setInt(3, totalRooms);
+                    psInsert.addBatch();
+                }
+                d = d.plusDays(1);
+            }
+
+            psInsert.executeBatch();
+        }
+
+        con.commit();
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
 }

@@ -18,7 +18,7 @@ public class ManagerPropertyInfoSaveServlet extends HttpServlet {
     }
 
     private boolean isValidEmail(String email) {
-        return email != null && email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+        return email != null && email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     }
 
     @Override
@@ -36,24 +36,44 @@ public class ManagerPropertyInfoSaveServlet extends HttpServlet {
         String checkOutTimeRaw = trim(request.getParameter("checkOutTime"));
         String content = trim(request.getParameter("content"));
 
-        String error = null;
+        java.util.Map<String, String> errors = new java.util.HashMap<>();
 
         if (name.isEmpty()) {
-            error = "Property name không được để trống.";
-        } else if (address.isEmpty()) {
-            error = "Address không được để trống.";
-        } else if (phone.isEmpty()) {
-            error = "Phone không được để trống.";
-        } else if (email.isEmpty()) {
-            error = "Email không được để trống.";
+            errors.put("name", "Property name không được để trống.");
+        } else if (name.length() < 2 || name.length() > 100) {
+            errors.put("name", "Property name phải từ 2 đến 100 ký tự.");
+        }
+
+        if (content.isEmpty()) {
+            errors.put("content", "Brand introduction không được để trống.");
+        } else if (content.length() < 10 || content.length() > 500) {
+            errors.put("content", "Brand introduction phải từ 10 đến 500 ký tự.");
+        }
+
+        if (address.isEmpty()) {
+            errors.put("address", "Official address không được để trống.");
+        } else if (address.length() < 10 || address.length() > 255) {
+            errors.put("address", "Official address phải từ 10 đến 255 ký tự.");
+        }
+
+        if (phone.isEmpty()) {
+            errors.put("phone", "Primary hotline không được để trống.");
+        } else if (!phone.matches("^\\+?[0-9\\s-]{10,20}$")) {
+            errors.put("phone", "Primary hotline không đúng định dạng.");
+        }
+
+        if (email.isEmpty()) {
+            errors.put("email", "Official email không được để trống.");
         } else if (!isValidEmail(email)) {
-            error = "Email không đúng định dạng.";
-        } else if (checkInTimeRaw.isEmpty()) {
-            error = "Check-in time không được để trống.";
-        } else if (checkOutTimeRaw.isEmpty()) {
-            error = "Check-out time không được để trống.";
-        } else if (content.isEmpty()) {
-            error = "Content không được để trống.";
+            errors.put("email", "Official email không đúng định dạng.");
+        }
+
+        if (checkInTimeRaw.isEmpty()) {
+            errors.put("checkInTime", "Check-in time không được để trống.");
+        }
+
+        if (checkOutTimeRaw.isEmpty()) {
+            errors.put("checkOutTime", "Check-out time không được để trống.");
         }
 
         HotelInformation hotel = new HotelInformation();
@@ -63,23 +83,32 @@ public class ManagerPropertyInfoSaveServlet extends HttpServlet {
         hotel.setEmail(email);
         hotel.setContent(content);
 
-try {
-    hotel.setCheckIn(java.time.LocalTime.parse(checkInTimeRaw));
-    hotel.setCheckOut(java.time.LocalTime.parse(checkOutTimeRaw));
-} catch (Exception e) {
-    error = "Định dạng thời gian không hợp lệ.";
-}
+        if (!checkInTimeRaw.isEmpty()) {
+            try {
+                hotel.setCheckIn(java.time.LocalTime.parse(checkInTimeRaw));
+            } catch (Exception e) {
+                errors.put("checkInTime", "Định dạng check-in time không hợp lệ.");
+            }
+        }
+
+        if (!checkOutTimeRaw.isEmpty()) {
+            try {
+                hotel.setCheckOut(java.time.LocalTime.parse(checkOutTimeRaw));
+            } catch (Exception e) {
+                errors.put("checkOutTime", "Định dạng check-out time không hợp lệ.");
+            }
+        }
 
         if (!hotelIdRaw.isEmpty()) {
             try {
                 hotel.setHotelId(Integer.parseInt(hotelIdRaw));
             } catch (NumberFormatException e) {
-                error = "Hotel ID không hợp lệ.";
+                errors.put("hotelId", "Hotel ID không hợp lệ.");
             }
         }
 
-        if (error != null) {
-            request.setAttribute("error", error);
+        if (!errors.isEmpty()) {
+            request.setAttribute("errors", errors);
             request.setAttribute("hotel", hotel);
             request.setAttribute("mode", hotelIdRaw.isEmpty() ? "create" : "update");
             request.getRequestDispatcher("/view/manager/property-info-form.jsp").forward(request, response);
