@@ -3,7 +3,9 @@ package controller.admin.policy;
 import dal.Admin_PolicyRuleDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,7 +18,7 @@ import model.PolicyRule;
 @WebServlet(name = "AdminPolicyServlet", urlPatterns = {"/admin/policies"})
 public class AdminPolicyServlet extends HttpServlet {
 
-    private Map<String, String> sidebarMap() { //tạo danh sách menu
+    private Map<String, String> sidebarMap() { // build sidebar menu
         Map<String, String> m = new LinkedHashMap<>();
         m.put("BOOKING", "Booking and Reservation");
         m.put("PAYMENT", "Payment and Fees");
@@ -30,13 +32,15 @@ public class AdminPolicyServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        //mặc định khi mở lên là phần của "BOOking"
+        // default to the BOOKING section on first load
         String key = request.getParameter("key");
-        if (key == null || key.isBlank()) key = "BOOKING";
+        if (key == null || key.isBlank()) {
+            key = "BOOKING";
+        }
 
         Admin_PolicyRuleDAO dao = new Admin_PolicyRuleDAO();
         PolicyRule selected = dao.getByName(key);
-        
+
         if (selected == null) {
             key = "BOOKING";
             selected = dao.getByName(key);
@@ -48,7 +52,7 @@ public class AdminPolicyServlet extends HttpServlet {
         request.setAttribute("active", "system_config");
 
         request.getRequestDispatcher("/view/admin/policy_list.jsp")
-               .forward(request, response);
+                .forward(request, response);
     }
 
     @Override
@@ -58,13 +62,20 @@ public class AdminPolicyServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
 
         String key = request.getParameter("key");
-        if (key == null || key.isBlank()) key = "BOOKING";
+        if (key == null || key.isBlank()) {
+            key = "BOOKING";
+        }
 
         int policyId = 0;
-        try { policyId = Integer.parseInt(request.getParameter("policyId")); } catch (Exception ignored) {}
+        try {
+            policyId = Integer.parseInt(request.getParameter("policyId"));
+        } catch (Exception ignored) {
+        }
 
         String content = request.getParameter("content");
-        if (content == null) content = "";
+        if (content == null) {
+            content = "";
+        }
 
         Admin_PolicyRuleDAO dao = new Admin_PolicyRuleDAO();
         dao.updateContent(policyId, content.trim());
