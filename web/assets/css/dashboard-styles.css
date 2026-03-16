@@ -1,6 +1,6 @@
 /*
-Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
-Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css to edit this template
+ Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css to edit this template
 */
 /* 
     Created on : Mar 2, 2026, 7:35:36 PM
@@ -12,7 +12,7 @@ Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css
     margin-left: 260px; 
     width: calc(100% - 260px);
     padding: 30px;
-    background-color: #f5f0e8; /* giống staff_create */
+    background-color: #f5f0e8; /* giá»‘ng staff_create */
     min-height: 100vh;
 }
 
@@ -40,7 +40,7 @@ Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css
 .stat-card {
     background: white;
     padding: 20px;
-    border-radius: 30px; /* Bo góc cực đại như ảnh */
+    border-radius: 30px; /* Bo gÃ³c cá»±c Ä‘áº¡i nhÆ° áº£nh */
     display: flex;
     align-items: center;
     gap: 15px;
@@ -109,7 +109,7 @@ Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css
 .bg-orange-light { background: #ffedd5; color: #9a3412; }
 
 .status-indicator::before {
-    content: "•"; margin-right: 5px; font-size: 1.2rem;
+    content: "â€¢"; margin-right: 5px; font-size: 1.2rem;
 }
 
 .btn-icon {
