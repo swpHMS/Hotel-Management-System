@@ -1,6 +1,7 @@
 package controller.auth;
 
 import context.GoogleUtils;
+import dal.HotelInformationDAO;
 import dal.UserDAO;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -22,6 +23,9 @@ public class LoginServlet extends HttpServlet {
         String code = request.getParameter("code");
         String contextPath = request.getContextPath();
 
+        HotelInformationDAO hotel=new HotelInformationDAO();
+        String name=hotel.getSingleHotel().getName();
+        
         if (code != null && !code.isEmpty()) {
             try {
                 String accessToken = GoogleUtils.getToken(code);
@@ -62,6 +66,7 @@ public class LoginServlet extends HttpServlet {
                 }
             }
         }
+        request.setAttribute("nameHotel", name);
         request.getRequestDispatcher("/view/auth/login.jsp").forward(request, response);
     }
 

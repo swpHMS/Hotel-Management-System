@@ -260,64 +260,64 @@ public class ReceptBookingListDAO extends DBContext {
     // ================================
     // LẤY CHI TIẾT BOOKING THEO ID
     // ================================
-    public BookingSummary getBookingById(int bookingId) {
-
-        String sql =
-                "SELECT TOP 1 "
-                + "       b.booking_id, "
-                + "       c.full_name, "
-                + "       c.phone, "
-                + "       b.check_in_date, "
-                + "       b.check_out_date, "
-                + "       b.status, "
-                + "       b.total_amount, "
-                + "       rt.name AS room_type_name, "
-                + "       ISNULL(brt.quantity, 0) AS quantity, "
-                + "       (SELECT ISNULL(SUM(p.amount), 0) "
-                + "          FROM dbo.payments p "
-                + "         WHERE p.booking_id = b.booking_id AND p.status = 1) AS deposit "
-                + "FROM dbo.bookings b "
-                + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
-                + "LEFT JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
-                + "LEFT JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id "
-                + "WHERE b.booking_id = ?";
-
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, bookingId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    BookingSummary b = new BookingSummary();
-
-                    b.setBookingId(rs.getInt("booking_id"));
-                    b.setCustomerName(rs.getString("full_name"));
-                    b.setPhone(rs.getString("phone"));
-                    b.setCheckInDate(rs.getDate("check_in_date"));
-                    b.setCheckOutDate(rs.getDate("check_out_date"));
-                    b.setStatus(String.valueOf(rs.getInt("status")));
-
-                    if (rs.getBigDecimal("total_amount") != null) {
-                        b.setTotalAmount(
-                                rs.getBigDecimal("total_amount").longValue()
-                        );
-                    } else {
-                        b.setTotalAmount(0);
-                    }
-
-                    b.setDeposit(rs.getLong("deposit"));
-                    b.setRoomTypeName(rs.getString("room_type_name"));
-                    b.setQuantity(rs.getInt("quantity"));
-
-                    return b;
-                }
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
+//    public BookingSummary getBookingById(int bookingId) {
+//
+//        String sql =
+//                "SELECT TOP 1 "
+//                + "       b.booking_id, "
+//                + "       c.full_name, "
+//                + "       c.phone, "
+//                + "       b.check_in_date, "
+//                + "       b.check_out_date, "
+//                + "       b.status, "
+//                + "       b.total_amount, "
+//                + "       rt.name AS room_type_name, "
+//                + "       ISNULL(brt.quantity, 0) AS quantity, "
+//                + "       (SELECT ISNULL(SUM(p.amount), 0) "
+//                + "          FROM dbo.payments p "
+//                + "         WHERE p.booking_id = b.booking_id AND p.status = 1) AS deposit "
+//                + "FROM dbo.bookings b "
+//                + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
+//                + "LEFT JOIN dbo.booking_room_types brt ON b.booking_id = brt.booking_id "
+//                + "LEFT JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id "
+//                + "WHERE b.booking_id = ?";
+//
+//        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+//            ps.setInt(1, bookingId);
+//
+//            try (ResultSet rs = ps.executeQuery()) {
+//                if (rs.next()) {
+//                    BookingSummary b = new BookingSummary();
+//
+//                    b.setBookingId(rs.getInt("booking_id"));
+//                    b.setCustomerName(rs.getString("full_name"));
+//                    b.setPhone(rs.getString("phone"));
+//                    b.setCheckInDate(rs.getDate("check_in_date"));
+//                    b.setCheckOutDate(rs.getDate("check_out_date"));
+//                    b.setStatus(String.valueOf(rs.getInt("status")));
+//
+//                    if (rs.getBigDecimal("total_amount") != null) {
+//                        b.setTotalAmount(
+//                                rs.getBigDecimal("total_amount").longValue()
+//                        );
+//                    } else {
+//                        b.setTotalAmount(0);
+//                    }
+//
+//                    b.setDeposit(rs.getLong("deposit"));
+//                    b.setRoomTypeName(rs.getString("room_type_name"));
+//                    b.setQuantity(rs.getInt("quantity"));
+//
+//                    return b;
+//                }
+//            }
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        return null;
+//    }
 
     // ================================
     // HỦY BOOKING VÀ HOÀN TRẢ PHÒNG VỀ KHO

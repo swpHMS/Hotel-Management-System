@@ -946,7 +946,6 @@
                                 <option value="2" ${statusValue == '2' ? 'selected' : ''}>Reserved</option>
                                 <option value="3" ${statusValue == '3' ? 'selected' : ''}>Checked-in</option>
                                 <option value="4" ${statusValue == '4' ? 'selected' : ''}>Completed</option>
-                                <option value="6" ${statusValue == '6' ? 'selected' : ''}>No-show</option>
                             </select>
                         </div>
 
@@ -1021,9 +1020,6 @@
                                             <c:when test="${b.bookingStatus == 4}">
                                                 <span class="tag-pill status-completed">Completed</span>
                                             </c:when>
-                                            <c:when test="${b.bookingStatus == 6}">
-                                                <span class="tag-pill status-noshow">No-show</span>
-                                            </c:when>
                                             <c:otherwise>
                                                 <span class="tag-pill">—</span>
                                             </c:otherwise>
@@ -1048,12 +1044,6 @@
                                                 <c:when test="${b.bookingStatus == 4}">
                                                     <span class="badge bg-light text-dark border px-3 py-2" style="width: 135px; border-radius: 12px;">
                                                         COMPLETED
-                                                    </span>
-                                                </c:when>
-
-                                                <c:when test="${b.bookingStatus == 6}">
-                                                    <span class="badge bg-danger-subtle text-danger border px-3 py-2" style="width: 135px; border-radius: 12px;">
-                                                        NO-SHOW
                                                     </span>
                                                 </c:when>
 
@@ -1243,8 +1233,6 @@
                         return {text: "Checked-in", className: "detail-status-badge status-checkin"};
                     case "4":
                         return {text: "Completed", className: "detail-status-badge status-completed"};
-                    case "6":
-                        return {text: "No-show", className: "detail-status-badge status-noshow"};
                     default:
                         return {text: "Other", className: "detail-status-badge status-other"};
                 }
