@@ -52,15 +52,14 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
     // ================================
     // BỎ RULE 14:00 - LUÔN CHO PHÉP BOOK TRONG NGÀY
 // ================================
-private LocalDate getMinCheckInDate() {
-    // Ngày check-in nhỏ nhất luôn luôn là ngày hôm nay
-    return LocalDate.now();
-}
+    private LocalDate getMinCheckInDate() {
+        // Ngày check-in nhỏ nhất luôn luôn là ngày hôm nay
+        return LocalDate.now();
+    }
 
     // ================================
     // GET CREATE BOOKING PAGE
     // ================================
-
     @Override
     protected void doGet(
             HttpServletRequest req,
@@ -84,6 +83,11 @@ private LocalDate getMinCheckInDate() {
 
         if (!checkIn.before(checkOut)) {
             checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(1));
+        }
+        
+        // ---> THÊM ĐOẠN NÀY: Tự động ép về 30 ngày nếu chọn quá <---
+        if (java.time.temporal.ChronoUnit.DAYS.between(checkIn.toLocalDate(), checkOut.toLocalDate()) > 30) {
+            checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(30));
         }
 
         Integer roomsParam = parseIntOrNull(req.getParameter("rooms"));
@@ -166,7 +170,6 @@ private LocalDate getMinCheckInDate() {
     // ================================
     // CREATE HOLD
     // ================================
-
     @Override
     protected void doPost(
             HttpServletRequest req,
@@ -177,8 +180,8 @@ private LocalDate getMinCheckInDate() {
 
         HttpSession session = req.getSession(false);
 
-        User loggedInUser =
-                (session == null)
+        User loggedInUser
+                = (session == null)
                         ? null
                         : (User) session.getAttribute("userAccount");
 
@@ -202,13 +205,13 @@ private LocalDate getMinCheckInDate() {
         }
 
         if (checkIn.toLocalDate().isBefore(minCheckIn)) {
-    req.setAttribute(
-        "errors",
-        java.util.List.of("Ngày Check-in không hợp lệ (không được chọn ngày trong quá khứ).")
-    );
-    doGet(req, resp);
-    return;
-}
+            req.setAttribute(
+                    "errors",
+                    java.util.List.of("Ngày Check-in không hợp lệ (không được chọn ngày trong quá khứ).")
+            );
+            doGet(req, resp);
+            return;
+        }
 
         if (checkOut == null) {
             checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(1));
@@ -216,6 +219,13 @@ private LocalDate getMinCheckInDate() {
 
         if (!checkIn.before(checkOut)) {
             checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(1));
+        }
+        
+        // ---> THÊM ĐOẠN NÀY: Quăng lỗi nếu cố tình truyền tham số > 30 ngày <---
+        if (java.time.temporal.ChronoUnit.DAYS.between(checkIn.toLocalDate(), checkOut.toLocalDate()) > 30) {
+            req.setAttribute("errors", java.util.List.of("Số ngày đặt phòng tối đa không được vượt quá 30 ngày!"));
+            doGet(req, resp);
+            return;
         }
 
         int rooms = clamp(roomsRaw == null ? 1 : roomsRaw, 1, 10);
@@ -250,8 +260,8 @@ private LocalDate getMinCheckInDate() {
 
             resp.sendRedirect(
                     req.getContextPath()
-                            + "/receptionist/booking/customer?holdId="
-                            + holdId
+                    + "/receptionist/booking/customer?holdId="
+                    + holdId
             );
 
         } catch (Exception ex) {

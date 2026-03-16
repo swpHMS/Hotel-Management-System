@@ -223,7 +223,8 @@
 
         <div class="sb-section">OPERATIONS</div>
 
-        <a class="sb-item <%= "services".equals(active) ? "active" : "" %>" href="#">
+        <a class="sb-item <%= "services".equals(active) ? "active" : "" %>" 
+           href="${pageContext.request.contextPath}/manager/services">
             <i class="bi bi-gem"></i><span>Services</span>
         </a>
 
@@ -232,9 +233,9 @@
         </a>
 
         <a class="sb-item <%= "propertyInfo".equals(active) ? "active" : "" %>"
-   href="${pageContext.request.contextPath}/manager/property-info">
-    <i class="bi bi-crown-fill"></i><span>Property Info</span>
-</a>
+           href="${pageContext.request.contextPath}/manager/property-info">
+            <i class="bi bi-crown-fill"></i><span>Property Info</span>
+        </a>
     </nav>
 
     <div class="sb-userwrap" id="sbUserWrap">
