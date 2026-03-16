@@ -1085,7 +1085,7 @@
                                                 </c:when>
 
                                                 <c:when test="${b.bookingStatus == 3}">
-                                                    <a class="btn-action btn-checkout" href="checkout?bookingId=${b.bookingId}">
+                                                    <a class="btn-action btn-checkout" href="checkout-process?bookingId=${b.bookingId}">
                                                         <i class="bi bi-box-arrow-right"></i> Check-out
                                                     </a>
                                                 </c:when>
