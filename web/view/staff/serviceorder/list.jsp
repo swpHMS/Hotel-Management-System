@@ -428,7 +428,7 @@
             <div class="staff-content">
                 <div class="topbar">
                     <div>
-                        <div class="title">Manage Services</div>
+                        <div class="title">List Service Order</div>
                     </div>
                     <a class="btn-primary"
                        href="${pageContext.request.contextPath}/staff/service-orders/create?returnId=${selected != null ? selected.serviceOrderId : ''}">
@@ -446,8 +446,8 @@
                                 <div class="tabs">
                                     <form method="get" action="${pageContext.request.contextPath}/staff/service-orders" style="display:contents;">
                                         <button class="tab ${empty param.status ? 'active' : ''}" name="status" value="">All</button>
-                                        <button class="tab ${param.status == '0' ? 'active' : ''}" name="status" value="0">Draft</button>
-                                        <button class="tab ${param.status == '1' ? 'active' : ''}" name="status" value="1">Posted</button>
+                                        <button class="tab ${param.status == '0' ? 'active' : ''}" name="status" value="0">Unfinished</button>
+                                        <button class="tab ${param.status == '1' ? 'active' : ''}" name="status" value="1">Finished</button>
                                         <button class="tab ${param.status == '2' ? 'active' : ''}" name="status" value="2">Cancelled</button>
                                     </form>
                                 </div>
@@ -495,8 +495,8 @@
                                                 <td>${o.bookingId}</td>
                                                 <td>
                                                     <c:choose>
-                                                        <c:when test="${o.status == 0}"><span class="badge b-draft">Draft</span></c:when>
-                                                        <c:when test="${o.status == 1}"><span class="badge b-posted">Posted</span></c:when>
+                                                        <c:when test="${o.status == 0}"><span class="badge b-draft">Unfinished</span></c:when>
+                                                        <c:when test="${o.status == 1}"><span class="badge b-posted">Finished</span></c:when>
                                                         <c:otherwise><span class="badge b-cancel">Cancelled</span></c:otherwise>
                                                     </c:choose>
                                                 </td>
@@ -539,8 +539,8 @@
                                         <div class="so-code">Order ID #${selected.serviceOrderId}</div>
                                         <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
                                             <c:choose>
-                                                <c:when test="${selected.status == 0}"><span class="badge b-draft">Draft</span></c:when>
-                                                <c:when test="${selected.status == 1}"><span class="badge b-posted">Posted</span></c:when>
+                                                <c:when test="${selected.status == 0}"><span class="badge b-draft">Unfinished</span></c:when>
+                                                <c:when test="${selected.status == 1}"><span class="badge b-posted">Finished</span></c:when>
                                                 <c:otherwise><span class="badge b-cancel">Cancelled</span></c:otherwise>
                                             </c:choose>
                                         </div>

@@ -582,7 +582,7 @@
                 <input type="hidden" name="roomId"    id="roomIdHidden"/>
                 <div id="hiddenItems"></div>
                 <button type="submit" class="so-btn-create" onclick="return beforeSubmitCreateDraft()">
-                    Create Service Ticket (Draft) →
+                    Create Service Ticket (Unfinished) →
                 </button>
             </form>
         </div>
