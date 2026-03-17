@@ -61,20 +61,20 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
     // GET CREATE BOOKING PAGE
     // ================================
     @Override
-    protected void doGet(
-            HttpServletRequest req,
-            HttpServletResponse resp
-    ) throws ServletException, IOException {
-
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("active", "create_booking");
 
         LocalDate minCheckIn = getMinCheckInDate();
+        LocalDate maxCheckIn = LocalDate.now().plusMonths(3); // ---> THÊM MỚI: Tối đa 3 tháng
 
         Date checkIn = parseSqlDateOrNull(req.getParameter("checkIn"));
         Date checkOut = parseSqlDateOrNull(req.getParameter("checkOut"));
 
+        // Kiểm tra mốc Check-in min và max
         if (checkIn == null || checkIn.toLocalDate().isBefore(minCheckIn)) {
             checkIn = Date.valueOf(minCheckIn);
+        } else if (checkIn.toLocalDate().isAfter(maxCheckIn)) { // ---> THÊM MỚI
+            checkIn = Date.valueOf(maxCheckIn);
         }
 
         if (checkOut == null) {
@@ -84,7 +84,7 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
         if (!checkIn.before(checkOut)) {
             checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(1));
         }
-        
+
         // ---> THÊM ĐOẠN NÀY: Tự động ép về 30 ngày nếu chọn quá <---
         if (java.time.temporal.ChronoUnit.DAYS.between(checkIn.toLocalDate(), checkOut.toLocalDate()) > 30) {
             checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(30));
@@ -122,18 +122,14 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
             selected = cards.get(0);
         }
 
-        long nights = dao.calcNights(
-                checkIn.toLocalDate(),
-                checkOut.toLocalDate()
-        );
+        long nights = dao.calcNights(checkIn.toLocalDate(),checkOut.toLocalDate());
 
-        long rate = selected != null
-                ? selected.getRatePerNight()
-                : 0;
+        long rate = selected != null ? selected.getRatePerNight() : 0;
 
         long total = rate * nights * rooms;
 
         req.setAttribute("minCheckInDate", minCheckIn.toString());
+        req.setAttribute("maxCheckInDate", maxCheckIn.toString()); // ---> THÊM MỚI
 
         req.setAttribute("checkIn", checkIn);
         req.setAttribute("checkOut", checkOut);
@@ -143,37 +139,24 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
 
         req.setAttribute("cards", cards);
 
-        req.setAttribute(
-                "roomTypeId",
-                selected != null ? selected.getRoomTypeId() : null
-        );
+        req.setAttribute("roomTypeId", selected != null ? selected.getRoomTypeId() : null);
 
-        req.setAttribute(
-                "roomTypeName",
-                selected != null ? selected.getRoomTypeName() : ""
-        );
+        req.setAttribute("roomTypeName", selected != null ? selected.getRoomTypeName() : "");
 
-        req.setAttribute(
-                "availableRooms",
-                selected != null ? selected.getAvailableRooms() : 0
-        );
+        req.setAttribute("availableRooms",selected != null ? selected.getAvailableRooms() : 0);
 
         req.setAttribute("nights", nights);
         req.setAttribute("rate", rate);
         req.setAttribute("total", total);
 
-        req.getRequestDispatcher(
-                "/view/receptionist/create_booking.jsp"
-        ).forward(req, resp);
+        req.getRequestDispatcher("/view/receptionist/create_booking.jsp").forward(req, resp);
     }
 
     // ================================
     // CREATE HOLD
     // ================================
     @Override
-    protected void doPost(
-            HttpServletRequest req,
-            HttpServletResponse resp
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp
     ) throws ServletException, IOException {
 
         req.setAttribute("active", "create_booking");
@@ -181,9 +164,7 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
         HttpSession session = req.getSession(false);
 
         User loggedInUser
-                = (session == null)
-                        ? null
-                        : (User) session.getAttribute("userAccount");
+                = (session == null) ? null : (User) session.getAttribute("userAccount");
 
         if (loggedInUser == null) {
             resp.sendRedirect(req.getContextPath() + "/login");
@@ -199,6 +180,8 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
         Integer roomTypeId = parseIntOrNull(req.getParameter("roomTypeId"));
 
         LocalDate minCheckIn = getMinCheckInDate();
+        LocalDate maxCheckIn = LocalDate.now().plusMonths(3); // ---> THÊM MỚI: Tối đa 3 tháng
+
 
         if (checkIn == null) {
             checkIn = Date.valueOf(minCheckIn);
@@ -212,6 +195,13 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
             doGet(req, resp);
             return;
         }
+        
+        // ---> THÊM MỚI: Chặn lỗi nếu vượt quá 3 tháng
+        if (checkIn.toLocalDate().isAfter(maxCheckIn)) {
+            req.setAttribute("errors", java.util.List.of("Chỉ được đặt phòng trước tối đa 3 tháng."));
+            doGet(req, resp);
+            return;
+        }
 
         if (checkOut == null) {
             checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(1));
@@ -220,7 +210,7 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
         if (!checkIn.before(checkOut)) {
             checkOut = Date.valueOf(checkIn.toLocalDate().plusDays(1));
         }
-        
+
         // ---> THÊM ĐOẠN NÀY: Quăng lỗi nếu cố tình truyền tham số > 30 ngày <---
         if (java.time.temporal.ChronoUnit.DAYS.between(checkIn.toLocalDate(), checkOut.toLocalDate()) > 30) {
             req.setAttribute("errors", java.util.List.of("Số ngày đặt phòng tối đa không được vượt quá 30 ngày!"));
@@ -250,29 +240,17 @@ public class ReceptionistBookingCreateServlet extends HttpServlet {
         try {
 
             int holdId = dao.createHold(
-                    userId,
-                    roomTypeId,
-                    checkIn,
-                    checkOut,
-                    rooms,
-                    15
-            );
+                    userId, roomTypeId, checkIn, checkOut, rooms,15);
 
             resp.sendRedirect(
-                    req.getContextPath()
-                    + "/receptionist/booking/customer?holdId="
-                    + holdId
-            );
+                    req.getContextPath() + "/receptionist/booking/customer?holdId=" + holdId);
 
         } catch (Exception ex) {
 
             req.setAttribute(
                     "errors",
-                    java.util.List.of(
-                            "Not enough rooms available for the selected dates."
-                    )
+                    java.util.List.of( "Not enough rooms available for the selected dates.")
             );
-
             doGet(req, resp);
         }
     }

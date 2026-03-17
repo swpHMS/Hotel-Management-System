@@ -11,6 +11,7 @@ import utils.AuthUtils;
 import utils.NameUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet(name = "CustomerDashboardServlet", urlPatterns = {"/customer/dashboard"})
@@ -37,6 +38,42 @@ public class CustomerDashboardServlet extends HttpServlet {
         } catch (Exception e) {
         }
         return 2;
+    }
+
+    private List<String> buildPageTokens(int currentPage, int totalPages) {
+        List<String> tokens = new ArrayList<>();
+        if (totalPages <= 1) {
+            return tokens;
+        }
+
+        if (totalPages <= 3) {
+            for (int i = 1; i <= totalPages; i++) {
+                tokens.add(String.valueOf(i));
+            }
+            return tokens;
+        }
+
+        if (currentPage <= 2) {
+            tokens.add("1");
+            tokens.add("2");
+            tokens.add("...");
+            tokens.add(String.valueOf(totalPages));
+            return tokens;
+        }
+
+        if (currentPage >= totalPages - 1) {
+            tokens.add("1");
+            tokens.add("...");
+            tokens.add(String.valueOf(totalPages - 1));
+            tokens.add(String.valueOf(totalPages));
+            return tokens;
+        }
+
+        tokens.add(String.valueOf(currentPage - 1));
+        tokens.add(String.valueOf(currentPage));
+        tokens.add("...");
+        tokens.add(String.valueOf(totalPages));
+        return tokens;
     }
 
     @Override
@@ -124,6 +161,7 @@ public class CustomerDashboardServlet extends HttpServlet {
                     request.setAttribute("currentBookings", currentBookings);
                     request.setAttribute("currentPage", currentPage);
                     request.setAttribute("totalPages", totalPages);
+                    request.setAttribute("currentPageTokens", buildPageTokens(currentPage, totalPages));
                 }
             }
 
@@ -148,6 +186,7 @@ public class CustomerDashboardServlet extends HttpServlet {
                     request.setAttribute("pastStays", pastStays);
                     request.setAttribute("pastCurrentPage", pastPage);
                     request.setAttribute("pastTotalPages", totalPages);
+                    request.setAttribute("pastPageTokens", buildPageTokens(pastPage, totalPages));
                 }
             }
 
@@ -180,6 +219,7 @@ public class CustomerDashboardServlet extends HttpServlet {
                     request.setAttribute("currentBookings", currentBookings);
                     request.setAttribute("currentPage", currentPage);
                     request.setAttribute("totalPages", totalPages);
+                    request.setAttribute("currentPageTokens", buildPageTokens(currentPage, totalPages));
                 }
             }
         }
