@@ -308,7 +308,7 @@ public class AdminUserDAO {
         String sql = """
         SELECT role_id, role_name
         FROM roles
-        WHERE role_name IN ('MANAGER', 'RECEPTIONIST', 'STAFF','ADMIN')
+        WHERE role_name IN ('MANAGER', 'RECEPTIONIST', 'STAFF')
         ORDER BY role_name
     """;
 
