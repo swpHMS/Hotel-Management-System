@@ -188,7 +188,7 @@
     .cp .actions{
         display:flex;
         gap:12px;
-        justify-content:flex-start;
+        justify-content:flex-end;
         align-items:center;
     }
 

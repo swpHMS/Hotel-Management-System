@@ -1103,7 +1103,7 @@
                 padding-top:14px;
                 border-top:1px solid #eef2f7;
                 display:flex;
-                justify-content:flex-start;
+                justify-content:flex-end;
                 gap:10px;
             }
 
