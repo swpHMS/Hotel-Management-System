@@ -65,12 +65,6 @@
            <span>Dashboard</span>
         </a>
 
-        <a class="sb-item <%= "checkin".equals(active)?"active":"" %>"
-           href="${pageContext.request.contextPath}/receptionist/checkin">
-           <i class="bi bi-box-arrow-in-right"></i>
-           <span>Check-in</span>
-        </a>
-
         <a class="sb-item <%= "create_booking".equals(active)?"active":"" %>"
            href="${pageContext.request.contextPath}/receptionist/booking/create">
            <i class="bi bi-plus-circle"></i>
