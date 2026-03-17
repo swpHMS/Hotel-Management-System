@@ -728,49 +728,57 @@
         </c:otherwise>
     </c:choose>
 
-    <div class="cb-bottombar">
+    <c:if test="${not empty currentBookings}">
+        <div class="cb-bottombar">
 
-        <form method="get"
-              action="${pageContext.request.contextPath}/customer/dashboard"
-              class="cb-size-form">
-            <input type="hidden" name="tab" value="current"/>
-            <input type="hidden" name="currentPage" value="1"/>
+            <form method="get"
+                  action="${pageContext.request.contextPath}/customer/dashboard"
+                  class="cb-size-form">
+                <input type="hidden" name="tab" value="current"/>
+                <input type="hidden" name="currentPage" value="1"/>
 
-            <label for="pageSize" class="cb-size-label">Show</label>
-            <select id="pageSize"
-                    name="pageSize"
-                    class="cb-size-select"
-                    onchange="this.form.submit()">
-                <option value="2" ${pageSize == 2 ? 'selected' : ''}>2</option>
-                <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
-                <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
-            </select>
-            <span class="cb-size-label">per page</span>
-        </form>
-        <!-- Pagination -->
+                <label for="pageSize" class="cb-size-label">Show</label>
+                <select id="pageSize"
+                        name="pageSize"
+                        class="cb-size-select"
+                        onchange="this.form.submit()">
+                    <option value="2" ${pageSize == 2 ? 'selected' : ''}>2</option>
+                    <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
+                    <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
+                </select>
+                <span class="cb-size-label">per page</span>
+            </form>
 
-        <c:if test="${totalPages > 1}">
-            <div class="cb-pagination">
-                <a class="cb-page-link ${currentPage == 1 ? 'is-disabled' : ''}"
-                   href="${pageContext.request.contextPath}/customer/dashboard?tab=current&currentPage=${currentPage - 1}&pageSize=${pageSize}">
-                    Previous
-                </a>
-
-                <c:forEach begin="1" end="${totalPages}" var="p">
-                    <a class="cb-page-link ${p == currentPage ? 'is-active' : ''}"
-                       href="${pageContext.request.contextPath}/customer/dashboard?tab=current&currentPage=${p}&pageSize=${pageSize}">
-                        ${p}
+            <c:if test="${totalPages > 1}">
+                <div class="cb-pagination">
+                    <a class="cb-page-link ${currentPage == 1 ? 'is-disabled' : ''}"
+                       href="${pageContext.request.contextPath}/customer/dashboard?tab=current&currentPage=${currentPage - 1}&pageSize=${pageSize}">
+                        Previous
                     </a>
-                </c:forEach>
 
-                <a class="cb-page-link ${currentPage == totalPages ? 'is-disabled' : ''}"
-                   href="${pageContext.request.contextPath}/customer/dashboard?tab=current&currentPage=${currentPage + 1}&pageSize=${pageSize}">
-                    Next
-                </a>
-            </div>
-        </c:if>
+                    <c:forEach var="token" items="${currentPageTokens}">
+                        <c:choose>
+                            <c:when test="${token == '...'}">
+                                <span class="cb-page-link is-disabled">...</span>
+                            </c:when>
+                            <c:otherwise>
+                                <a class="cb-page-link ${token == currentPage ? 'is-active' : ''}"
+                                   href="${pageContext.request.contextPath}/customer/dashboard?tab=current&currentPage=${token}&pageSize=${pageSize}">
+                                    ${token}
+                                </a>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:forEach>
 
-    </div>
+                    <a class="cb-page-link ${currentPage == totalPages ? 'is-disabled' : ''}"
+                       href="${pageContext.request.contextPath}/customer/dashboard?tab=current&currentPage=${currentPage + 1}&pageSize=${pageSize}">
+                        Next
+                    </a>
+                </div>
+            </c:if>
+
+        </div>
+    </c:if>
 </div>
 
 <!-- Modal -->
