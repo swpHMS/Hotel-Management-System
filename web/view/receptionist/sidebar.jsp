@@ -85,7 +85,7 @@
            <span>Booking List</span>
         </a>
 
-        <a class="sb-item <%= "room_dashboard".equals(active)?"active":"" %>"
+<!--        <a class="sb-item <%= "room_dashboard".equals(active)?"active":"" %>"
            href="${pageContext.request.contextPath}/receptionist/rooms">
            <i class="bi bi-door-open"></i>
            <span>Room Dashboard</span>
@@ -95,7 +95,7 @@
            href="${pageContext.request.contextPath}/receptionist/guests">
            <i class="bi bi-people"></i>
            <span>Guest List</span>
-        </a>
+        </a>-->
 
     </nav>
 
