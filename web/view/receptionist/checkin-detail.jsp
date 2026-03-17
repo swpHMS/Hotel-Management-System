@@ -204,7 +204,7 @@
             const content = document.getElementById('room-list-content');
             content.innerHTML = rooms.length
                 ? ""
-                : "<p class='text-center py-3 text-muted'>Không còn phòng trống phù hợp.</p>";
+                : "<p class='text-center py-3 text-muted'>No suitable rooms are available.</p>";
 
             rooms.forEach(r => {
                 const diff = r.price - originalPricePerRoom;
@@ -235,7 +235,7 @@
 
     if (isUpgrade && !isSameType) {
         if (diff > 0) {
-            const choice = confirm(`UPGRADE FEE: \${diff.toLocaleString()}₫\n- OK: Tính phí khách hàng\n- Cancel: Miễn phí`);
+            const choice = confirm(`UPGRADE FEE: \${diff.toLocaleString()}₫\n- OK: Charge customers\n- Cancel: Free`);
             document.getElementById('upgrade_fee_' + idx).value = choice ? diff : 0;
 
             if (choice) {

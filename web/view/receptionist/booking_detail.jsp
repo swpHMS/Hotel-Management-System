@@ -217,25 +217,25 @@
                     </div>
                 </div>
 
-                <!-- Phòng nào có khách nào -->
+                <!-- Khách -->
                 <div class="card card-custom p-4 mb-4">
                     <h5 class="section-title">
-                        <i class="bi bi-door-open-fill me-2"></i>Phòng nào có khách nào đang ở
+                        <i class="bi bi-door-open-fill me-2"></i>Room information
                     </h5>
 
                     <c:choose>
                         <c:when test="${empty assignedRooms}">
-                            <div class="text-muted">Booking này hiện chưa có phòng được assign.</div>
+                            <div class="text-muted">This booking currently has no rooms assigned.</div>
                         </c:when>
                         <c:otherwise>
                             <c:forEach var="r" items="${assignedRooms}">
                                 <div class="box-room">
-                                    <div class="room-title">Phòng ${r.roomNo}</div>
+                                    <div class="room-title">Room ${r.roomNo}</div>
                                     <div class="room-sub">${r.roomTypeName}</div>
 
                                     <c:choose>
                                         <c:when test="${empty r.guests}">
-                                            <div class="text-muted">Chưa có khách nào trong phòng này.</div>
+                                            <div class="text-muted">There are no guests in this room yet.</div>
                                         </c:when>
                                         <c:otherwise>
                                             <c:forEach var="g" items="${r.guests}">
@@ -257,7 +257,7 @@
                 <!-- Thanh toán -->
                 <div class="card card-custom p-4">
                     <h5 class="section-title">
-                        <i class="bi bi-credit-card-2-front-fill me-2"></i>Thông tin thanh toán
+                        <i class="bi bi-credit-card-2-front-fill me-2"></i>Payment information
                     </h5>
 
                     <div class="mb-4">
@@ -287,7 +287,7 @@
 
                     <c:choose>
                         <c:when test="${empty payments}">
-                            <div class="text-muted">Booking này chưa có lịch sử thanh toán.</div>
+                            <div class="text-muted">This booking has no payment history.</div>
                         </c:when>
                         <c:otherwise>
                             <div class="table-responsive">
