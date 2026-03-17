@@ -662,57 +662,63 @@
         </c:otherwise>
     </c:choose>
 
-    <div class="cb-bottombar">
+    <c:if test="${not empty pastStays}">
+        <div class="cb-bottombar">
 
-        <!-- LEFT: page size -->
-        <form method="get"
-              action="${pageContext.request.contextPath}/customer/dashboard"
-              class="cb-size-form">
+            <form method="get"
+                  action="${pageContext.request.contextPath}/customer/dashboard"
+                  class="cb-size-form">
 
-            <input type="hidden" name="tab" value="past"/>
-            <input type="hidden" name="pastPage" value="1"/>
+                <input type="hidden" name="tab" value="past"/>
+                <input type="hidden" name="pastPage" value="1"/>
 
-            <label class="cb-size-label">Show</label>
+                <label class="cb-size-label">Show</label>
 
-            <select name="pageSize"
-                    class="cb-size-select"
-                    onchange="this.form.submit()">
+                <select name="pageSize"
+                        class="cb-size-select"
+                        onchange="this.form.submit()">
 
-                <option value="2" ${pageSize == 2 ? 'selected' : ''}>2</option>
-                <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
-                <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
+                    <option value="2" ${pageSize == 2 ? 'selected' : ''}>2</option>
+                    <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
+                    <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
 
-            </select>
+                </select>
 
-            <span class="cb-size-label">per page</span>
-        </form>
+                <span class="cb-size-label">per page</span>
+            </form>
 
+            <c:if test="${pastTotalPages > 1}">
+                <div class="cb-pagination">
 
-        <!-- RIGHT: pagination -->
-        <c:if test="${pastTotalPages > 1}">
-            <div class="cb-pagination">
-
-                <a class="cb-page-link ${pastCurrentPage == 1 ? 'is-disabled' : ''}"
-                   href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${pastCurrentPage - 1}&pageSize=${pageSize}">
-                    Previous
-                </a>
-
-                <c:forEach begin="1" end="${pastTotalPages}" var="p">
-                    <a class="cb-page-link ${p == pastCurrentPage ? 'is-active' : ''}"
-                       href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${p}&pageSize=${pageSize}">
-                        ${p}
+                    <a class="cb-page-link ${pastCurrentPage == 1 ? 'is-disabled' : ''}"
+                       href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${pastCurrentPage - 1}&pageSize=${pageSize}">
+                        Previous
                     </a>
-                </c:forEach>
 
-                <a class="cb-page-link ${pastCurrentPage == pastTotalPages ? 'is-disabled' : ''}"
-                   href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${pastCurrentPage + 1}&pageSize=${pageSize}">
-                    Next
-                </a>
+                    <c:forEach var="token" items="${pastPageTokens}">
+                        <c:choose>
+                            <c:when test="${token == '...'}">
+                                <span class="cb-page-link is-disabled">...</span>
+                            </c:when>
+                            <c:otherwise>
+                                <a class="cb-page-link ${token == pastCurrentPage ? 'is-active' : ''}"
+                                   href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${token}&pageSize=${pageSize}">
+                                    ${token}
+                                </a>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:forEach>
 
-            </div>
-        </c:if>
+                    <a class="cb-page-link ${pastCurrentPage == pastTotalPages ? 'is-disabled' : ''}"
+                       href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${pastCurrentPage + 1}&pageSize=${pageSize}">
+                        Next
+                    </a>
 
-    </div>
+                </div>
+            </c:if>
+
+        </div>
+    </c:if>
 </div>
 
 <!-- Modal (same as current) -->
