@@ -285,9 +285,9 @@
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
-                    <button type="button" class="btn btn-light rounded-3 w-50 fw-bold border" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary rounded-3 w-50 fw-bold" style="background: #2563eb; border: none;">SAVE SERVICE</button>
+                <div class="modal-footer border-0 pt-0 d-flex flex-nowrap gap-3 w-100 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-3 fw-bold border w-100" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-3 fw-bold w-100" style="background: #2563eb; border: none;">SAVE SERVICE</button>
                 </div>
             </form>
         </div>
