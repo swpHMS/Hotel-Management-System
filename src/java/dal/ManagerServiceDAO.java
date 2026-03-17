@@ -17,9 +17,16 @@ public class ManagerServiceDAO extends DBContext {
         List<HotelService> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT * FROM dbo.services WHERE 1=1 ");
 
-        if (keyword != null && !keyword.trim().isEmpty()) sql.append(" AND (name LIKE ? OR code LIKE ?) ");
-        if (serviceType != null && !serviceType.isEmpty()) sql.append(" AND service_type = ? ");
-        if (status != null && !status.isEmpty()) sql.append(" AND status = ? ");
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            // Đã chuyển phần tìm kiếm code thành tìm kiếm theo ID
+            sql.append(" AND (name LIKE ? OR CAST(service_id AS VARCHAR(20)) LIKE ?) ");
+        }
+        if (serviceType != null && !serviceType.isEmpty()) {
+            sql.append(" AND service_type = ? ");
+        }
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND status = ? ");
+        }
 
         // Phân trang
         sql.append(" ORDER BY service_id DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
@@ -33,8 +40,12 @@ public class ManagerServiceDAO extends DBContext {
                 st.setString(index++, "%" + keyword + "%");
                 st.setString(index++, "%" + keyword + "%");
             }
-            if (serviceType != null && !serviceType.isEmpty()) st.setInt(index++, Integer.parseInt(serviceType));
-            if (status != null && !status.isEmpty()) st.setInt(index++, Integer.parseInt(status));
+            if (serviceType != null && !serviceType.isEmpty()) {
+                st.setInt(index++, Integer.parseInt(serviceType));
+            }
+            if (status != null && !status.isEmpty()) {
+                st.setInt(index++, Integer.parseInt(status));
+            }
 
             // Set cho phân trang
             st.setInt(index++, (pageIndex - 1) * pageSize);
@@ -61,9 +72,16 @@ public class ManagerServiceDAO extends DBContext {
     public int getTotalServiceCount(String keyword, String serviceType, String status) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM dbo.services WHERE 1=1 ");
 
-        if (keyword != null && !keyword.trim().isEmpty()) sql.append(" AND (name LIKE ? OR code LIKE ?) ");
-        if (serviceType != null && !serviceType.isEmpty()) sql.append(" AND service_type = ? ");
-        if (status != null && !status.isEmpty()) sql.append(" AND status = ? ");
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            // Đã chuyển phần tìm kiếm code thành tìm kiếm theo ID
+            sql.append(" AND (name LIKE ? OR CAST(service_id AS VARCHAR(20)) LIKE ?) ");
+        }
+        if (serviceType != null && !serviceType.isEmpty()) {
+            sql.append(" AND service_type = ? ");
+        }
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND status = ? ");
+        }
 
         try {
             connection = getConnection();
@@ -74,11 +92,17 @@ public class ManagerServiceDAO extends DBContext {
                 st.setString(index++, "%" + keyword + "%");
                 st.setString(index++, "%" + keyword + "%");
             }
-            if (serviceType != null && !serviceType.isEmpty()) st.setInt(index++, Integer.parseInt(serviceType));
-            if (status != null && !status.isEmpty()) st.setInt(index++, Integer.parseInt(status));
+            if (serviceType != null && !serviceType.isEmpty()) {
+                st.setInt(index++, Integer.parseInt(serviceType));
+            }
+            if (status != null && !status.isEmpty()) {
+                st.setInt(index++, Integer.parseInt(status));
+            }
 
             ResultSet rs = st.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -95,7 +119,7 @@ public class ManagerServiceDAO extends DBContext {
 
         try {
             connection = getConnection();
-            
+
             // Đếm số lượng services
             String sqlServices = "SELECT COUNT(*) AS total, SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS active FROM dbo.services";
             PreparedStatement ps1 = connection.prepareStatement(sqlServices);
@@ -114,10 +138,10 @@ public class ManagerServiceDAO extends DBContext {
             }
 
             // Tính tổng doanh thu từ service_order_items (Giá * Số lượng)
-            String sqlRevenue = "SELECT SUM(soi.quantity * soi.unit_price) AS total_revenue " +
-                                "FROM dbo.service_order_items soi " +
-                                "JOIN dbo.service_orders so ON soi.service_order_id = so.service_order_id " +
-                                "WHERE so.status = 1";
+            String sqlRevenue = "SELECT SUM(soi.quantity * soi.unit_price_snapshot) AS total_revenue "
+                    + "FROM dbo.service_order_items soi "
+                    + "JOIN dbo.service_orders so ON soi.service_order_id = so.service_order_id "
+                    + "WHERE so.status = 1";
             PreparedStatement ps3 = connection.prepareStatement(sqlRevenue);
             ResultSet rs3 = ps3.executeQuery();
             if (rs3.next()) {
@@ -136,16 +160,16 @@ public class ManagerServiceDAO extends DBContext {
         try {
             connection = getConnection();
             PreparedStatement st = connection.prepareStatement(sql);
-            
+
             // Tự động sinh mã Code ngẫu nhiên vì form không có trường nhập mã
-            String generateCode = "SRV" + (System.currentTimeMillis() % 100000); 
-            
+            String generateCode = "SRV" + (System.currentTimeMillis() % 100000);
+
             st.setString(1, generateCode);
             st.setString(2, s.getName());
             st.setInt(3, s.getServiceType());
             st.setDouble(4, s.getUnitPrice());
             st.setInt(5, s.getStatus());
-            
+
             return st.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -159,13 +183,13 @@ public class ManagerServiceDAO extends DBContext {
         try {
             connection = getConnection();
             PreparedStatement st = connection.prepareStatement(sql);
-            
+
             st.setString(1, s.getName());
             st.setInt(2, s.getServiceType());
             st.setDouble(3, s.getUnitPrice());
             st.setInt(4, s.getStatus());
             st.setInt(5, s.getServiceId());
-            
+
             return st.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();

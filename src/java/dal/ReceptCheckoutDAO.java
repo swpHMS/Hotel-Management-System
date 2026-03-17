@@ -15,25 +15,26 @@ public class ReceptCheckoutDAO extends DBContext {
     // ==========================================
     public CheckoutBill getCheckoutBill(int bookingId) {
         CheckoutBill bill = new CheckoutBill();
-        
-        String sqlBooking = 
-            "SELECT b.booking_id, c.full_name, c.phone, " +
-            "       b.check_in_date, b.check_out_date, b.total_amount AS room_charges, " +
-            "       (SELECT ISNULL(SUM(amount), 0) FROM dbo.payments WHERE booking_id = b.booking_id AND status = 1) AS deposit_paid, " +
-            "       (SELECT TOP 1 rt.name FROM dbo.booking_room_types brt JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id WHERE brt.booking_id = b.booking_id) AS room_type_name, " +
-            "       (SELECT ISNULL(SUM(quantity), 1) FROM dbo.booking_room_types WHERE booking_id = b.booking_id) AS room_quantity " +
-            "FROM dbo.bookings b " +
-            "JOIN dbo.customers c ON b.customer_id = c.customer_id " +
-            "WHERE b.booking_id = ?";
 
-        String sqlServices = 
-            "SELECT s.name AS service_name, soi.quantity, soi.unit_price_snapshot, " +
-            "       (soi.quantity * soi.unit_price_snapshot) AS total_price " +
-            "FROM dbo.service_orders so " +
-            "JOIN dbo.service_order_items soi ON so.service_order_id = soi.service_order_id " +
-            "JOIN dbo.services s ON soi.service_id = s.service_id " +
-            "WHERE so.booking_id = ? AND so.status = 1";
+        String sqlBooking
+                = "SELECT b.booking_id, c.full_name, c.phone, "
+                + "       b.check_in_date, b.check_out_date, b.total_amount AS room_charges, "
+                + "       (SELECT ISNULL(SUM(amount), 0) FROM dbo.payments WHERE booking_id = b.booking_id AND status = 1) AS deposit_paid, "
+                + "       (SELECT TOP 1 rt.name FROM dbo.booking_room_types brt JOIN dbo.room_types rt ON brt.room_type_id = rt.room_type_id WHERE brt.booking_id = b.booking_id) AS room_type_name, "
+                + "       (SELECT ISNULL(SUM(quantity), 1) FROM dbo.booking_room_types WHERE booking_id = b.booking_id) AS room_quantity "
+                + "FROM dbo.bookings b "
+                + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
+                + "WHERE b.booking_id = ?";
 
+        String sqlServices
+                = "SELECT COALESCE(r.room_no + ' - ', '') + s.name AS service_name, "
+                + "       soi.quantity, soi.unit_price_snapshot, "
+                + "       (soi.quantity * soi.unit_price_snapshot) AS total_price "
+                + "FROM dbo.service_orders so "
+                + "JOIN dbo.service_order_items soi ON so.service_order_id = soi.service_order_id "
+                + "JOIN dbo.services s ON soi.service_id = s.service_id "
+                + "LEFT JOIN dbo.rooms r ON so.room_id = r.room_id "
+                + "WHERE so.booking_id = ? AND so.status = 1";
         // ĐÃ SỬA: Bỏ "Connection con = connection" ra khỏi try()
         try {
             try (PreparedStatement ps = connection.prepareStatement(sqlBooking)) {
@@ -45,28 +46,28 @@ public class ReceptCheckoutDAO extends DBContext {
                         bill.setPhone(rs.getString("phone"));
                         bill.setCheckInDate(rs.getDate("check_in_date"));
                         bill.setCheckOutDate(rs.getDate("check_out_date"));
-                        
+
                         long roomCharges = rs.getBigDecimal("room_charges").longValue();
                         long depositPaid = rs.getBigDecimal("deposit_paid").longValue();
-                        
+
                         bill.setRoomTypeName(rs.getString("room_type_name"));
                         bill.setRoomQuantity(rs.getInt("room_quantity"));
-                        
+
                         long diff = bill.getCheckOutDate().getTime() - bill.getCheckInDate().getTime();
                         long nights = Math.max(1, diff / (1000 * 60 * 60 * 24));
-                        
+
                         bill.setNights(nights);
                         bill.setRoomCharges(roomCharges);
                         bill.setDepositPaid(depositPaid);
                     } else {
-                        return null; 
+                        return null;
                     }
                 }
             }
 
             List<CheckoutServiceItem> usedServices = new ArrayList<>();
             long totalServiceCharges = 0;
-            
+
             try (PreparedStatement ps = connection.prepareStatement(sqlServices)) {
                 ps.setInt(1, bookingId);
                 try (ResultSet rs = ps.executeQuery()) {
@@ -75,23 +76,24 @@ public class ReceptCheckoutDAO extends DBContext {
                         int qty = rs.getInt("quantity");
                         long price = rs.getBigDecimal("unit_price_snapshot").longValue();
                         long total = rs.getBigDecimal("total_price").longValue();
-                        
+
                         usedServices.add(new CheckoutServiceItem(name, qty, price, total));
                         totalServiceCharges += total;
                     }
                 }
             }
-            
+
             bill.setUsedServices(usedServices);
             bill.setServiceCharges(totalServiceCharges);
             bill.setTotalAmount(bill.getRoomCharges() + totalServiceCharges);
             bill.setBalanceDue(bill.getTotalAmount() - bill.getDepositPaid());
 
         } catch (SQLException e) {
-            e.printStackTrace(); 
+            e.printStackTrace();
         }
         return bill;
     }
+
     // ==========================================
     // 2. TRANSACTION CHECK-OUT VÀ LƯU THANH TOÁN
     // ==========================================
@@ -120,18 +122,18 @@ public class ReceptCheckoutDAO extends DBContext {
             }
 
             // 3. Cập nhật bảng Stay Room Assignments (status = 3: ENDED, actual_check_out = NOW)
-            String sqlSRA = "UPDATE dbo.stay_room_assignments " +
-                            "SET status = 3, actual_check_out = SYSDATETIME() " +
-                            "WHERE booking_id = ? AND status = 2"; // Chỉ đổi phòng đang IN_HOUSE
+            String sqlSRA = "UPDATE dbo.stay_room_assignments "
+                    + "SET status = 3, actual_check_out = SYSDATETIME() "
+                    + "WHERE booking_id = ? AND status = 2"; // Chỉ đổi phòng đang IN_HOUSE
             try (PreparedStatement ps = con.prepareStatement(sqlSRA)) {
                 ps.setInt(1, bookingId);
                 ps.executeUpdate();
             }
 
             // 4. Cập nhật trạng thái Phòng trong bảng Rooms (status = 4: DIRTY)
-            String sqlRoom = "UPDATE dbo.rooms " +
-                             "SET status = 4 " +
-                             "WHERE room_id IN (SELECT room_id FROM dbo.stay_room_assignments WHERE booking_id = ?)";
+            String sqlRoom = "UPDATE dbo.rooms "
+                    + "SET status = 4 "
+                    + "WHERE room_id IN (SELECT room_id FROM dbo.stay_room_assignments WHERE booking_id = ?)";
             try (PreparedStatement ps = con.prepareStatement(sqlRoom)) {
                 ps.setInt(1, bookingId);
                 ps.executeUpdate();
@@ -148,31 +150,35 @@ public class ReceptCheckoutDAO extends DBContext {
             return true;
 
         } catch (SQLException ex) {
-            if (con != null) con.rollback();
+            if (con != null) {
+                con.rollback();
+            }
             throw ex;
         } finally {
-            if (con != null) con.setAutoCommit(true);
+            if (con != null) {
+                con.setAutoCommit(true);
+            }
         }
     }
-    
+
     // ==========================================
     // 3. LẤY DANH SÁCH KHÁCH ĐANG IN-HOUSE (CHỜ CHECK-OUT)
     // ==========================================
     public int countInHouseBookings(String keyword, String statusFilter) {
         StringBuilder sql = new StringBuilder(
-            "SELECT COUNT(*) FROM dbo.bookings b " +
-            "JOIN dbo.customers c ON b.customer_id = c.customer_id " +
-            "WHERE b.status = 3 " // Chỉ lấy khách đang IN-HOUSE
+                "SELECT COUNT(*) FROM dbo.bookings b "
+                + "JOIN dbo.customers c ON b.customer_id = c.customer_id "
+                + "WHERE b.status = 3 " // Chỉ lấy khách đang IN-HOUSE
         );
 
         // --- CẬP NHẬT LOGIC TÌM KIẾM MỚI ---
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (CAST(b.booking_id AS VARCHAR) LIKE ? " +
-                       " OR EXISTS (SELECT 1 FROM dbo.stay_room_assignments sra " +
-                       "            JOIN dbo.rooms r ON sra.room_id = r.room_id " +
-                       "            WHERE sra.booking_id = b.booking_id AND sra.status = 2 AND r.room_no LIKE ?)) ");
+            sql.append(" AND (CAST(b.booking_id AS VARCHAR) LIKE ? "
+                    + " OR EXISTS (SELECT 1 FROM dbo.stay_room_assignments sra "
+                    + "            JOIN dbo.rooms r ON sra.room_id = r.room_id "
+                    + "            WHERE sra.booking_id = b.booking_id AND sra.status = 2 AND r.room_no LIKE ?)) ");
         }
-        
+
         if ("5".equals(statusFilter)) {
             sql.append(" AND SYSDATETIME() > DATEADD(hour, 12, CAST(b.check_out_date AS DATETIME)) ");
         } else if ("4".equals(statusFilter)) {
@@ -183,16 +189,18 @@ public class ReceptCheckoutDAO extends DBContext {
 
         try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
             int paramIndex = 1;
-            
+
             // --- GÁN BIẾN CHO TÌM KIẾM MỚI ---
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim() + "%";
                 ps.setString(paramIndex++, kw); // Cho booking_id
                 ps.setString(paramIndex++, kw); // Cho room_no
             }
-            
+
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -205,13 +213,16 @@ public class ReceptCheckoutDAO extends DBContext {
         StringBuilder sql = new StringBuilder(
             "SELECT b.booking_id, c.full_name, c.phone, b.check_in_date, b.check_out_date, " +
             "       (SELECT ISNULL(SUM(amount), 0) FROM dbo.payments WHERE booking_id = b.booking_id AND status = 1) AS deposit_paid, " +
-            "       (SELECT TOP 1 r.room_no FROM dbo.stay_room_assignments sra JOIN dbo.rooms r ON sra.room_id = r.room_id WHERE sra.booking_id = b.booking_id AND sra.status = 2) AS room_no " +
+            
+            // ---> ĐÃ SỬA: Dùng STRING_AGG để nối tất cả các phòng lại với nhau bằng dấu phẩy (VD: "101, 102") <---
+            "       (SELECT STRING_AGG(r.room_no, ', ') FROM dbo.stay_room_assignments sra JOIN dbo.rooms r ON sra.room_id = r.room_id WHERE sra.booking_id = b.booking_id AND sra.status = 2) AS room_no " +
+            
             "FROM dbo.bookings b " +
             "JOIN dbo.customers c ON b.customer_id = c.customer_id " +
             "WHERE b.status = 3 "
         );
 
-        // --- CẬP NHẬT LOGIC TÌM KIẾM MỚI ---
+        // --- LOGIC TÌM KIẾM THEO MÃ BOOKING VÀ SỐ PHÒNG ---
         if (keyword != null && !keyword.trim().isEmpty()) {
             sql.append(" AND (CAST(b.booking_id AS VARCHAR) LIKE ? " +
                        " OR EXISTS (SELECT 1 FROM dbo.stay_room_assignments sra " +
@@ -219,6 +230,7 @@ public class ReceptCheckoutDAO extends DBContext {
                        "            WHERE sra.booking_id = b.booking_id AND sra.status = 2 AND r.room_no LIKE ?)) ");
         }
         
+        // --- LOGIC LỌC OVERSTAY VÀ STATUS ---
         if ("5".equals(statusFilter)) {
             sql.append(" AND SYSDATETIME() > DATEADD(hour, 12, CAST(b.check_out_date AS DATETIME)) ");
         } else if ("4".equals(statusFilter)) {
@@ -227,6 +239,7 @@ public class ReceptCheckoutDAO extends DBContext {
             sql.append(" AND SYSDATETIME() <= DATEADD(hour, 12, CAST(b.check_out_date AS DATETIME)) ");
         }
 
+        // --- LOGIC SẮP XẾP ---
         if ("Oldest".equalsIgnoreCase(sortFilter)) {
             sql.append(" ORDER BY b.check_in_date ASC, b.booking_id ASC ");
         } else {
@@ -237,7 +250,6 @@ public class ReceptCheckoutDAO extends DBContext {
         try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
             int paramIndex = 1;
             
-            // --- GÁN BIẾN CHO TÌM KIẾM MỚI ---
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = "%" + keyword.trim() + "%";
                 ps.setString(paramIndex++, kw); // Cho booking_id
