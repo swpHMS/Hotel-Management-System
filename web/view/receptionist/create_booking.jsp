@@ -292,7 +292,6 @@
                         setActiveCard(id);
                     });
                 });
-
                 // init (khi load trang)
                 setActiveCard(dropdown.value);
             });
@@ -407,11 +406,8 @@
         </script>
 
         <script>
-
             function changeQty(id, delta) {
-
                 const input = document.getElementById(id)
-
                 let value = parseInt(input.value) || 0
 
                 const min = parseInt(input.min)
@@ -426,8 +422,6 @@
 
                 input.value = value
             }
-
         </script>
-
     </body>
 </html>

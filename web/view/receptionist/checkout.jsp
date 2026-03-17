@@ -236,11 +236,11 @@
                                 <div class="pay-method">
                                     <button class="method-btn" type="button" id="btnCash" onclick="selectMethod('CASH')">
                                         <div class="mb-2"><i class="bi bi-cash-stack" style="font-size:26px;"></i></div>
-                                        <div class="fw-bold">TIỀN MẶT</div>
+                                        <div class="fw-bold">CASH</div>
                                     </button>
                                     <button class="method-btn" type="button" id="btnQR" onclick="selectMethod('QR')">
                                         <div class="mb-2"><i class="bi bi-qr-code-scan" style="font-size:26px;"></i></div>
-                                        <div class="fw-bold">MÃ QR</div>
+                                        <div class="fw-bold">QR</div>
                                     </button>
                                 </div>
                                 <div id="dynamicPaymentArea" class="mt-4 text-center" style="min-height: 200px;"></div>
@@ -267,8 +267,8 @@
 
                         <!-- NÚT CHỐT CHECKOUT GIỐNG ẢNH 5 -->
                         <button type="submit" class="btn w-100 btn-confirm-checkout mt-4" id="btnConfirmCheckout" 
-                                onclick="return confirm('Xác nhận Check-out cho phòng này? Trạng thái phòng sẽ chuyển sang DIRTY và hóa đơn sẽ bị đóng.');">
-                            XÁC NHẬN ĐÃ THU TIỀN & CHECK-OUT <i class="bi bi-check-circle ms-2"></i>
+                                onclick="return confirm('Are you confirmed check-out for booking? The room status will change to DIRTY and the bill will be closed.');">
+                            CONFIRM PAYMENT & CHECK-OUT <i class="bi bi-check-circle ms-2"></i>
                         </button>
                     </form>
                 </div>
@@ -305,7 +305,7 @@
             area.innerHTML = 
                 '<div class="p-4 rounded-3" style="background: rgba(255,255,255,.05); border: 1px dashed rgba(255,255,255,.2);">' +
                     '<i class="bi bi-cash-stack mb-2 d-block" style="color: #10b981; font-size: 2.5rem;"></i>' +
-                    '<p class="mb-0 text-secondary">Vui lòng thu tiền mặt từ khách hàng:</p>' +
+                    '<p class="mb-0 text-secondary">Please collect cash from customers:</p>' +
                     '<h3 class="fw-bold mt-2" style="color: #10b981;">' + formattedAmount + '</h3>' +
                 '</div>';
         } else if (method === 'QR') {

@@ -6,15 +6,19 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
+import utils.Validation;
 
-@WebServlet(name="ReceptionistBookingCustomerServlet", urlPatterns={"/receptionist/booking/customer"})
+@WebServlet(name = "ReceptionistBookingCustomerServlet", urlPatterns = {"/receptionist/booking/customer"})
 public class ReceptionistBookingCustomerServlet extends HttpServlet {
 
     private final ReceptBookingDAO dao = new ReceptBookingDAO();
 
     private Integer parseIntOrNull(String s) {
-        try { return (s==null||s.trim().isEmpty()) ? null : Integer.parseInt(s.trim()); }
-        catch (Exception e) { return null; }
+        try {
+            return (s == null || s.trim().isEmpty()) ? null : Integer.parseInt(s.trim());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
@@ -63,22 +67,37 @@ public class ReceptionistBookingCustomerServlet extends HttpServlet {
 
         // ===== 1. Lấy dữ liệu từ Form =====
         String fullName = utils.Validation.trimToNull(req.getParameter("fullName"));
-        String phone    = utils.Validation.trimToNull(req.getParameter("phone"));
-        String email    = utils.Validation.trimToNull(req.getParameter("email"));
+        String phone = utils.Validation.trimToNull(req.getParameter("phone"));
+        String email = utils.Validation.trimToNull(req.getParameter("email"));
         String identity = utils.Validation.trimToNull(req.getParameter("identity"));
-        String address  = utils.Validation.trimToNull(req.getParameter("address"));
+        String address = utils.Validation.trimToNull(req.getParameter("address"));
 
         java.util.List<String> errors = new java.util.ArrayList<>();
 
         // ===== 2. Kiểm tra lỗi (Validate) =====
-if (fullName == null) errors.add("Full Name is required.");
-        else if (!utils.Validation.isValidFullNameNoNumber(fullName)) errors.add("Full Name is invalid (no numbers).");
-        if (phone == null) errors.add("Phone is required.");
-        else if (!utils.Validation.isPhoneVN(phone)) errors.add("Phone number is invalid (VN format: 0xxxxxxxxx).");
-        if (email != null && !utils.Validation.isEmail(email)) errors.add("Email is invalid.");
-        if (identity != null && !utils.Validation.isCCCD(identity)) errors.add("Identity/CCCD must be 12 digits.");
-        if (address == null) errors.add("Address is required.");
-        else if (!utils.Validation.minLen(address, 5)) errors.add("Address is too short.");
+        if (fullName == null) {
+            errors.add("Full Name is required.");
+        } else if (!utils.Validation.isValidFullNameNoNumber(fullName)) {
+            errors.add("Full Name is invalid (no numbers).");
+        }
+        if (phone == null) {
+            errors.add("Phone is required.");
+        } else if (!utils.Validation.isPhoneVN(phone)) {
+            errors.add("Phone number is invalid (VN format: 0xxxxxxxxx).");
+        }
+
+        String emailRegex = "^[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}$";
+        if (!email.matches(emailRegex)) {
+            errors.add("Invalid email format.");
+        }
+        if (identity != null && !utils.Validation.isCCCD(identity)) {
+            errors.add("Identity/CCCD must be 12 digits.");
+        }
+        if (address == null) {
+            errors.add("Address is required.");
+        } else if (!utils.Validation.minLen(address, 5)) {
+            errors.add("Address is too short.");
+        }
 
         // ===== 3. Nếu có lỗi thì dừng lại =====
         if (!errors.isEmpty()) {
@@ -101,9 +120,10 @@ if (fullName == null) errors.add("Full Name is required.");
                     req.setAttribute("nights", s.nights);
                     req.setAttribute("total", s.total);
                 }
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+            }
             req.getRequestDispatcher("/view/receptionist/customer_info.jsp").forward(req, resp);
-            return; 
+            return;
         }
 
         // ===== 4. LƯU SESSION VÀ CHUYỂN TRANG (Phần quan trọng nhất) =====
