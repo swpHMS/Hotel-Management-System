@@ -18,7 +18,8 @@ public class ManagerServiceDAO extends DBContext {
         StringBuilder sql = new StringBuilder("SELECT * FROM dbo.services WHERE 1=1 ");
 
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (name LIKE ? OR code LIKE ?) ");
+            // Đã chuyển phần tìm kiếm code thành tìm kiếm theo ID
+            sql.append(" AND (name LIKE ? OR CAST(service_id AS VARCHAR(20)) LIKE ?) ");
         }
         if (serviceType != null && !serviceType.isEmpty()) {
             sql.append(" AND service_type = ? ");
@@ -72,7 +73,8 @@ public class ManagerServiceDAO extends DBContext {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM dbo.services WHERE 1=1 ");
 
         if (keyword != null && !keyword.trim().isEmpty()) {
-            sql.append(" AND (name LIKE ? OR code LIKE ?) ");
+            // Đã chuyển phần tìm kiếm code thành tìm kiếm theo ID
+            sql.append(" AND (name LIKE ? OR CAST(service_id AS VARCHAR(20)) LIKE ?) ");
         }
         if (serviceType != null && !serviceType.isEmpty()) {
             sql.append(" AND service_type = ? ");

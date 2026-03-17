@@ -116,7 +116,7 @@
             <label>Search</label>
             <div class="rr-search-wrap">
                 <i class="bi bi-search"></i>
-                <input class="rr-input" type="text" name="keyword" placeholder="Search service name or category..." value="${keyword}">
+                <input class="rr-input" type="text" name="keyword" placeholder="Search by id or service name" value="${keyword}">
             </div>
         </div>
         <div class="rr-field">

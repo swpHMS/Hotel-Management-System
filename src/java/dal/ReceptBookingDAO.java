@@ -29,6 +29,8 @@ public class ReceptBookingDAO extends DBContext {
     // ================================
     public List<RoomTypeCard> getRoomTypeCards(Date checkIn, Date checkOut, int roomsRequested) {
         List<RoomTypeCard> list = new ArrayList<>();
+        
+        syncInventoryData(checkIn, checkOut);
 
         String sql
                 = "WITH Dates AS ( "
@@ -38,9 +40,10 @@ public class ReceptBookingDAO extends DBContext {
                 + "   FROM Dates "
                 + "   WHERE DATEADD(DAY, 1, d) < ? "
                 + ") "
+                // ---> ĐÃ SỬA: Chuyển phép trừ phòng bảo trì (status = 3) lên SELECT tổng <---
                 + "SELECT rt.room_type_id, rt.name, "
                 + "       COALESCE(rv.price, 0) AS rate_per_night, "
-                + "       COALESCE(inv.min_available, 0) AS available_rooms "
+                + "       COALESCE(inv.min_available, 0) - (SELECT COUNT(*) FROM dbo.rooms rm WHERE rm.room_type_id = rt.room_type_id AND rm.status = 3) AS available_rooms "
                 + "FROM dbo.room_types rt "
                 + "OUTER APPLY ( "
                 + "   SELECT TOP 1 price, rate_version_id "
@@ -50,6 +53,7 @@ public class ReceptBookingDAO extends DBContext {
                 + "   ORDER BY valid_from DESC, rate_version_id DESC "
                 + ") rv "
                 + "OUTER APPLY ( "
+                // ---> ĐÃ SỬA: Trả lại hàm MIN nguyên bản, không chứa SELECT bên trong <---
                 + "   SELECT MIN( "
                 + "       COALESCE(i.total_rooms,0) - COALESCE(i.booked_rooms,0) - COALESCE(i.held_rooms,0) "
                 + "   ) AS min_available "
@@ -92,7 +96,6 @@ public class ReceptBookingDAO extends DBContext {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return list;
     }
 
@@ -119,7 +122,9 @@ public class ReceptBookingDAO extends DBContext {
 
         final String sqlCheckDay
                 = "SELECT 1 FROM dbo.room_type_inventory "
-                + "WHERE room_type_id=? AND inventory_date=? AND (total_rooms - booked_rooms - held_rooms) >= ?";
+                + "WHERE room_type_id=? AND inventory_date=? "
+                + "  AND (total_rooms - booked_rooms - held_rooms "
+                + "       - (SELECT COUNT(*) FROM dbo.rooms WHERE room_type_id = dbo.room_type_inventory.room_type_id AND status = 3)) >= ?";
 
         final String sqlInsertNight
                 = "INSERT INTO dbo.availability_hold_nights(hold_id, room_type_id, inventory_date, quantity) VALUES(?,?,?,?)";
@@ -152,7 +157,6 @@ public class ReceptBookingDAO extends DBContext {
                     holdId = rs.getInt(1);
                 }
             }
-
             try (PreparedStatement ps = con.prepareStatement(sqlInsertItem)) {
                 ps.setInt(1, holdId);
                 ps.setInt(2, roomTypeId);
@@ -517,17 +521,14 @@ public class ReceptBookingDAO extends DBContext {
             try (PreparedStatement ps = con.prepareStatement(sqlInsertPayment)) {
                 ps.setInt(1, bookingId);
                 ps.setBigDecimal(2, new java.math.BigDecimal(depositAmount));
-
                 int methodInt = 1; // CASH
                 if ("QR".equalsIgnoreCase(paymentMethod)) {
                     methodInt = 2;
                 }
-
                 int statusInt = 1; // SUCCESS
                 if ("FAILED".equalsIgnoreCase(paymentStatus)) {
                     statusInt = 0;
                 }
-
                 ps.setInt(3, methodInt);
                 ps.setInt(4, statusInt);
                 ps.executeUpdate();
@@ -542,7 +543,6 @@ public class ReceptBookingDAO extends DBContext {
                     + "JOIN dbo.availability_hold_nights n "
                     + "  ON n.room_type_id = i.room_type_id AND n.inventory_date = i.inventory_date "
                     + "WHERE n.hold_id = ?;";
-
             try (PreparedStatement ps = con.prepareStatement(sqlMoveHeldToBooked)) {
                 ps.setInt(1, holdId);
                 int aff = ps.executeUpdate();
@@ -559,10 +559,8 @@ public class ReceptBookingDAO extends DBContext {
                 ps.setInt(2, holdId);
                 ps.executeUpdate();
             }
-
             con.commit();
             return bookingId;
-
         } catch (SQLException ex) {
             if (con != null) {
                 con.rollback();
@@ -602,7 +600,6 @@ public class ReceptBookingDAO extends DBContext {
 
     // ===== internal tx helper =====
     private void releaseHoldByIdTx(Connection con, int holdId) throws SQLException {
-
         String sqlDec
                 = "UPDATE i "
                 + "SET i.held_rooms = CASE "
@@ -614,17 +611,14 @@ public class ReceptBookingDAO extends DBContext {
                 + "  ON n.room_type_id = i.room_type_id "
                 + " AND n.inventory_date = i.inventory_date "
                 + "WHERE n.hold_id = ?;";
-
         try (PreparedStatement ps = con.prepareStatement(sqlDec)) {
             ps.setInt(1, holdId);
             ps.executeUpdate();
         }
-
         String sqlHold
                 = "UPDATE dbo.availability_holds "
                 + "SET status = ? "
                 + "WHERE hold_id = ? AND status = ?;";
-
         try (PreparedStatement ps = con.prepareStatement(sqlHold)) {
             ps.setInt(1, HOLD_EXPIRED);
             ps.setInt(2, holdId);
@@ -632,62 +626,42 @@ public class ReceptBookingDAO extends DBContext {
             ps.executeUpdate();
         }
     }
+    
 // ================================
 // DỌN DẸP CÁC HOLD QUÁ HẠN
 // ================================
-
     public int expireHolds() throws SQLException {
-
         Connection con = null;
-
         try {
-
             con = connection;
             con.setAutoCommit(false);
-
             int affected = expireHoldsTx(con);
-
             con.commit();
-
             return affected;
-
         } catch (SQLException ex) {
-
             if (con != null) {
                 con.rollback();
             }
-
             throw ex;
-
         } finally {
-
             if (con != null) {
                 con.setAutoCommit(true);
             }
-
         }
     }
 
     private int expireHoldsTx(Connection con) throws SQLException {
-
         String select
                 = "SELECT hold_id "
                 + "FROM dbo.availability_holds "
                 + "WHERE status = ? "
                 + "AND expires_at < SYSDATETIME()";
-
         int count = 0;
-
         try (PreparedStatement psSel = con.prepareStatement(select)) {
-
             psSel.setInt(1, HOLD_ACTIVE);
-
             try (ResultSet rs = psSel.executeQuery()) {
-
                 while (rs.next()) {
-
                     int holdId = rs.getInt("hold_id");
-
                     try (PreparedStatement psInv = con.prepareStatement(
                             "UPDATE inv "
                             + "SET inv.held_rooms = CASE "
@@ -700,33 +674,74 @@ public class ReceptBookingDAO extends DBContext {
                             + " AND hn.inventory_date = inv.inventory_date "
                             + "WHERE hn.hold_id = ?"
                     )) {
-
                         psInv.setInt(1, holdId);
                         psInv.executeUpdate();
-
                     }
-
                     try (PreparedStatement psUp = con.prepareStatement(
                             "UPDATE dbo.availability_holds "
                             + "SET status = ? "
                             + "WHERE hold_id = ? AND status = ?"
                     )) {
-
                         psUp.setInt(1, HOLD_EXPIRED);
                         psUp.setInt(2, holdId);
                         psUp.setInt(3, HOLD_ACTIVE);
                         psUp.executeUpdate();
-
                     }
-
                     count++;
-
                 }
-
             }
-
         }
-
         return count;
+    }
+    
+    // ================================
+    // HÀM TỰ ĐỘNG KHỞI TẠO & CẬP NHẬT KHO PHÒNG (LAZY INITIALIZATION)
+    // ================================
+    private void syncInventoryData(Date checkIn, Date checkOut) {
+        if (checkIn == null || checkOut == null) return;
+
+        // LỆNH 1: Tự động Insert các ngày còn thiếu trong khoảng Check-in đến Check-out
+        String sqlInsert = 
+            "WITH Dates AS ( " +
+            "   SELECT CAST(? AS DATE) AS d " +
+            "   UNION ALL " +
+            "   SELECT DATEADD(DAY, 1, d) FROM Dates WHERE DATEADD(DAY, 1, d) < CAST(? AS DATE) " +
+            ") " +
+            "INSERT INTO dbo.room_type_inventory (room_type_id, inventory_date, total_rooms, booked_rooms, held_rooms) " +
+            "SELECT rt.room_type_id, x.d, " +
+            "       (SELECT COUNT(*) FROM dbo.rooms r WHERE r.room_type_id = rt.room_type_id), " +
+            "       0, 0 " +
+            "FROM dbo.room_types rt " +
+            "CROSS JOIN Dates x " +
+            "WHERE rt.status = 1 " +
+            "  AND NOT EXISTS ( " +
+            "      SELECT 1 FROM dbo.room_type_inventory i " +
+            "      WHERE i.room_type_id = rt.room_type_id AND i.inventory_date = x.d " +
+            ") OPTION (MAXRECURSION 400);";
+
+        // LỆNH 2: Tự động Update đếm lại total_rooms nếu nó đang = 0 hoặc NULL
+        String sqlUpdate = 
+            "UPDATE i " +
+            "SET i.total_rooms = (SELECT COUNT(*) FROM dbo.rooms r WHERE r.room_type_id = i.room_type_id) " +
+            "FROM dbo.room_type_inventory i " +
+            "WHERE i.inventory_date >= ? AND i.inventory_date < ? " +
+            "  AND (i.total_rooms = 0 OR i.total_rooms IS NULL);";
+
+        try (PreparedStatement ps1 = connection.prepareStatement(sqlInsert);
+             PreparedStatement ps2 = connection.prepareStatement(sqlUpdate)) {
+
+            // Chạy lệnh Insert
+            ps1.setDate(1, checkIn);
+            ps1.setDate(2, checkOut);
+            ps1.executeUpdate();
+
+            // Chạy lệnh Update
+            ps2.setDate(1, checkIn);
+            ps2.setDate(2, checkOut);
+            ps2.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
