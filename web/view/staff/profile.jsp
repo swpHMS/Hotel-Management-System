@@ -117,7 +117,7 @@
                                 <div class="edit-mode">
                                     <input type="text" name="fullName" id="fullNameInput" class="form-control" 
                                            value="${staff.fullName}" oninput="checkName(this)">
-                                    <div class="invalid-feedback">Vui lòng nhập tên chỉ chứa chữ cái và khoảng trắng.</div>
+                                    <div class="invalid-feedback">Please enter a name containing only letters and spaces.</div>
                                 </div>
                             </div>
                         </div>
@@ -136,7 +136,7 @@
                                 <div class="edit-mode">
                                     <input type="text" name="phone" id="phoneInput" class="form-control" 
                                            value="${staff.phone}" maxlength="10" oninput="checkPhone(this)">
-                                    <div class="invalid-feedback">Số điện thoại phải có 10 số và bắt đầu bằng số 0.</div>
+                                    <div class="invalid-feedback">Phone numbers must have 10 digits and begin with the number 0.</div>
                                 </div>
                             </div>
                         </div>

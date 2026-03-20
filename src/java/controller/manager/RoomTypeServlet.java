@@ -65,14 +65,17 @@ public class RoomTypeServlet extends HttpServlet {
         List<Integer> deletedGalleryImageIds = parseIntegerList(req.getParameterValues("deletedGalleryImageIds"));
 
         String thumbnailImageUrl = null;
+        String uploadedThumbnailImageUrl = null;
         boolean hasNewThumbnail = false;
         List<String> galleryImageUrls = new ArrayList<>();
+        List<String> uploadedGalleryImageUrls = new ArrayList<>();
         String preservedThumbnailUrl = trim(req.getParameter("existingThumbnailUrl"));
         List<String> preservedGalleryUrls = parseStringList(req.getParameterValues("existingGalleryUrls"));
         try {
             Part thumbnailPart = req.getPart("thumbnailImage");
             if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
                 thumbnailImageUrl = saveImage(thumbnailPart, req);
+                uploadedThumbnailImageUrl = thumbnailImageUrl;
                 hasNewThumbnail = true;
             }
         } catch (Exception ex) {
@@ -80,6 +83,7 @@ public class RoomTypeServlet extends HttpServlet {
         }
         try {
             galleryImageUrls = saveImages(req.getParts(), "galleryImages", req);
+            uploadedGalleryImageUrls = new ArrayList<>(galleryImageUrls);
         } catch (Exception ex) {
             errors.add("Gallery upload failed: " + ex.getMessage());
         }
@@ -113,6 +117,7 @@ public class RoomTypeServlet extends HttpServlet {
         }
 
         if (!errors.isEmpty()) {
+            deleteUploadedImages(uploadedThumbnailImageUrl, uploadedGalleryImageUrls, req);
             req.setAttribute("errors", errors);
             req.setAttribute("mode", "create".equals(action) ? "create" : "edit");
             req.setAttribute("editingId", roomTypeId);
@@ -120,8 +125,8 @@ public class RoomTypeServlet extends HttpServlet {
                 req.setAttribute("editingRoomType", roomTypeDAO.getRoomTypeForManagerById(roomTypeId));
             }
             req.setAttribute("formValue", form);
-            req.setAttribute("preservedThumbnailUrl", thumbnailImageUrl);
-            req.setAttribute("preservedGalleryUrls", galleryImageUrls);
+            req.setAttribute("preservedThumbnailUrl", preservedThumbnailUrl);
+            req.setAttribute("preservedGalleryUrls", preservedGalleryUrls);
             req.setAttribute("deletedGalleryImageIds", deletedGalleryImageIds);
             loadViewData(req);
             renderPage(req, resp);
@@ -138,13 +143,14 @@ public class RoomTypeServlet extends HttpServlet {
             if (ok) {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?success=updated");
             } else {
+                deleteUploadedImages(uploadedThumbnailImageUrl, uploadedGalleryImageUrls, req);
                 req.setAttribute("errors", List.of(buildPersistenceError("Update failed", roomTypeDAO.getLastErrorMessage())));
                 req.setAttribute("mode", "edit");
                 req.setAttribute("editingId", roomTypeId);
                 req.setAttribute("editingRoomType", roomTypeDAO.getRoomTypeForManagerById(roomTypeId));
                 req.setAttribute("formValue", form);
-                req.setAttribute("preservedThumbnailUrl", thumbnailImageUrl);
-                req.setAttribute("preservedGalleryUrls", galleryImageUrls);
+                req.setAttribute("preservedThumbnailUrl", preservedThumbnailUrl);
+                req.setAttribute("preservedGalleryUrls", preservedGalleryUrls);
                 req.setAttribute("deletedGalleryImageIds", deletedGalleryImageIds);
                 loadViewData(req);
                 renderPage(req, resp);
@@ -154,11 +160,12 @@ public class RoomTypeServlet extends HttpServlet {
             if (ok) {
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?success=created");
             } else {
+                deleteUploadedImages(uploadedThumbnailImageUrl, uploadedGalleryImageUrls, req);
                 req.setAttribute("errors", List.of(buildPersistenceError("Create failed", roomTypeDAO.getLastErrorMessage())));
                 req.setAttribute("mode", "create");
                 req.setAttribute("formValue", form);
-                req.setAttribute("preservedThumbnailUrl", thumbnailImageUrl);
-                req.setAttribute("preservedGalleryUrls", galleryImageUrls);
+                req.setAttribute("preservedThumbnailUrl", preservedThumbnailUrl);
+                req.setAttribute("preservedGalleryUrls", preservedGalleryUrls);
                 loadViewData(req);
                 renderPage(req, resp);
             }
@@ -512,6 +519,37 @@ public class RoomTypeServlet extends HttpServlet {
 
         folders.add(Path.of(System.getProperty("user.dir"), "web", normalizedRelativeFolder));
         return folders;
+    }
+
+    private void deleteUploadedImages(String uploadedThumbnailImageUrl, List<String> uploadedGalleryImageUrls, HttpServletRequest req) {
+        deleteImageByUrl(uploadedThumbnailImageUrl, req);
+        if (uploadedGalleryImageUrls == null) {
+            return;
+        }
+        for (String imageUrl : uploadedGalleryImageUrls) {
+            deleteImageByUrl(imageUrl, req);
+        }
+    }
+
+    private void deleteImageByUrl(String imageUrl, HttpServletRequest req) {
+        String trimmedUrl = trim(imageUrl);
+        if (trimmedUrl == null || trimmedUrl.isBlank()) {
+            return;
+        }
+
+        int slashIndex = trimmedUrl.lastIndexOf('/');
+        if (slashIndex <= 0 || slashIndex >= trimmedUrl.length() - 1) {
+            return;
+        }
+
+        String relativeFolder = trimmedUrl.substring(0, slashIndex);
+        String fileName = trimmedUrl.substring(slashIndex + 1);
+        for (Path folder : resolveImageFolders(req, relativeFolder)) {
+            try {
+                Files.deleteIfExists(folder.resolve(fileName));
+            } catch (IOException ignored) {
+            }
+        }
     }
 
     private Integer toInt(String input, Integer defaultValue) {

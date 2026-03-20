@@ -169,7 +169,7 @@
                     </c:if>
                     <div class="rt-alert error rt-modal-alert" id="rtClientImageError" style="display:none;"></div>
 
-                    <form method="post" enctype="multipart/form-data" action="${pageContext.request.contextPath}/manager/room-types">
+                    <form method="post" enctype="multipart/form-data" action="${pageContext.request.contextPath}/manager/room-types" id="rtRoomTypeForm" novalidate>
                         <input type="hidden" name="action" value="${mode == 'create' ? 'create' : 'update'}"/>
                         <c:if test="${mode == 'edit'}">
                             <input type="hidden" name="roomTypeId" value="${editing != null ? editing.roomTypeId : editingId}"/>
@@ -282,19 +282,19 @@
                             </div>
                             <div class="rt-form-grid cols-4">
                                 <label>Room Type Name *
-                                    <input type="text" name="name" required
+                                    <input type="text" name="name"
                                            value="${formValue != null ? formValue.name : (editing != null ? editing.name : '')}"/>
                                 </label>
                                 <label>Bed Type *
-                                    <input type="text" name="bedType" placeholder="Ex: King Bed / Queen Bed" required
+                                    <input type="text" name="bedType" placeholder="Ex: King Bed / Queen Bed"
                                            value="${formValue != null ? formValue.bedType : (editing != null ? editing.bedType : '')}"/>
                                 </label>
                                 <label>View Type *
-                                    <input type="text" name="viewType" placeholder="Ex: Ocean View / City View" required
+                                    <input type="text" name="viewType" placeholder="Ex: Ocean View / City View"
                                            value="${formValue != null ? formValue.viewType : (editing != null ? editing.viewType : '')}"/>
                                 </label>
                                 <label>Room Size (sqm) *
-                                    <input type="number" min="1" name="roomSize" required
+                                    <input type="number" min="1" step="1" inputmode="numeric" name="roomSize"
                                            value="${formValue != null ? formValue.roomSize : (editing != null ? editing.roomSize : '')}"/>
                                 </label>
                             </div>
@@ -307,18 +307,18 @@
                             </div>
                             <div class="rt-form-grid cols-2">
                                 <label>Max Adults *
-                                    <input type="number" min="1" name="maxAdult" required
+                                    <input type="number" min="1" step="1" inputmode="numeric" name="maxAdult"
                                            value="${formValue != null ? formValue.maxAdult : (editing != null ? editing.maxAdult : 2)}"/>
                                 </label>
                                 <label>Max Children *
-                                    <input type="number" min="0" name="maxChildren" required
+                                    <input type="number" min="0" step="1" inputmode="numeric" name="maxChildren"
                                            value="${formValue != null ? formValue.maxChildren : (editing != null ? editing.maxChildren : 0)}"/>
                                 </label>
                             </div>
 
                             <div class="rt-form-grid cols-2">
                                 <label>Base Price *
-                                    <input type="number" min="0" step="0.01" name="price" required
+                                    <input type="number" min="0.01" step="0.01" name="price"
                                            value="${formValue != null ? formValue.price : (editing != null ? editing.currentPrice : '')}"/>
                                 </label>
                                 <div class="rt-static-note">

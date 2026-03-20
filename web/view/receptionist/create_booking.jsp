@@ -292,115 +292,122 @@
                         setActiveCard(id);
                     });
                 });
-
                 // init (khi load trang)
                 setActiveCard(dropdown.value);
             });
         </script>
         <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const checkInInput = document.getElementById("checkInDate");
-    const checkOutInput = document.getElementById("checkOutDate");
+            document.addEventListener("DOMContentLoaded", function () {
+                const checkInInput = document.getElementById("checkInDate");
+                const checkOutInput = document.getElementById("checkOutDate");
 
-    if (!checkInInput || !checkOutInput) return;
+                if (!checkInInput || !checkOutInput)
+                    return;
 
-    const minCheckInDate = "${minCheckInDate}";
-    // Chặn ngày Check-in trong quá khứ (làm mờ lịch ở ô Check-in)
-    checkInInput.min = minCheckInDate; 
+                const minCheckInDate = "${minCheckInDate}";
+                const maxCheckInDate = "${maxCheckInDate}"; // ---> THÊM MỚI
 
-    // Hàm format ngày chuẩn Local (tránh bị lệch múi giờ của toISOString)
-    function formatDateLocal(date) {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        return y + "-" + m + "-" + d;
-    }
+                // Chặn ngày Check-in trong quá khứ (làm mờ lịch ở ô Check-in)
+                checkInInput.min = minCheckInDate;
+                checkInInput.max = maxCheckInDate; // ---> THÊM MỚI: Làm mờ các ngày sau 3 tháng
 
-    // Hàm cập nhật vùng giới hạn của lịch Check-out
-    function updateCheckOutMin() {
-        if (!checkInInput.value) return;
 
-        // Lấy mốc gốc là ngày Check-in hiện tại
-        const baseDate = new Date(checkInInput.value);
+                // Hàm format ngày chuẩn Local (tránh bị lệch múi giờ của toISOString)
+                function formatDateLocal(date) {
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    return y + "-" + m + "-" + d;
+                }
 
-        // 1. Min Check-out = Check-in + 1 ngày
-        const minDate = new Date(baseDate);
-        minDate.setDate(minDate.getDate() + 1);
-        const minStr = formatDateLocal(minDate);
+                // Hàm cập nhật vùng giới hạn của lịch Check-out
+                function updateCheckOutMin() {
+                    if (!checkInInput.value)
+                        return;
 
-        // 2. Max Check-out = Check-in + 30 ngày
-        const maxDate = new Date(baseDate);
-        maxDate.setDate(maxDate.getDate() + 30);
-        const maxStr = formatDateLocal(maxDate);
+                    // Lấy mốc gốc là ngày Check-in hiện tại
+                    const baseDate = new Date(checkInInput.value);
 
-        // ĐÂY LÀ DÒNG LỆNH LÀM MỜ LỊCH:
-        // Trình duyệt sẽ tự động làm mờ các ngày < minStr và > maxStr
-        checkOutInput.min = minStr;
-        checkOutInput.max = maxStr;
+                    // 1. Min Check-out = Check-in + 1 ngày
+                    const minDate = new Date(baseDate);
+                    minDate.setDate(minDate.getDate() + 1);
+                    const minStr = formatDateLocal(minDate);
 
-        // Nếu ngày Check-out đang hiện tại bị nằm vùng mờ -> Tự nhảy về ngày hợp lệ
-        if (!checkOutInput.value || checkOutInput.value < minStr) {
-            checkOutInput.value = minStr;
-        } else if (checkOutInput.value > maxStr) {
-            checkOutInput.value = maxStr;
-        }
-    }
+                    // 2. Max Check-out = Check-in + 30 ngày
+                    const maxDate = new Date(baseDate);
+                    maxDate.setDate(maxDate.getDate() + 30);
+                    const maxStr = formatDateLocal(maxDate);
 
-    // Chạy lần đầu khi load trang để ép giới hạn ngay lập tức
-    updateCheckOutMin();
+                    // ĐÂY LÀ DÒNG LỆNH LÀM MỜ LỊCH:
+                    // Trình duyệt sẽ tự động làm mờ các ngày < minStr và > maxStr
+                    checkOutInput.min = minStr;
+                    checkOutInput.max = maxStr;
 
-    // Lắng nghe khi Lễ tân đổi ngày Check-in -> Tính lại lịch Check-out
-    checkInInput.addEventListener("change", function () {
-        if (checkInInput.value < minCheckInDate) {
-            alert("Ngày check-in không hợp lệ theo quy định khách sạn!");
-            checkInInput.value = minCheckInDate;
-        }
-        updateCheckOutMin();
-    });
+                    // Nếu ngày Check-out đang hiện tại bị nằm vùng mờ -> Tự nhảy về ngày hợp lệ
+                    if (!checkOutInput.value || checkOutInput.value < minStr) {
+                        checkOutInput.value = minStr;
+                    } else if (checkOutInput.value > maxStr) {
+                        checkOutInput.value = maxStr;
+                    }
+                }
 
-    // Lắng nghe khi Lễ tân cố tình gõ tay sai ngày Check-out
-    checkOutInput.addEventListener("change", function () {
-        if (checkOutInput.value <= checkInInput.value) {
-            alert("Ngày Check-out phải sau ngày Check-in!");
-            updateCheckOutMin();
-        } else if (checkOutInput.value > checkOutInput.max) {
-            alert("Bạn chỉ được đặt phòng tối đa 30 ngày tính từ ngày Check-in!");
-            updateCheckOutMin();
-        }
-    });
+                // Chạy lần đầu khi load trang để ép giới hạn ngay lập tức
+                updateCheckOutMin();
 
-    // Chặn submit form (Trường hợp sửa code HTML ở F12)
-    document.querySelectorAll("form").forEach(form => {
-        form.addEventListener("submit", function (e) {
-            if (checkInInput.value < minCheckInDate) {
-                e.preventDefault();
-                alert("Không được chọn ngày Check-in trong quá khứ!");
-                checkInInput.focus();
-                return;
-            }
-            if (checkOutInput.value <= checkInInput.value) {
-                e.preventDefault();
-                alert("Ngày Check-out phải sau ngày Check-in!");
-                checkOutInput.focus();
-                return;
-            }
-            if (checkOutInput.value > checkOutInput.max) {
-                e.preventDefault();
-                alert("Số ngày đặt phòng tối đa là 30 ngày!");
-                checkOutInput.focus();
-                return;
-            }
-        });
-    });
-});
-</script>
+                // Lắng nghe khi Lễ tân đổi ngày Check-in -> Tính lại lịch Check-out
+                checkInInput.addEventListener("change", function () {
+                    if (checkInInput.value < minCheckInDate) {
+                        alert("Ngày check-in không hợp lệ theo quy định khách sạn!");
+                        checkInInput.value = minCheckInDate;
+                    }
+                    // ---> THÊM MỚI: Báo lỗi nếu gõ ngày quá 3 tháng
+                    else if (checkInInput.value > maxCheckInDate) {
+                        alert("Chỉ được đặt phòng trước tối đa 3 tháng!");
+                        checkInInput.value = maxCheckInDate;
+                    }
+                    updateCheckOutMin();
+                });
+
+                // Lắng nghe khi Lễ tân cố tình gõ tay sai ngày Check-out
+                checkOutInput.addEventListener("change", function () {
+                    if (checkOutInput.value <= checkInInput.value) {
+                        alert("Ngày Check-out phải sau ngày Check-in!");
+                        updateCheckOutMin();
+                    } else if (checkOutInput.value > checkOutInput.max) {
+                        alert("Bạn chỉ được đặt phòng tối đa 30 ngày tính từ ngày Check-in!");
+                        updateCheckOutMin();
+                    }
+                });
+
+                // Chặn submit form (Trường hợp sửa code HTML ở F12)
+                document.querySelectorAll("form").forEach(form => {
+                    form.addEventListener("submit", function (e) {
+                        if (checkInInput.value < minCheckInDate) {
+                            e.preventDefault();
+                            alert("Không được chọn ngày Check-in trong quá khứ!");
+                            checkInInput.focus();
+                            return;
+                        }
+                        if (checkOutInput.value <= checkInInput.value) {
+                            e.preventDefault();
+                            alert("Ngày Check-out phải sau ngày Check-in!");
+                            checkOutInput.focus();
+                            return;
+                        }
+                        if (checkOutInput.value > checkOutInput.max) {
+                            e.preventDefault();
+                            alert("Số ngày đặt phòng tối đa là 30 ngày!");
+                            checkOutInput.focus();
+                            return;
+                        }
+                    });
+                });
+            });
+        </script>
 
         <script>
-
             function changeQty(id, delta) {
-
                 const input = document.getElementById(id)
-
                 let value = parseInt(input.value) || 0
 
                 const min = parseInt(input.min)
@@ -415,8 +422,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 input.value = value
             }
-
         </script>
-
     </body>
 </html>
