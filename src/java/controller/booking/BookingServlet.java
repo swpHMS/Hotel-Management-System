@@ -20,6 +20,7 @@ import model.RoomTypeImage;
 public class BookingServlet extends HttpServlet {
 
     private static final int MAX_STAY_NIGHTS = 30;
+    private static final int MAX_ADVANCE_BOOKING_DAYS = 180;
 
     private int parseIntOrDefault(String s, int def) {
         try {
@@ -91,7 +92,7 @@ public class BookingServlet extends HttpServlet {
         LocalDate today = LocalDate.now();
         LocalDate checkIn = parseDateOrNull(request.getParameter("checkIn"));
         LocalDate checkOut = parseDateOrNull(request.getParameter("checkOut"));
-
+        LocalDate maxAdvanceDate = today.plusDays(MAX_ADVANCE_BOOKING_DAYS);
         int adults = clamp(parseIntOrDefault(request.getParameter("adults"), 2), 1, 30);
         int children = clamp(parseIntOrDefault(request.getParameter("children"), 0), 0, 15);
         int roomQty = clamp(parseIntOrDefault(request.getParameter("roomQty"), 1), 1, 20);
@@ -102,7 +103,12 @@ public class BookingServlet extends HttpServlet {
         if (checkOut == null) {
             checkOut = checkIn.plusDays(1);
         }
-
+if (checkIn.isAfter(maxAdvanceDate)) {
+    checkIn = maxAdvanceDate;
+    checkOut = checkIn.plusDays(1);
+    request.setAttribute("dateError",
+            "You can only book up to " + MAX_ADVANCE_BOOKING_DAYS + " days in advance.");
+}
         if (!checkOut.isAfter(checkIn)) {
             checkOut = checkIn.plusDays(1);
         }

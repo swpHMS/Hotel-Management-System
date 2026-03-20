@@ -235,7 +235,7 @@ if (totalGuests < roomQty) {
         req.setAttribute("total", total);
         req.setAttribute("deposit", deposit);
 
-        req.setAttribute("holdMs", 60 * 60 * 1000);
+        req.setAttribute("holdMs", 1 * 60 * 1000);
 
         // ✅ FIX: set customerEmail cho confirm.jsp + lưu tạm vào session để doPost dùng nếu form không submit email
         String resolved = resolveCustomerEmail(req);

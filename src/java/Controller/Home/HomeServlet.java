@@ -29,6 +29,8 @@ public class HomeServlet extends HttpServlet {
     private final AmenityDAO amenityRepo = new AmenityDAO();
     private final RoomTypeImageDAO roomTypeImageRepo = new RoomTypeImageDAO();
     private static final int DEFAULT_LIMIT = 8;
+    private static final int MAX_STAY_NIGHTS = 30;
+    private static final int MAX_ADVANCE_BOOKING_DAYS = 30;
 
     private int parseIntOrDefault(String s, int def) {
         try {
@@ -79,13 +81,30 @@ public class HomeServlet extends HttpServlet {
 
         LocalDate checkIn = parseDateOrDefault(checkInStr, defaultIn);
         LocalDate checkOut = parseDateOrDefault(checkOutStr, defaultOut);
+        LocalDate today = LocalDate.now();
+        LocalDate maxAdvanceDate = today.plusDays(MAX_ADVANCE_BOOKING_DAYS);
+
+        if (checkIn.isBefore(today)) {
+            checkIn = today;
+            checkOut = checkIn.plusDays(1);
+            req.setAttribute("dateError", "Check-in date cannot be in the past.");
+        }
+
+        if (checkIn.isAfter(maxAdvanceDate)) {
+            checkIn = maxAdvanceDate;
+            checkOut = checkIn.plusDays(1);
+            req.setAttribute("dateError",
+                    "You can only book up to " + MAX_ADVANCE_BOOKING_DAYS + " days in advance.");
+        }
 
         if (!checkOut.isAfter(checkIn)) {
             checkOut = checkIn.plusDays(1);
         }
+
         long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
-        if (nights > 30) {
-            req.setAttribute("dateError", "You can only book up to 30 nights.");
+        if (nights > MAX_STAY_NIGHTS) {
+            checkOut = checkIn.plusDays(MAX_STAY_NIGHTS);
+            req.setAttribute("dateError", "You can only book up to " + MAX_STAY_NIGHTS + " nights.");
         }
         // guests + rooms
         int roomQty = clamp(parseIntOrDefault(roomQtyStr, 1), 1, 20);
