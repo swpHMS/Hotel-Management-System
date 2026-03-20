@@ -218,8 +218,8 @@
             background: currentColor;
             flex-shrink: 0;
         }
-        .status-badge.active   { background: var(--green-bg); color: var(--green-text); }
-        .status-badge.inactive { background: var(--red-bg);   color: var(--red-text);   }
+        .status-badge.active   { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .status-badge.inactive { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
         /* ── Actions ── */
         .actions-bar {

@@ -153,7 +153,8 @@
 
             /* Card header */
             .card-header {
-                background: var(--ink);
+                background: var(--white);
+                border-bottom: 2px solid var(--cream-dark);
                 padding: 28px 48px;
                 display: flex;
                 align-items: center;
@@ -164,7 +165,7 @@
             .card-header__name {
                 font-size: 26px;
                 font-weight: 700;
-                color: var(--cream);
+                color: var(--ink);
                 letter-spacing: -0.01em;
             }
 
@@ -172,7 +173,7 @@
                 font-size: 12px;
                 letter-spacing: 0.12em;
                 text-transform: uppercase;
-                color: var(--gold-light);
+                color: var(--ink-light);
                 margin-top: 5px;
                 font-weight: 400;
             }
@@ -266,11 +267,11 @@
                 border-radius: 50%;
                 flex-shrink: 0;
             }
-            .pill.active   { background: #1a2f1e; color: #6fcf7e; }
-            .pill.active::before { background: #6fcf7e; }
-            .pill.inactive { background: #2f1a1a; color: #f87171; }
-            .pill.inactive::before { background: #f87171; }
-            .pill.gray     { background: var(--cream-dark); color: var(--ink-light); }
+            .pill.active   { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+            .pill.active::before { background: #10b981; }
+            .pill.inactive { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+            .pill.inactive::before { background: #ef4444; }
+            .pill.gray     { background: var(--cream-dark); color: var(--ink-light); border: 1px solid var(--cream-deep); }
             .pill.gray::before { background: var(--ink-faint); }
 
             /* ID badge */
@@ -499,11 +500,7 @@
 
                             </div><!-- /detail-grid -->
 
-                            <div class="card-footer">
-                                <span class="card-footer__note">HMS Hotel Management System</span>
-                                <div class="card-footer__dot"></div>
-                                <span class="card-footer__note">Customer Record</span>
-                            </div>
+                            
 
                         </div><!-- /detail-card -->
                     </c:if>
