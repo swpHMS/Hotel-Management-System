@@ -437,6 +437,29 @@
         cursor: not-allowed;
         transform: none;
     }
+    .so-textarea {
+        width: 100%;
+        min-height: 96px;
+        padding: 10px 13px;
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        background: #fff;
+        color: #111827;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        outline: none;
+        resize: vertical;
+        transition: border-color .18s, box-shadow .18s;
+    }
+    .so-textarea:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+    }
+    .so-textarea::placeholder {
+        color: #94a3b8;
+    }
+
 </style>
 
 <!-- MODAL -->
@@ -542,6 +565,22 @@
                     </div>
                 </div>
 
+                <!-- Step 4: Note -->
+                <div class="so-step">
+                    <div class="so-step-h">
+                        <div class="so-badge">4</div>
+                        <div class="so-step-title">Note</div>
+                    </div>
+
+                    <div class="so-card">
+                        <div class="so-label">Customer Note / Staff Note</div>
+                        <textarea
+                            id="noteInput"
+                            name="note"
+                            class="so-textarea"
+                            placeholder="">${fn:escapeXml(noteVal)}</textarea>
+                    </div>
+                </div>
             </div>
 
             <!-- RIGHT: Preview -->
@@ -580,6 +619,7 @@
                   class="so-form">
                 <input type="hidden" name="bookingId" id="bookingIdHidden"/>
                 <input type="hidden" name="roomId"    id="roomIdHidden"/>
+                <input type="hidden" name="note"      id="noteHidden"/>
                 <div id="hiddenItems"></div>
                 <button type="submit" class="so-btn-create" onclick="return beforeSubmitCreateDraft()">
                     Create Service Ticket (Unfinished) →
@@ -781,6 +821,7 @@
     function beforeSubmitCreateDraft() {
         const bookingId = document.getElementById('bookingIdHidden').value.trim();
         const roomId = document.getElementById('roomIdHidden').value.trim();
+        const note = document.getElementById('noteInput').value.trim();
 
         if (!bookingId || !roomId) {
             showToast('Please enter a valid Room Number (IN_HOUSE).');
@@ -790,6 +831,9 @@
             showToast('Please add at least 1 item.');
             return false;
         }
+
+        document.getElementById('noteHidden').value = note;
+
         const hiddenWrap = document.getElementById('hiddenItems');
         hiddenWrap.innerHTML = '';
         ticket.forEach(it => {
