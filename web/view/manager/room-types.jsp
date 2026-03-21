@@ -323,7 +323,7 @@
                                 </label>
                                 <div class="rt-static-note">
                                     <strong>Automatic Price Period</strong>
-                                    <span>${mode == 'create' ? 'The first price starts from tomorrow. When you change the price later, the previous price period will be closed automatically.' : 'When you change the price, the new price starts today and the previous price period will be closed automatically.'}</span>
+                                    <span>${mode == 'create' ? 'The first price starts from tomorrow. When you change the price later, the previous price period will be closed automatically.' : 'When you change the price, the new price starts immediately after save and the previous price period will be closed automatically.'}</span>
                                 </div>
                             </div>
                         </div>
