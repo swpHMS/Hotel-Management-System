@@ -177,7 +177,7 @@ public class RoomTypeServlet extends HttpServlet {
         int pageSize = normalizePageSize(toInt(req.getParameter("pageSize"), 3));
         int currentPage = Math.max(1, toInt(req.getParameter("page"), 1));
 
-        List<RoomTypeManagementView> allRoomTypes = roomTypeDAO.getRoomTypesForManager((String) null);
+        List<RoomTypeManagementView> allRoomTypes = roomTypeDAO.getRoomTypesForManager(q);
         int totalItems = allRoomTypes.size();
         int totalPages = Math.max(1, (int) Math.ceil(totalItems / (double) pageSize));
         if (currentPage > totalPages) {

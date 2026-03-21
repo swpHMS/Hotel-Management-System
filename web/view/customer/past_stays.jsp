@@ -643,8 +643,11 @@
                                 <form action="${pageContext.request.contextPath}/booking"
                                       method="get">
                                     <input type="hidden"
-                                           name="bookingId"
-                                           value="${b.bookingId}" />
+                                           name="roomTypeId"
+                                           value="${b.roomTypeId}" />
+                                    <input type="hidden"
+                                           name="roomQty"
+                                           value="${b.quantity}" />
 
                                     <button type="submit"
                                             class="cb-btn">

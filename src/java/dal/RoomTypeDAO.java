@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedHashSet;
@@ -40,7 +41,8 @@ private static final String SQL_INSERT_INVENTORY_DAY
         + "VALUES (?, ?, ?, 0, 0)";
 
     private volatile String lastErrorMessage;
-    private static final LocalDate OPEN_ENDED_RATE_DATE = LocalDate.of(9999, 12, 31);
+    private static final LocalDateTime OPEN_ENDED_RATE_DATE_TIME
+            = LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999_000_000);
 
     // =====================================================
     // BOOKING SEARCH (DATE RANGE + AVAILABILITY BY INVENTORY + CAPACITY BY ROOMQTY + KEYWORD)
@@ -513,16 +515,15 @@ ensureInventoryUntil(checkOut);
                     WHERE room_type_id = rt.room_type_id
                     ORDER BY
                         CASE
-                            WHEN CAST(GETDATE() AS date) BETWEEN valid_from AND valid_to THEN 0
-                            WHEN valid_from > CAST(GETDATE() AS date) THEN 1
+                            WHEN valid_from <= SYSDATETIME() AND SYSDATETIME() < valid_to THEN 0
+                            WHEN valid_from > SYSDATETIME() THEN 1
                             ELSE 2
                         END,
                         valid_from DESC,
                         rate_version_id DESC
                 ) rv
                 WHERE (? IS NULL OR ? = ''
-                       OR rt.name LIKE '%' + ? + '%'
-                       OR rt.description LIKE '%' + ? + '%')
+                       OR rt.name LIKE '%' + ? + '%')
                 ORDER BY rt.room_type_id DESC
                 """;
 
@@ -535,7 +536,6 @@ ensureInventoryUntil(checkOut);
             ps.setString(1, search);
             ps.setString(2, search);
             ps.setString(3, search);
-            ps.setString(4, search);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -548,14 +548,14 @@ ensureInventoryUntil(checkOut);
                     view.setStatus(rs.getInt("status"));
                     view.setCurrentPrice(rs.getBigDecimal("price"));
 
-                    Date validFrom = rs.getDate("valid_from");
+                    Timestamp validFrom = rs.getTimestamp("valid_from");
                     if (validFrom != null) {
-                        view.setValidFrom(validFrom.toLocalDate());
+                        view.setValidFrom(validFrom.toLocalDateTime().toLocalDate());
                     }
 
-                    Date validTo = rs.getDate("valid_to");
+                    Timestamp validTo = rs.getTimestamp("valid_to");
                     if (validTo != null) {
-                        view.setValidTo(validTo.toLocalDate());
+                        view.setValidTo(validTo.toLocalDateTime().toLocalDate());
                     }
 
                     fillMetadata(view, rs.getString("description"));
@@ -715,7 +715,7 @@ ensureInventoryUntil(checkOut);
             }
 
             if (form.getPrice() != null) {
-                upsertRateVersion(con, roomTypeId, form.getPrice(), LocalDate.now().plusDays(1));
+                upsertRateVersion(con, roomTypeId, form.getPrice(), LocalDate.now().plusDays(1).atStartOfDay());
             }
 
             con.commit();
@@ -781,7 +781,7 @@ ensureInventoryUntil(checkOut);
             }
 
             if (form.getPrice() != null) {
-                upsertRateVersion(con, roomTypeId, form.getPrice(), LocalDate.now());
+                upsertRateVersion(con, roomTypeId, form.getPrice(), LocalDateTime.now());
             }
 
             con.commit();
@@ -992,50 +992,32 @@ ensureInventoryUntil(checkOut);
         }
     }
 
-    private void upsertRateVersion(Connection con, int roomTypeId, java.math.BigDecimal price, LocalDate effectiveFrom) throws SQLException {
+    private void upsertRateVersion(Connection con, int roomTypeId, java.math.BigDecimal price, LocalDateTime effectiveFrom) throws SQLException {
         String closeOpenRateSql = """
                 UPDATE dbo.rate_versions
                 SET valid_to = ?
                 WHERE room_type_id = ?
-                  AND valid_to = ?
                   AND valid_from < ?
-                """;
-        String updateSameDayRateSql = """
-                UPDATE dbo.rate_versions
-                SET price = ?, valid_to = ?
-                WHERE room_type_id = ?
-                  AND valid_from = ?
+                  AND valid_to > ?
                 """;
         String insertRateSql = """
                 INSERT INTO dbo.rate_versions(room_type_id, price, valid_from, valid_to)
                 VALUES (?, ?, ?, ?)
                 """;
 
-        LocalDate previousValidTo = effectiveFrom.minusDays(1);
-
-        try (PreparedStatement psUpdateSameDay = con.prepareStatement(updateSameDayRateSql)) {
-            psUpdateSameDay.setBigDecimal(1, price);
-            psUpdateSameDay.setDate(2, Date.valueOf(OPEN_ENDED_RATE_DATE));
-            psUpdateSameDay.setInt(3, roomTypeId);
-            psUpdateSameDay.setDate(4, Date.valueOf(effectiveFrom));
-            if (psUpdateSameDay.executeUpdate() > 0) {
-                return;
-            }
-        }
-
         try (PreparedStatement psClose = con.prepareStatement(closeOpenRateSql)) {
-            psClose.setDate(1, Date.valueOf(previousValidTo));
+            psClose.setTimestamp(1, Timestamp.valueOf(effectiveFrom));
             psClose.setInt(2, roomTypeId);
-            psClose.setDate(3, Date.valueOf(OPEN_ENDED_RATE_DATE));
-            psClose.setDate(4, Date.valueOf(effectiveFrom));
+            psClose.setTimestamp(3, Timestamp.valueOf(effectiveFrom));
+            psClose.setTimestamp(4, Timestamp.valueOf(effectiveFrom));
             psClose.executeUpdate();
         }
 
         try (PreparedStatement psInsert = con.prepareStatement(insertRateSql)) {
             psInsert.setInt(1, roomTypeId);
             psInsert.setBigDecimal(2, price);
-            psInsert.setDate(3, Date.valueOf(effectiveFrom));
-            psInsert.setDate(4, Date.valueOf(OPEN_ENDED_RATE_DATE));
+            psInsert.setTimestamp(3, Timestamp.valueOf(effectiveFrom));
+            psInsert.setTimestamp(4, Timestamp.valueOf(OPEN_ENDED_RATE_DATE_TIME));
             psInsert.executeUpdate();
         }
     }
