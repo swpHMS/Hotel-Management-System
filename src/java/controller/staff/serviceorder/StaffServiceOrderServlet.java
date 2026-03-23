@@ -42,13 +42,8 @@ public class StaffServiceOrderServlet extends HttpServlet {
             throws ServletException, IOException {
 
         Integer status = parseIntNullable(req.getParameter("status")); // null = ALL
-        String keyword = req.getParameter("keyword");
-        if (keyword != null) {
-            keyword = keyword.trim();
-            if (keyword.isEmpty()) {
-                keyword = null;
-            }
-        }
+        String createdDate = req.getParameter("createdDate");
+        
         String roomNo = req.getParameter("roomNo");
         if (roomNo != null) {
             roomNo = roomNo.trim();
@@ -56,9 +51,8 @@ public class StaffServiceOrderServlet extends HttpServlet {
                 roomNo = null;
             }
         }
-        Integer bookingId = parseIntNullable(req.getParameter("bookingId"));
-
-        List<ServiceOrder> orders = dao.listOrders(status, keyword, roomNo, bookingId);
+        
+        List<ServiceOrder> orders = dao.listOrders(status, roomNo,createdDate);
         req.setAttribute("orders", orders);
 
         Integer selectedId = parseIntNullable(req.getParameter("id"));

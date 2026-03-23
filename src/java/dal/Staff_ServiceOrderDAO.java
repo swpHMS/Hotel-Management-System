@@ -18,13 +18,13 @@ import model.Service;
 public class Staff_ServiceOrderDAO {
 
     // ========== LIST ORDERS (for left panel) ==========
-    public static List<ServiceOrder> listOrders(Integer status, String keyword, String roomNo, Integer bookingId) {
+    public static List<ServiceOrder> listOrders(Integer status, String roomNo, String createdDate) {
         List<ServiceOrder> list = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT ")
                 .append(" so.service_order_id, so.booking_id, so.room_id, r.room_no, ")
-                .append(" so.created_by_staff_id, so.status, ")
+                .append(" so.created_by_staff_id, so.status, so.created_at, ")
                 .append(" COALESCE(SUM(soi.quantity * soi.unit_price_snapshot), 0) AS total ")
                 .append("FROM service_orders so ")
                 .append("LEFT JOIN rooms r ON r.room_id = so.room_id ")
@@ -41,26 +41,14 @@ public class Staff_ServiceOrderDAO {
             sql.append(" AND r.room_no LIKE ? ");
             params.add("%" + roomNo.trim() + "%");
         }
-        if (bookingId != null) {
-            sql.append(" AND so.booking_id = ? ");
-            params.add(bookingId);
-        }
-
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            String kw = "%" + keyword.trim() + "%";
-            sql.append(" AND (")
-                    .append(" CAST(so.service_order_id AS varchar(20)) LIKE ? ")
-                    .append(" OR CAST(so.booking_id AS varchar(20)) LIKE ? ")
-                    .append(" OR r.room_no LIKE ? ")
-                    .append(" ) ");
-            params.add(kw);
-            params.add(kw);
-            params.add(kw);
+        if (createdDate != null && !createdDate.isEmpty()) {
+            sql.append(" AND CAST(so.created_at AS DATE) = ? ");
+            params.add(createdDate);
         }
 
         sql.append(" GROUP BY ")
                 .append(" so.service_order_id, so.booking_id, so.room_id, r.room_no, ")
-                .append(" so.created_by_staff_id, so.status ")
+                .append(" so.created_by_staff_id, so.status, so.created_at ")
                 .append(" ORDER BY so.service_order_id DESC ");
 
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
@@ -79,6 +67,10 @@ public class Staff_ServiceOrderDAO {
                     o.setCreatedByStaffId(rs.getInt("created_by_staff_id"));
                     o.setStatus(rs.getInt("status"));
                     o.setTotal(rs.getDouble("total"));
+                    Timestamp ts = rs.getTimestamp("created_at");
+                    if (ts != null) {
+                        o.setCreatedAt(ts.toLocalDateTime());
+                    }
                     list.add(o);
                 }
             }
@@ -96,9 +88,17 @@ public class Staff_ServiceOrderDAO {
 
         String sqlOrder
                 = "SELECT so.service_order_id, so.booking_id, so.room_id, r.room_no, "
-                + "       so.created_by_staff_id, so.status, so.posted_at "
+                + "       so.created_by_staff_id, so.status, "
+                + "       so.created_at, so.completed_at, so.completed_by_staff_id, "
+                + "       so.cancelled_at, so.cancelled_by_staff_id, so.note, "
+                + "       s1.full_name AS created_by_staff_name, "
+                + "       s2.full_name AS completed_by_staff_name, "
+                + "       s3.full_name AS cancelled_by_staff_name "
                 + "FROM service_orders so "
                 + "LEFT JOIN rooms r ON r.room_id = so.room_id "
+                + "LEFT JOIN staff s1 ON s1.staff_id = so.created_by_staff_id "
+                + "LEFT JOIN staff s2 ON s2.staff_id = so.completed_by_staff_id "
+                + "LEFT JOIN staff s3 ON s3.staff_id = so.cancelled_by_staff_id "
                 + "WHERE so.service_order_id = ?";
 
         String sqlItems
@@ -124,11 +124,28 @@ public class Staff_ServiceOrderDAO {
                         order.setRoomNo(rs.getString("room_no"));
                         order.setCreatedByStaffId(rs.getInt("created_by_staff_id"));
                         order.setStatus(rs.getInt("status"));
+                        order.setCreatedByStaffName(rs.getString("created_by_staff_name"));
+                        order.setCompletedByStaffName(rs.getString("completed_by_staff_name"));
+                        order.setCancelledByStaffName(rs.getString("cancelled_by_staff_name"));
 
-                        Timestamp ts = rs.getTimestamp("posted_at");
-                        if (ts != null) {
-                            order.setPostedAt(ts.toLocalDateTime());
+                        Timestamp createdTs = rs.getTimestamp("created_at");
+                        if (createdTs != null) {
+                            order.setCreatedAt(createdTs.toLocalDateTime());
                         }
+
+                        Timestamp completedTs = rs.getTimestamp("completed_at");
+                        if (completedTs != null) {
+                            order.setCompletedAt(completedTs.toLocalDateTime());
+                        }
+
+                        Timestamp cancelledTs = rs.getTimestamp("cancelled_at");
+                        if (cancelledTs != null) {
+                            order.setCancelledAt(cancelledTs.toLocalDateTime());
+                        }
+
+                        order.setCompletedByStaffId((Integer) rs.getObject("completed_by_staff_id"));
+                        order.setCancelledByStaffId((Integer) rs.getObject("cancelled_by_staff_id"));
+                        order.setNote(rs.getString("note"));
                     }
                 }
             }
@@ -175,10 +192,29 @@ public class Staff_ServiceOrderDAO {
         return order;
     }
 
+    public Integer getStaffIdByUserId(int userId) {
+        String sql = "SELECT staff_id FROM staff WHERE user_id = ?";
+
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("staff_id");
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     // ========== CREATE DRAFT ==========
-    public int createDraft(int bookingId, Integer roomId, int createdByStaffId) {
-        String sql = "INSERT INTO service_orders (booking_id, room_id, created_by_staff_id, status, posted_at) "
-                + "VALUES (?, ?, ?, 0, NULL)";
+    public int createDraft(int bookingId, Integer roomId, int createdByStaffId, String note) {
+        String sql = "INSERT INTO service_orders (booking_id, room_id, created_by_staff_id, status, created_at, note) "
+                + "VALUES (?, ?, ?, 0, SYSDATETIME(), ?)";
 
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -190,6 +226,7 @@ public class Staff_ServiceOrderDAO {
             }
 
             ps.setInt(3, createdByStaffId);
+            ps.setString(4, note);
 
             int affected = ps.executeUpdate();
             if (affected == 0) {
@@ -219,10 +256,10 @@ public class Staff_ServiceOrderDAO {
         }
     }
 
-    public int createDraftWithItems(int bookingId, Integer roomId, int staffId, List<ItemReq> items) {
+    public int createDraftWithItems(int bookingId, Integer roomId, int staffId, String note, List<ItemReq> items) {
         String sqlInsertOrder
-                = "INSERT INTO service_orders (booking_id, room_id, created_by_staff_id, status, posted_at) "
-                + "VALUES (?, ?, ?, 0, NULL)";
+                = "INSERT INTO service_orders (booking_id, room_id, created_by_staff_id, status, created_at, note) "
+                + "VALUES (?, ?, ?, 0, SYSDATETIME(), ?)";
 
         // snapshot lấy từ services.unit_price tại thời điểm create
         String sqlInsertItem
@@ -246,6 +283,7 @@ public class Staff_ServiceOrderDAO {
                     ps.setInt(2, roomId);
                 }
                 ps.setInt(3, staffId);
+                ps.setString(4, note);
 
                 int affected = ps.executeUpdate();
                 if (affected != 1) {
@@ -363,6 +401,47 @@ public class Staff_ServiceOrderDAO {
         return false;
     }
 
+    public void appendNote(int serviceOrderId, String newNote) {
+    String getOldNoteSql = "SELECT note, status FROM service_orders WHERE service_order_id = ?";
+    String updateSql = "UPDATE service_orders SET note = ? WHERE service_order_id = ?";
+
+    try (Connection con = new DBContext().getConnection()) {
+
+        String oldNote = "";
+        int status = -1;
+
+        try (PreparedStatement ps = con.prepareStatement(getOldNoteSql)) {
+            ps.setInt(1, serviceOrderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    oldNote = rs.getString("note");
+                    status = rs.getInt("status");
+                }
+            }
+        }
+
+        if (status != 0) return;
+        if (newNote == null || newNote.trim().isEmpty()) return;
+
+        String time = java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+
+        String formattedNote = "[" + time + "]\n" + newNote;
+
+        String finalNote = (oldNote == null || oldNote.trim().isEmpty())
+                ? formattedNote
+                : oldNote + "\n\n" + formattedNote;
+
+        try (PreparedStatement ps = con.prepareStatement(updateSql)) {
+            ps.setString(1, finalNote);
+            ps.setInt(2, serviceOrderId);
+            ps.executeUpdate();
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
     //========lấy services theo type=========
     public List<Service> listServicesByType(int serviceType) {
         List<Service> list = new ArrayList<>();
@@ -371,7 +450,7 @@ public class Staff_ServiceOrderDAO {
                 + "FROM services "
                 + "WHERE service_type = ? AND status = 1 "
                 + "ORDER BY name ASC";
-        
+
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, serviceType);
@@ -438,10 +517,12 @@ public class Staff_ServiceOrderDAO {
     }
 
     // ========== MARK AS POSTED (Draft -> Posted) ==========
-    public boolean markPosted(int serviceOrderId) {
+    public boolean markFinished(int serviceOrderId, int staffId) {
         String sql
                 = "UPDATE so "
-                + "SET so.status = 1, so.posted_at = SYSDATETIME() "
+                + "SET so.status = 1, "
+                + "    so.completed_at = SYSDATETIME(), "
+                + "    so.completed_by_staff_id = ? "
                 + "FROM service_orders so "
                 + "WHERE so.service_order_id = ? "
                 + "  AND so.status = 0 "
@@ -449,7 +530,8 @@ public class Staff_ServiceOrderDAO {
 
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(1, serviceOrderId);
+            ps.setInt(1, staffId);
+            ps.setInt(2, serviceOrderId);
             return ps.executeUpdate() > 0;
 
         } catch (Exception e) {
@@ -459,15 +541,18 @@ public class Staff_ServiceOrderDAO {
     }
 
     // ========== CANCEL DRAFT (Draft -> Cancelled=2) ==========
-    public boolean cancelDraft(int serviceOrderId) {
+    public boolean cancelDraft(int serviceOrderId, int staffId) {
         String sql
                 = "UPDATE service_orders "
-                + "SET status = 2 "
+                + "SET status = 2, "
+                + "    cancelled_at = SYSDATETIME(), "
+                + "    cancelled_by_staff_id = ? "
                 + "WHERE service_order_id = ? AND status = 0";
 
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(1, serviceOrderId);
+            ps.setInt(1, staffId);
+            ps.setInt(2, serviceOrderId);
             return ps.executeUpdate() > 0;
 
         } catch (Exception e) {
