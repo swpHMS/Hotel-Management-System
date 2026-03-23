@@ -77,7 +77,7 @@ public class AdminTemplateDAO {
         return false;
     }
     
-    // Thêm vào dal.AdminTemplateDAO
+   
 public java.util.Map<String, String> getEmailDataByBookingId(int bookingId) {
     java.util.Map<String, String> data = new java.util.HashMap<>();
     // Truy vấn thông tin khách hàng và phòng dựa trên Database của bạn
@@ -123,7 +123,7 @@ public model.EmailTemplate getByCode(String code) {
     return null;
 }
     
-    // Bổ sung vào dal.AdminTemplateDAO
+    
 public EmailTemplate getTemplateByCode(String code) {
     String sql = "SELECT template_id, code, subject, content, is_active FROM dbo.templates WHERE code = ?";
     try (Connection con = new DBContext().getConnection();

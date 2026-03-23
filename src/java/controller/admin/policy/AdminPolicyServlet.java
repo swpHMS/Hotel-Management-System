@@ -58,29 +58,50 @@ public class AdminPolicyServlet extends HttpServlet {
         Admin_PolicyRuleDAO dao = new Admin_PolicyRuleDAO();
 
         String action = request.getParameter("action");
-        if (action == null) action = "saveContent";
+        if (action == null) {
+            action = "saveContent";
+        }
 
         switch (action) {
             case "addPolicy": {
                 String newName = request.getParameter("newPolicyName");
-                if (newName == null) newName = "";
-                newName = newName.trim();
+                String content = request.getParameter("content");
 
-                if (!newName.isEmpty() && !dao.existsByName(newName)) {
-                    dao.insertPolicy(newName, "");
-                    response.sendRedirect(request.getContextPath() + "/admin/policies?key="
-                            + URLEncoder.encode(newName, StandardCharsets.UTF_8));
+                if (newName == null) {
+                    newName = "";
+                }
+                if (content == null) {
+                    content = "";
+                }
+
+                newName = newName.trim();
+                content = content.trim();
+
+                // VALIDATE
+                if (newName.isEmpty() || content.isEmpty()) {
+                    response.sendRedirect(request.getContextPath() + "/admin/policies?error=empty");
                     return;
                 }
 
-                response.sendRedirect(request.getContextPath() + "/admin/policies?error=add");
+                if (dao.existsByName(newName)) {
+                    response.sendRedirect(request.getContextPath() + "/admin/policies?error=duplicate");
+                    return;
+                }
+
+                // INSERT CÓ CONTENT
+                dao.insertPolicy(newName, content);
+
+                response.sendRedirect(request.getContextPath() + "/admin/policies?key="
+                        + URLEncoder.encode(newName, StandardCharsets.UTF_8));
                 return;
             }
 
             case "renamePolicy": {
                 int policyId = parseInt(request.getParameter("policyId"));
                 String newName = request.getParameter("renameValue");
-                if (newName == null) newName = "";
+                if (newName == null) {
+                    newName = "";
+                }
                 newName = newName.trim();
 
                 if (policyId > 0 && !newName.isEmpty() && !dao.existsByName(newName)) {
@@ -116,8 +137,12 @@ public class AdminPolicyServlet extends HttpServlet {
                 String key = request.getParameter("key");
                 String content = request.getParameter("content");
 
-                if (content == null) content = "";
-                if (key == null) key = "";
+                if (content == null) {
+                    content = "";
+                }
+                if (key == null) {
+                    key = "";
+                }
 
                 dao.updateContent(policyId, content.trim());
 
