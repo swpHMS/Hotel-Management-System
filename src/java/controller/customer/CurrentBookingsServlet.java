@@ -6,13 +6,9 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-
-import model.BookingCardView;
 import model.User;
 
-@WebServlet("/current_bookings")
+@WebServlet(urlPatterns = {"/current_bookings", "/customer/bookings/current/cancel"})
 public class CurrentBookingsServlet extends HttpServlet {
 
     private final BookingDAO bookingDAO = new BookingDAO();
@@ -40,54 +36,12 @@ public class CurrentBookingsServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        User user = (User) request.getSession().getAttribute("userAccount");
-
-        if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        Integer customerId = bookingDAO.getCustomerIdByUserId(user.getUserId());
-        int pageSize = parsePageSize(request.getParameter("pageSize"));
-        int page = parsePage(request.getParameter("page"));
-
-        if (customerId == null) {
-            request.setAttribute("currentBookings", Collections.emptyList());
-            request.setAttribute("currentPage", 1);
-            request.setAttribute("totalPages", 0);
-            request.setAttribute("pageSize", pageSize);
-            request.getRequestDispatcher("/view/customer/current_bookings.jsp").forward(request, response);
-            return;
-        }
-
-        int totalItems = bookingDAO.countCurrentBookingsByCustomerId(customerId);
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-
-        if (totalPages <= 0) {
-            totalPages = 0;
-            page = 1;
-        } else if (page > totalPages) {
-            page = totalPages;
-        }
-
-        List<BookingCardView> bookingList =
-                bookingDAO.getCurrentBookingsByCustomerIdPaging(customerId, page, pageSize);
-
-        request.setAttribute("currentBookings", bookingList);
-        request.setAttribute("currentPage", page);
-        request.setAttribute("totalPages", totalPages);
-        request.setAttribute("pageSize", pageSize);
-
-        request.getRequestDispatcher("/view/customer/current_bookings.jsp").forward(request, response);
+        response.sendRedirect(request.getContextPath() + "/customer/bookings/current");
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        System.out.println("=== CANCEL SERVLET HIT ===");
-
         User user = (User) request.getSession().getAttribute("userAccount");
 
         if (user == null) {
@@ -102,7 +56,7 @@ public class CurrentBookingsServlet extends HttpServlet {
 
         if (customerId == null) {
             response.sendRedirect(
-                    request.getContextPath() + "/customer/dashboard?tab=current&currentPage=" + page + "&pageSize=" + pageSize
+                    request.getContextPath() + "/customer/bookings/current?currentPage=" + page + "&pageSize=" + pageSize
             );
             return;
         }
@@ -130,7 +84,7 @@ public class CurrentBookingsServlet extends HttpServlet {
         }
 
         response.sendRedirect(
-                request.getContextPath() + "/customer/dashboard?tab=current&currentPage=" + page + "&pageSize=" + pageSize
+                request.getContextPath() + "/customer/bookings/current?currentPage=" + page + "&pageSize=" + pageSize
         );
     }
 }
