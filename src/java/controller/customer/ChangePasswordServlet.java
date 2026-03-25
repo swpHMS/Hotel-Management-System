@@ -13,18 +13,19 @@ import java.io.IOException;
 public class ChangePasswordServlet extends HttpServlet {
 
     private final UserDAO userDAO = new UserDAO();
+    private final CustomerPageSupport pageSupport = new CustomerPageSupport();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        Integer userId = AuthUtils.getUserId(request);
+        Integer userId = pageSupport.requireUserId(request, response);
         if (userId == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
-        response.sendRedirect(request.getContextPath() + "/customer/dashboard?tab=changePassword");
+        pageSupport.prepareChangePassword(request, userId);
+        pageSupport.forwardLayout(request, response);
     }
 
     @Override
@@ -51,56 +52,56 @@ public class ChangePasswordServlet extends HttpServlet {
 
         if (isBlank(currentPassword) || isBlank(newPassword) || isBlank(confirmPassword)) {
             session.setAttribute("flash_error", "Please fill in all fields.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
         if (containsWhitespace(newPassword) || containsWhitespace(confirmPassword)) {
             session.setAttribute("flash_error", "Password must not contain spaces.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
         if (!newPassword.equals(confirmPassword)) {
             session.setAttribute("flash_error", "Confirm password does not match.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
         if (newPassword.equals(currentPassword)) {
             session.setAttribute("flash_error", "New password must be different from current password.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
         if (newPassword.length() < 8) {
             session.setAttribute("flash_error", "New password must be at least 8 characters.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
         if (!newPassword.matches(".*\\d.*")) {
             session.setAttribute("flash_error", "Include at least one number.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
         if (!newPassword.matches(".*[A-Z].*")) {
             session.setAttribute("flash_error", "Include at least one uppercase letter.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
         String storedHash = userDAO.getPasswordHashByUserId(userId);
         if (storedHash == null || storedHash.isBlank()) {
             session.setAttribute("flash_error", "Your account cannot change password.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
         if (!PasswordUtils.verify(currentPassword, storedHash)) {
             session.setAttribute("flash_error", "Current password is incorrect.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
@@ -109,7 +110,7 @@ public class ChangePasswordServlet extends HttpServlet {
 
         if (!updated) {
             session.setAttribute("flash_error", "Failed to update password. Please try again.");
-            redirectTab(response, request, "changePassword");
+            redirectChangePassword(response, request);
             return;
         }
 
@@ -122,9 +123,9 @@ public class ChangePasswordServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/login");
     }
 
-    private void redirectTab(HttpServletResponse res, HttpServletRequest req, String tab)
+    private void redirectChangePassword(HttpServletResponse res, HttpServletRequest req)
             throws IOException {
-        res.sendRedirect(req.getContextPath() + "/customer/dashboard?tab=" + tab);
+        res.sendRedirect(req.getContextPath() + "/customer/change-password");
     }
 
     private boolean isBlank(String s) {

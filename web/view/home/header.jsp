@@ -134,7 +134,7 @@
                                             </div>
                                         </div>
 
-                                        <a class="user-dd-item" href="${ctx}/customer/dashboard">
+                                        <a class="user-dd-item" href="${ctx}/customer/bookings/current">
                                             <span class="user-ico">👤</span>
                                             <span class="user-dd-text">DASHBOARD</span>
                                         </a>
