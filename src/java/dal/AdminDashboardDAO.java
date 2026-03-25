@@ -12,49 +12,24 @@ import java.util.Map;
 
 public class AdminDashboardDAO {
 
-
     public int countStaff() throws Exception {
-        String sql = "SELECT COUNT(*) FROM dbo.staff";
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+        String sql = "SELECT COUNT(*) FROM users WHERE role_id IN (1,2,3,4)";
+
+        try (
+                Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getInt(1) : 0;
         }
     }
-    
+
     public Map<String, Integer> countStaffStatus() throws Exception {
-
-    String sql = """
-        SELECT 
-            COUNT(*) AS total_staff,
-            SUM(CASE WHEN u.status = 1 THEN 1 ELSE 0 END) AS active_count,
-            SUM(CASE WHEN u.status = 0 THEN 1 ELSE 0 END) AS inactive_count
-        FROM dbo.staff s
-        JOIN dbo.users u ON s.user_id = u.user_id
-    """;
-
-    Map<String, Integer> result = new HashMap<>();
-
-    try (Connection con = new DBContext().getConnection();
-         PreparedStatement ps = con.prepareStatement(sql);
-         ResultSet rs = ps.executeQuery()) {
-
-        if (rs.next()) {
-            result.put("total", rs.getInt("total_staff"));
-            result.put("active", rs.getInt("active_count"));
-            result.put("inactive", rs.getInt("inactive_count"));
-        }
-    }
-
-    return result;
-}
-
-    public Map<String, Integer> countCustomerStatus() throws Exception {
 
         String sql = """
         SELECT 
-            SUM(CASE WHEN u.status = 1 THEN 1 ELSE 0 END) AS active_count,
-            SUM(CASE WHEN u.status = 0 THEN 1 ELSE 0 END) AS inactive_count
-        FROM dbo.customers c
-        JOIN dbo.users u ON c.user_id = u.user_id
+            COUNT(*) AS total_staff,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS active_count,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS inactive_count
+        FROM users
+        WHERE role_id IN (1,2,3,4)
     """;
 
         Map<String, Integer> result = new HashMap<>();
@@ -62,6 +37,32 @@ public class AdminDashboardDAO {
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             if (rs.next()) {
+                result.put("total", rs.getInt("total_staff"));
+                result.put("active", rs.getInt("active_count"));
+                result.put("inactive", rs.getInt("inactive_count"));
+            }
+        }
+
+        return result;
+    }
+
+    public Map<String, Integer> countCustomerStatus() throws Exception {
+
+        String sql = """
+        SELECT 
+            COUNT(*) AS total_customer,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS active_count,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS inactive_count
+        FROM users
+        WHERE role_id = 5
+    """;
+
+        Map<String, Integer> result = new HashMap<>();
+
+        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                result.put("total", rs.getInt("total_customer")); // thêm luôn cho đủ dashboard
                 result.put("active", rs.getInt("active_count"));
                 result.put("inactive", rs.getInt("inactive_count"));
             }
@@ -98,8 +99,10 @@ public class AdminDashboardDAO {
     }
 
     public int countCustomers() throws Exception {
-        String sql = "SELECT COUNT(*) FROM dbo.customers";
-        try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+        String sql = "SELECT COUNT(*) FROM users WHERE role_id = 5";
+
+        try (
+                Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getInt(1) : 0;
         }
     }
