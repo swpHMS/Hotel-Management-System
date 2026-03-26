@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import model.RoomTypeForm;
+import model.RoomTypeImage;
 import model.RoomTypeManagementView;
 
 import java.awt.Color;
@@ -44,7 +45,11 @@ public class RoomTypeServlet extends HttpServlet {
 
     private static final List<String> ALLOWED_IMAGE_EXTENSIONS = List.of(".jpg", ".jpeg", ".png");
     private static final String ALLOWED_IMAGE_LABEL = "JPG, JPEG, PNG";
-    private static final int MAX_IMAGE_BYTES = 300 * 1024;
+    private static final int THUMBNAIL_MAX_WIDTH = 1200;
+    private static final int THUMBNAIL_MAX_HEIGHT = 800;
+    private static final int GALLERY_MAX_WIDTH = 1600;
+    private static final int GALLERY_MAX_HEIGHT = 1200;
+    private static final float STORED_JPEG_QUALITY = 0.82f;
     private final RoomTypeDAO roomTypeDAO = new RoomTypeDAO();
 
     @Override
@@ -59,9 +64,12 @@ public class RoomTypeServlet extends HttpServlet {
 
         String action = trim(req.getParameter("action"));
 
+        Integer roomTypeId = toInt(req.getParameter("roomTypeId"), null);
+        RoomTypeManagementView existingRoomType = "update".equals(action) && roomTypeId != null && roomTypeId > 0
+                ? roomTypeDAO.getRoomTypeForManagerById(roomTypeId)
+                : null;
         RoomTypeForm form = parseForm(req);
         List<String> errors = form.validate("create".equals(action));
-        Integer roomTypeId = toInt(req.getParameter("roomTypeId"), null);
         List<Integer> deletedGalleryImageIds = parseIntegerList(req.getParameterValues("deletedGalleryImageIds"));
 
         String thumbnailImageUrl = null;
@@ -69,8 +77,6 @@ public class RoomTypeServlet extends HttpServlet {
         boolean hasNewThumbnail = false;
         List<String> galleryImageUrls = new ArrayList<>();
         List<String> uploadedGalleryImageUrls = new ArrayList<>();
-        String preservedThumbnailUrl = trim(req.getParameter("existingThumbnailUrl"));
-        List<String> preservedGalleryUrls = parseStringList(req.getParameterValues("existingGalleryUrls"));
         try {
             Part thumbnailPart = req.getPart("thumbnailImage");
             if (thumbnailPart != null && thumbnailPart.getSize() > 0) {
@@ -88,20 +94,10 @@ public class RoomTypeServlet extends HttpServlet {
             errors.add("Gallery upload failed: " + ex.getMessage());
         }
 
-        if (!hasNewThumbnail) {
-            thumbnailImageUrl = preservedThumbnailUrl;
-        }
-        if (!preservedGalleryUrls.isEmpty()) {
-            List<String> mergedGalleryUrls = new ArrayList<>(preservedGalleryUrls);
-            mergedGalleryUrls.addAll(galleryImageUrls);
-            galleryImageUrls = mergedGalleryUrls;
-        }
-
-        if ("update".equals(action) && (thumbnailImageUrl == null || thumbnailImageUrl.isBlank()) && roomTypeId != null && roomTypeId > 0) {
-            RoomTypeManagementView existingRoomType = roomTypeDAO.getRoomTypeForManagerById(roomTypeId);
-            if (existingRoomType != null && existingRoomType.getThumbnailImage() != null) {
+        if ("update".equals(action) && (thumbnailImageUrl == null || thumbnailImageUrl.isBlank()) && existingRoomType != null) {
+            if (existingRoomType.getThumbnailImage() != null) {
                 thumbnailImageUrl = existingRoomType.getThumbnailImage().getImageUrl();
-            } else if (existingRoomType != null && existingRoomType.getImageUrl() != null && !existingRoomType.getImageUrl().isBlank()) {
+            } else if (existingRoomType.getImageUrl() != null && !existingRoomType.getImageUrl().isBlank()) {
                 thumbnailImageUrl = existingRoomType.getImageUrl();
             }
         }
@@ -122,11 +118,9 @@ public class RoomTypeServlet extends HttpServlet {
             req.setAttribute("mode", "create".equals(action) ? "create" : "edit");
             req.setAttribute("editingId", roomTypeId);
             if (roomTypeId != null && roomTypeId > 0) {
-                req.setAttribute("editingRoomType", roomTypeDAO.getRoomTypeForManagerById(roomTypeId));
+                req.setAttribute("editingRoomType", existingRoomType);
             }
             req.setAttribute("formValue", form);
-            req.setAttribute("preservedThumbnailUrl", preservedThumbnailUrl);
-            req.setAttribute("preservedGalleryUrls", preservedGalleryUrls);
             req.setAttribute("deletedGalleryImageIds", deletedGalleryImageIds);
             loadViewData(req);
             renderPage(req, resp);
@@ -141,16 +135,15 @@ public class RoomTypeServlet extends HttpServlet {
             }
             ok = roomTypeDAO.updateRoomType(roomTypeId, form, thumbnailImageUrl, hasNewThumbnail, galleryImageUrls, deletedGalleryImageIds);
             if (ok) {
+                deleteReplacedImages(existingRoomType, hasNewThumbnail ? thumbnailImageUrl : null, deletedGalleryImageIds, req);
                 resp.sendRedirect(req.getContextPath() + "/manager/room-types?success=updated");
             } else {
                 deleteUploadedImages(uploadedThumbnailImageUrl, uploadedGalleryImageUrls, req);
                 req.setAttribute("errors", List.of(buildPersistenceError("Update failed", roomTypeDAO.getLastErrorMessage())));
                 req.setAttribute("mode", "edit");
                 req.setAttribute("editingId", roomTypeId);
-                req.setAttribute("editingRoomType", roomTypeDAO.getRoomTypeForManagerById(roomTypeId));
+                req.setAttribute("editingRoomType", existingRoomType);
                 req.setAttribute("formValue", form);
-                req.setAttribute("preservedThumbnailUrl", preservedThumbnailUrl);
-                req.setAttribute("preservedGalleryUrls", preservedGalleryUrls);
                 req.setAttribute("deletedGalleryImageIds", deletedGalleryImageIds);
                 loadViewData(req);
                 renderPage(req, resp);
@@ -164,8 +157,6 @@ public class RoomTypeServlet extends HttpServlet {
                 req.setAttribute("errors", List.of(buildPersistenceError("Create failed", roomTypeDAO.getLastErrorMessage())));
                 req.setAttribute("mode", "create");
                 req.setAttribute("formValue", form);
-                req.setAttribute("preservedThumbnailUrl", preservedThumbnailUrl);
-                req.setAttribute("preservedGalleryUrls", preservedGalleryUrls);
                 loadViewData(req);
                 renderPage(req, resp);
             }
@@ -260,20 +251,6 @@ public class RoomTypeServlet extends HttpServlet {
         return ids;
     }
 
-    private List<String> parseStringList(String[] values) {
-        List<String> list = new ArrayList<>();
-        if (values == null) {
-            return list;
-        }
-        for (String value : values) {
-            String trimmed = trim(value);
-            if (trimmed != null && !trimmed.isEmpty()) {
-                list.add(trimmed);
-            }
-        }
-        return list;
-    }
-
     private List<String> saveImages(java.util.Collection<Part> parts, String fieldName, HttpServletRequest req) throws IOException {
         List<String> urls = new ArrayList<>();
         if (parts == null) {
@@ -365,7 +342,8 @@ public class RoomTypeServlet extends HttpServlet {
 
         String relativeFolder = "assets/images/room_types";
         byte[] content = part.getInputStream().readAllBytes();
-        ProcessedImage processedImage = normalizeImageForStorage(content, extension);
+        boolean thumbnail = "thumbnailImage".equals(part.getName());
+        ProcessedImage processedImage = normalizeImageForStorage(content, thumbnail);
         String fileName = "rt_" + UUID.randomUUID().toString().replace("-", "") + processedImage.extension;
         Set<Path> imageFolders = resolveImageFolders(req, relativeFolder);
         if (imageFolders.isEmpty()) {
@@ -380,12 +358,9 @@ public class RoomTypeServlet extends HttpServlet {
         return relativeFolder + "/" + fileName;
     }
 
-    private ProcessedImage normalizeImageForStorage(byte[] originalBytes, String originalExtension) throws IOException {
+    private ProcessedImage normalizeImageForStorage(byte[] originalBytes, boolean thumbnail) throws IOException {
         if (originalBytes == null || originalBytes.length == 0) {
             throw new IOException("Empty image file");
-        }
-        if (originalBytes.length <= MAX_IMAGE_BYTES) {
-            return new ProcessedImage(originalBytes, originalExtension);
         }
 
         BufferedImage source = ImageIO.read(new ByteArrayInputStream(originalBytes));
@@ -393,58 +368,24 @@ public class RoomTypeServlet extends HttpServlet {
             throw new IOException("Unsupported or corrupted image");
         }
 
-        String format = ".png".equals(originalExtension) ? "png" : "jpg";
-        String extension = "png".equals(format) ? ".png" : ".jpg";
-        BufferedImage current = "png".equals(format) ? source : toRgbImage(source);
-        float quality = 0.9f;
-
-        for (int attempt = 0; attempt < 10; attempt++) {
-            byte[] encoded = writeImage(current, format, quality);
-            if (encoded.length <= MAX_IMAGE_BYTES) {
-                return new ProcessedImage(encoded, extension);
-            }
-
-            int nextWidth = Math.max(240, (int) Math.round(current.getWidth() * 0.85));
-            int nextHeight = Math.max(180, (int) Math.round(current.getHeight() * 0.85));
-            if (nextWidth == current.getWidth() && nextHeight == current.getHeight()) {
-                break;
-            }
-            current = resizeImage(current, nextWidth, nextHeight, "png".equals(format));
-            if (!"png".equals(format)) {
-                quality = Math.max(0.55f, quality - 0.08f);
-            }
-        }
-
-        BufferedImage jpgSource = toRgbImage(source);
-        float jpgQuality = 0.82f;
-        BufferedImage jpgCurrent = jpgSource;
-        for (int attempt = 0; attempt < 10; attempt++) {
-            byte[] encoded = writeImage(jpgCurrent, "jpg", jpgQuality);
-            if (encoded.length <= MAX_IMAGE_BYTES) {
-                return new ProcessedImage(encoded, ".jpg");
-            }
-
-            int nextWidth = Math.max(240, (int) Math.round(jpgCurrent.getWidth() * 0.82));
-            int nextHeight = Math.max(180, (int) Math.round(jpgCurrent.getHeight() * 0.82));
-            if (nextWidth == jpgCurrent.getWidth() && nextHeight == jpgCurrent.getHeight()) {
-                break;
-            }
-            jpgCurrent = resizeImage(jpgCurrent, nextWidth, nextHeight, false);
-            jpgQuality = Math.max(0.5f, jpgQuality - 0.07f);
-        }
-
-        byte[] fallbackBytes = writeImage(jpgCurrent, "jpg", 0.5f);
-        return new ProcessedImage(fallbackBytes, ".jpg");
+        int maxWidth = thumbnail ? THUMBNAIL_MAX_WIDTH : GALLERY_MAX_WIDTH;
+        int maxHeight = thumbnail ? THUMBNAIL_MAX_HEIGHT : GALLERY_MAX_HEIGHT;
+        BufferedImage resized = scaleDownToFit(source, maxWidth, maxHeight);
+        BufferedImage rgbImage = toRgbImage(resized);
+        byte[] encoded = writeImage(rgbImage, "jpg", STORED_JPEG_QUALITY);
+        return new ProcessedImage(encoded, ".jpg");
     }
 
-    private BufferedImage resizeImage(BufferedImage source, int width, int height, boolean keepAlpha) {
-        int imageType = keepAlpha ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
-        BufferedImage resized = new BufferedImage(width, height, imageType);
-        Graphics2D graphics = resized.createGraphics();
-        if (!keepAlpha) {
-            graphics.setColor(Color.WHITE);
-            graphics.fillRect(0, 0, width, height);
+    private BufferedImage scaleDownToFit(BufferedImage source, int maxWidth, int maxHeight) {
+        if (source.getWidth() <= maxWidth && source.getHeight() <= maxHeight) {
+            return source;
         }
+
+        double scale = Math.min(maxWidth / (double) source.getWidth(), maxHeight / (double) source.getHeight());
+        int width = Math.max(1, (int) Math.round(source.getWidth() * scale));
+        int height = Math.max(1, (int) Math.round(source.getHeight() * scale));
+        BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = resized.createGraphics();
         graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -548,6 +489,36 @@ public class RoomTypeServlet extends HttpServlet {
             try {
                 Files.deleteIfExists(folder.resolve(fileName));
             } catch (IOException ignored) {
+            }
+        }
+    }
+
+    private void deleteReplacedImages(RoomTypeManagementView existingRoomType, String newThumbnailImageUrl, List<Integer> deletedGalleryImageIds, HttpServletRequest req) {
+        if (existingRoomType == null) {
+            return;
+        }
+
+        String oldThumbnailUrl = null;
+        RoomTypeImage currentThumbnail = existingRoomType.getThumbnailImage();
+        if (currentThumbnail != null && currentThumbnail.getImageUrl() != null && !currentThumbnail.getImageUrl().isBlank()) {
+            oldThumbnailUrl = currentThumbnail.getImageUrl();
+        } else if (existingRoomType.getImageUrl() != null && !existingRoomType.getImageUrl().isBlank()) {
+            oldThumbnailUrl = existingRoomType.getImageUrl();
+        }
+        if (oldThumbnailUrl != null
+                && newThumbnailImageUrl != null
+                && !newThumbnailImageUrl.isBlank()
+                && !newThumbnailImageUrl.equals(oldThumbnailUrl)) {
+            deleteImageByUrl(oldThumbnailUrl, req);
+        }
+
+        if (deletedGalleryImageIds == null || deletedGalleryImageIds.isEmpty()) {
+            return;
+        }
+
+        for (RoomTypeImage image : existingRoomType.getGalleryImages()) {
+            if (image != null && deletedGalleryImageIds.contains(image.getImageId())) {
+                deleteImageByUrl(image.getImageUrl(), req);
             }
         }
     }
