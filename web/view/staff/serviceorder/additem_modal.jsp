@@ -534,6 +534,22 @@
                     </div>
                 </div>
 
+                <div class="aim-step">
+                    <div class="aim-step-label">
+                        <div class="aim-step-num">3</div>
+                        <div class="aim-step-name">Note</div>
+
+                    </div>
+
+                    <div class="aim-card">
+                        <div class="aim-field-label">Customer Note / Staff Note</div>
+                        <textarea
+                            id="noteInput"
+                            class="aim-input"
+                            style="height:80px; resize: vertical;"
+                            placeholder="Enter note..."></textarea> </div>
+                </div>
+
             </div>
 
             <!-- RIGHT -->
@@ -551,7 +567,7 @@
                 <div class="aim-right-foot">
                     <div class="aim-total-label">New Items Total</div>
                     <div class="aim-total-amount">
-                        <span class="aim-total-sym">$</span><span id="newTotal">0</span>
+                        <span id="newTotal">0 đ</span>
                     </div>
                 </div>
             </div>
@@ -569,6 +585,7 @@
                 <input type="hidden" name="orderId" value="${selected.serviceOrderId}"/>
                 <input type="hidden" name="type" value="${type}"/>
                 <div id="hiddenNewItems"></div>
+                <input type="hidden" name="note" id="noteHidden"/>
                 <button type="submit" class="aim-save">💾 Save Items</button>
             </form>
         </div>
@@ -611,7 +628,7 @@
     let currentType = ${type != null ? type : 1};
     const newItems = [];
     function formatMoney(num) {
-    return Number(num).toLocaleString('en-US', {
+    return Number(num).toLocaleString('vi-VN', {
     minimumFractionDigits: 0,
             maximumFractionDigits: 0
     });
@@ -646,7 +663,7 @@
     opt.value = s.serviceId;
     opt.setAttribute('data-price', s.price);
     opt.setAttribute('data-name', s.name);
-    opt.textContent = s.name + ' ($' + formatMoney(s.price) + ')';
+    opt.textContent = s.name + ' (' + formatMoney(s.price) + ')';
     sel.appendChild(opt);
     });
     sel.value = '';
@@ -716,22 +733,28 @@
             '<div class="aim-item-name">' + it.name + '</div>' +
             '<div class="aim-item-row">' +
             qtyHtml +
-            '<span class="aim-item-price">$' + formatMoney(line) + '</span>' +
+            '<span class="aim-item-price">' + formatMoney(line) + '</span>' +
             '</div>' +
             '<button type="button" class="aim-remove-btn" onclick="removeNewItem(' + idx + ')">Remove</button>';
     wrap.appendChild(div);
     });
     document.getElementById('newCount').innerText = newItems.length;
-    document.getElementById('newTotal').innerText = formatMoney(total);
+    document.getElementById('newTotal').innerText = formatMoney(total) + ' đ';
     }
     function beforeSaveItems() {
-    if (newItems.length === 0) {
-    showToast('Please add at least 1 item.');
+    const note = document.getElementById('noteInput').value.trim();
+    // - có item
+    // - hoặc có note
+    if (newItems.length === 0 && note === '') {
+    showToast('Please add at least 1 item OR enter note.');
     return false;
     }
 
+    // gán note
+    document.getElementById('noteHidden').value = note;
     const hidden = document.getElementById('hiddenNewItems');
     hidden.innerHTML = '';
+    // nếu có item thì mới append
     newItems.forEach(it => {
     const s = document.createElement('input');
     s.type = 'hidden';
@@ -746,7 +769,6 @@
     });
     return true;
     }
-
     function showToast(msg) {
     const t = document.createElement('div');
     t.className = 'aim-toast';
