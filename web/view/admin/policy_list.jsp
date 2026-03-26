@@ -76,8 +76,14 @@
                 animation: fadeDown .4s ease both;
             }
             @keyframes fadeDown {
-                from { opacity:0; transform:translateY(-10px); }
-                to   { opacity:1; transform:translateY(0); }
+                from {
+                    opacity:0;
+                    transform:translateY(-10px);
+                }
+                to   {
+                    opacity:1;
+                    transform:translateY(0);
+                }
             }
             .eyebrow {
                 font-size: 11px;
@@ -153,8 +159,14 @@
                 animation: slideUp .4s ease both;
             }
             @keyframes slideUp {
-                from { opacity:0; transform:translateY(16px); }
-                to   { opacity:1; transform:translateY(0); }
+                from {
+                    opacity:0;
+                    transform:translateY(16px);
+                }
+                to   {
+                    opacity:1;
+                    transform:translateY(0);
+                }
             }
 
             .layout {
@@ -269,12 +281,16 @@
                 background: var(--ink);
                 color: #fff;
             }
-            .mini-btn-save:hover { opacity: .9; }
+            .mini-btn-save:hover {
+                opacity: .9;
+            }
             .mini-btn-cancel {
                 background: var(--bg2);
                 color: var(--ink-mid);
             }
-            .mini-btn-cancel:hover { background: var(--border); }
+            .mini-btn-cancel:hover {
+                background: var(--border);
+            }
 
             /* ── POLICY LIST ── */
             .policy-list {
@@ -538,7 +554,9 @@
                 transform: translateY(-1px);
                 box-shadow: 0 8px 24px rgba(44,36,22,.28);
             }
-            .btn-primary:active { transform: translateY(0); }
+            .btn-primary:active {
+                transform: translateY(0);
+            }
 
             /* ── TOAST ── */
             #toast {
@@ -590,14 +608,14 @@
                     <a class="tab-link is-active"
                        href="${pageContext.request.contextPath}/admin/policies?key=${activeKey}">
                         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
                         Terms and Policies
                     </a>
                     <a class="tab-link"
                        href="${pageContext.request.contextPath}/admin/templates">
                         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
                         Email Templates
                     </a>
@@ -624,9 +642,19 @@
                                        class="policy-input"
                                        placeholder="New section name…"
                                        required />
+
+                                <textarea name="content"
+                                          class="policy-textarea"
+                                          placeholder="Enter policy content..."
+                                          required></textarea>
+
                                 <div class="policy-form-actions">
                                     <button type="submit" class="mini-btn mini-btn-save">Add</button>
-                                    <button type="button" class="mini-btn mini-btn-cancel" onclick="toggleAddPolicyForm(false)">Cancel</button>
+                                    <button type="button"
+                                            class="mini-btn mini-btn-cancel"
+                                            onclick="toggleAddPolicyForm(false)">
+                                        Cancel
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -649,8 +677,8 @@
                                                         title="Rename"
                                                         onclick="toggleRenameForm('${p.policyId}')">
                                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                                     </svg>
                                                 </button>
 
@@ -662,9 +690,9 @@
                                                     <input type="hidden" name="policyId" value="${p.policyId}"/>
                                                     <button type="submit" class="icon-btn danger" title="Delete">
                                                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                            <polyline points="3 6 5 6 21 6"/>
-                                                            <path d="M19 6l-1 14H6L5 6"/>
-                                                            <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+                                                        <polyline points="3 6 5 6 21 6"/>
+                                                        <path d="M19 6l-1 14H6L5 6"/>
+                                                        <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
                                                         </svg>
                                                     </button>
                                                 </form>
@@ -743,9 +771,9 @@
                                             </button>
                                             <button type="submit" class="btn btn-primary">
                                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                                                    <polyline points="17 21 17 13 7 13 7 21"/>
-                                                    <polyline points="7 3 7 8 15 8"/>
+                                                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                                                <polyline points="17 21 17 13 7 13 7 21"/>
+                                                <polyline points="7 3 7 8 15 8"/>
                                                 </svg>
                                                 Save Changes
                                             </button>
@@ -779,7 +807,8 @@
             const charCount = document.getElementById('charCount');
 
             function updateCount() {
-                if (!editor || !charCount) return;
+                if (!editor || !charCount)
+                    return;
                 const n = editor.value.length;
                 charCount.textContent = n.toLocaleString() + ' character' + (n !== 1 ? 's' : '');
             }
@@ -791,29 +820,58 @@
 
             function showToast() {
                 const t = document.getElementById('toast');
-                if (!t) return;
+                if (!t)
+                    return;
                 t.classList.add('show');
                 setTimeout(() => t.classList.remove('show'), 2800);
             }
 
             function toggleAddPolicyForm(force) {
                 const box = document.getElementById('addPolicyForm');
-                if (!box) return;
-                if (force === false) { box.style.display = 'none'; return; }
+                if (!box)
+                    return;
+                if (force === false) {
+                    box.style.display = 'none';
+                    return;
+                }
                 box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'block' : 'none';
             }
 
             function toggleRenameForm(policyId, force) {
                 const el = document.getElementById('renameForm-' + policyId);
-                if (!el) return;
-                if (force === false) { el.style.display = 'none'; return; }
+                if (!el)
+                    return;
+                if (force === false) {
+                    el.style.display = 'none';
+                    return;
+                }
                 el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+            }
+
+            function toggleAddPolicyForm(force) {
+                const box = document.getElementById('addPolicyForm');
+                if (!box)
+                    return;
+
+                if (force === false) {
+                    box.style.display = 'none';
+
+                    // clear input
+                    box.querySelector('input').value = '';
+                    box.querySelector('textarea').value = '';
+                    return;
+                }
+
+                box.style.display = (box.style.display === 'none' || box.style.display === '')
+                        ? 'block'
+                        : 'none';
             }
 
             document.addEventListener('keydown', e => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                     const form = document.querySelector('form');
-                    if (!form) return;
+                    if (!form)
+                        return;
                     e.preventDefault();
                     form.submit();
                 }
