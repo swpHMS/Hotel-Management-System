@@ -450,7 +450,7 @@ public class Staff_ServiceOrderDAO {
                 + "FROM services "
                 + "WHERE service_type = ? AND status = 1 "
                 + "ORDER BY name ASC";
-
+        
         try (Connection con = new DBContext().getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, serviceType);
@@ -473,7 +473,6 @@ public class Staff_ServiceOrderDAO {
 
         return list;
     }
-
     // ========== UPDATE QTY (Draft only) ==========
     public boolean updateItemQuantityDraft(long serviceOrderItemId, int newQty) {
         String sql

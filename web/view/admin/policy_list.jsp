@@ -637,7 +637,6 @@
                         <div id="addPolicyForm" class="add-policy-form" style="display:none;">
                             <form method="post" action="${pageContext.request.contextPath}/admin/policies">
                                 <input type="hidden" name="action" value="addPolicy"/>
-
                                 <input type="text"
                                        name="newPolicyName"
                                        class="policy-input"

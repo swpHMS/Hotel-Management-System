@@ -2,542 +2,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
-<style>
-    .cb-page{
-        width:100%;
-        max-width:1100px;
-        margin:0 auto;
-    }
-
-    .cb-title{
-        margin:0;
-        font-size:26px;
-        font-weight:700;
-        letter-spacing:-.2px;
-        color:#0f172a;
-    }
-    .cb-sub{
-        margin:6px 0 14px;
-        font-size:13px;
-        color:#94a3b8;
-        font-weight:500;
-    }
-
-    .cb-list{
-        display:flex;
-        flex-direction:column;
-        gap:14px;
-    }
-
-    .cb-card{
-        background:#fff;
-        border:1px solid #e9eef5;
-        border-radius:14px;
-        box-shadow:0 6px 18px rgba(15,23,42,.06);
-        overflow:hidden;
-        display:grid;
-        grid-template-columns: 300px 1fr;
-        min-height:180px;
-    }
-
-    /* LEFT */
-    .cb-media{
-        position:relative;
-        background:#f1f5f9;
-        overflow:hidden;
-        border-top-left-radius:14px;
-        border-bottom-left-radius:14px;
-    }
-
-    .cb-slide{
-        width:100%;
-        height:100%;
-        min-height:180px;
-        object-fit:cover;
-        display:none;
-        transform:scale(1);
-        transition:transform .35s ease;
-    }
-    .cb-slide.is-active{
-        display:block;
-    }
-    .cb-media:hover .cb-slide.is-active{
-        transform:scale(1.04);
-    }
-
-    .cb-status{
-        position:absolute;
-        top:12px;
-        left:12px;
-        padding:6px 10px;
-        border-radius:999px;
-        font-size:10px;
-        font-weight:800;
-        letter-spacing:.06em;
-        text-transform:uppercase;
-        user-select:none;
-        box-shadow:0 10px 22px rgba(0,0,0,.14);
-        border:1px solid rgba(15,23,42,.10);
-        backdrop-filter: blur(6px);
-    }
-    .cb-status--confirmed{
-        background:rgba(236,253,243,.92);
-        color:#027a48;
-    }
-    .cb-status--pending{
-        background:rgba(255,243,219,.92);
-        color:#8a5a08;
-    }
-    .cb-status--cancelled{
-        background:rgba(255,241,242,.92);
-        color:#b42318;
-    }
-    .cb-status--completed{
-        background:rgba(241,245,249,.92);
-        color:#475569;
-    }
-
-    .cb-nav{
-        position:absolute;
-        top:50%;
-        transform:translateY(-50%);
-        width:34px;
-        height:34px;
-        border-radius:999px;
-        border:1px solid rgba(255,255,255,.55);
-        background:rgba(2,6,23,.40);
-        color:#fff;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        cursor:pointer;
-        user-select:none;
-        transition:all .15s ease;
-    }
-    .cb-nav:hover{
-        background:rgba(2,6,23,.60);
-    }
-    .cb-prev{
-        left:10px;
-    }
-    .cb-next{
-        right:10px;
-    }
-    .cb-nav[disabled]{
-        opacity:.35;
-        cursor:not-allowed;
-    }
-
-    /* RIGHT (center text vertically) */
-    .cb-body{
-        padding:14px 16px;
-        display:flex;
-        flex-direction:column;
-        justify-content:center;  /* ✅ căn giữa theo chiều dọc */
-        gap:10px;
-    }
-
-    .cb-dates{
-        font-size:11px;
-        font-weight:700;
-        letter-spacing:.12em;
-        text-transform:uppercase;
-        color:#b08a3c;
-        line-height:1.35;
-        margin:0;
-    }
-
-    .cb-room{
-        margin:0;
-        font-size:30px;
-        font-weight:800;
-        letter-spacing:-.4px;
-        color:#0f172a;
-        line-height:1.15;
-    }
-
-    .cb-meta{
-        margin:0;
-        font-size:14px;
-        color:#64748b;
-        font-weight:500;
-        line-height:1.45;
-    }
-
-    .cb-divider{
-        height:1px;
-        background:#e9eef5;
-    }
-
-    .cb-kpi{
-        display:grid;
-        grid-template-columns: 1fr 1fr;
-        gap:12px 18px;
-    }
-
-    .cb-item .k{
-        font-size:12px;
-        color:#94a3b8;
-        font-weight:800;
-        letter-spacing:.14em;
-        text-transform:uppercase;
-        margin-bottom:6px;
-    }
-    .cb-item .v{
-        font-size:16px;
-        color:#0f172a;
-        font-weight:700;
-        line-height:1.25;
-        word-break:break-word;
-    }
-
-    .cb-actions{
-        display:flex;
-        gap:12px;
-        margin-top:6px;
-    }
-
-    /* ✅ buttons: no rounded */
-    .cb-btn{
-        appearance:none;
-        border-radius:0;              /* ✅ bỏ bo góc */
-        padding:12px 18px;
-        font-weight:800;
-        letter-spacing:.10em;
-        text-transform:uppercase;
-        font-size:12px;
-        cursor:pointer;
-        min-width:210px;
-        border:1px solid #e5eaf2;
-        background:#fff;
-        color:#475569;
-        transition:filter .12s ease, background .12s ease, border-color .12s ease;
-    }
-
-    .cb-btn-primary{
-        background:#0a1b2a;
-        color:#fff;
-        border-color:#0a1b2a;
-    }
-    .cb-btn-primary:hover{
-        filter:brightness(1.05);
-    }
-
-    .cb-btn-cancel{
-        background:#fff;
-        color:#b42318;
-        border-color: rgba(180,35,24,.28);
-    }
-    .cb-btn-cancel:hover{
-        background:#fff1f2;
-        border-color: rgba(180,35,24,.40);
-    }
-
-    /* ===== Modal (cbm-*) - smaller ===== */
-    .cbm-overlay{
-        position:fixed;
-        inset:0;
-        background:rgba(2,6,23,.55);
-        backdrop-filter: blur(6px);
-        display:none;
-        z-index:9999;
-    }
-    .cbm-overlay.show{
-        display:block;
-    }
-
-    .cbm-modal{
-        position:absolute;
-        left:50%;
-        top:50%;
-        transform:translate(-50%,-50%);
-        width:min(980px, calc(100vw - 60px));   /* ✅ nhỏ lại */
-        height:min(560px, calc(100vh - 60px));  /* ✅ nhỏ lại */
-        border-radius:18px;
-        overflow:hidden;
-        box-shadow:0 30px 70px rgba(0,0,0,.45);
-        display:grid;
-        grid-template-columns: 1.1fr .9fr;
-        background:#0b1c2b;
-    }
-
-    .cbm-gallery{
-        position:relative;
-    }
-    .cbm-gallery img{
-        width:100%;
-        height:100%;
-        object-fit:cover;
-        display:none;
-    }
-    .cbm-gallery img.is-active{
-        display:block;
-    }
-
-    .cbm-panel{
-        background:#fff;
-        padding:18px 18px 16px;
-        overflow:auto;
-        position:relative;
-    }
-
-    .cbm-x{
-        position:absolute;
-        right:12px;
-        top:12px;
-        width:42px;
-        height:42px;
-        border-radius:0; /* ✅ đồng bộ yêu cầu bỏ bo góc */
-        background:#fff;
-        border:1px solid rgba(15,23,42,.12);
-        cursor:pointer;
-        font-size:18px;
-        font-weight:900;
-        z-index:2;
-    }
-
-    .cbm-head{
-        display:flex;
-        align-items:flex-start;
-        justify-content:space-between;
-        gap:12px;
-        margin-bottom:10px;
-    }
-
-    .cbm-room{
-        margin:0;
-        font-size:30px;
-        font-weight:800;
-        letter-spacing:-.5px;
-        color:#0f172a;
-        line-height:1.12;
-    }
-
-    .cbm-meta{
-        margin:8px 0 0;
-        color:#64748b;
-        font-size:14px;
-        line-height:1.55;
-        font-weight:500;
-    }
-
-    .cbm-statusPill{
-        display:inline-flex;
-        align-items:center;
-        padding:7px 10px;
-        border-radius:999px;
-        font-size:11px;
-        font-weight:800;
-        letter-spacing:.08em;
-        text-transform:uppercase;
-        border:1px solid rgba(15,23,42,.10);
-        background:#f1f5f9;
-        color:#475569;
-        white-space:nowrap;
-        flex:0 0 auto;
-    }
-    .cbm-statusPill--confirmed{
-        background:#ecfdf3;
-        color:#027a48;
-        border-color:rgba(2,122,72,.16);
-    }
-    .cbm-statusPill--pending{
-        background:#fff3db;
-        color:#8a5a08;
-        border-color:rgba(138,90,8,.18);
-    }
-    .cbm-statusPill--cancelled{
-        background:#fff1f2;
-        color:#b42318;
-        border-color:rgba(180,35,24,.18);
-    }
-    .cbm-statusPill--completed{
-        background:#f1f5f9;
-        color:#475569;
-        border-color:rgba(71,85,105,.16);
-    }
-
-    .cbm-line{
-        height:1px;
-        background:#e9eef5;
-        margin:12px 0;
-    }
-
-    .cbm-grid{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:10px 12px;
-    }
-    .cbm-box{
-        border:1px solid #eef2f7;
-        background:#f8fafc;
-        border-radius:12px;
-        padding:10px 10px;
-        min-width:0;
-    }
-    .cbm-k{
-        color:#94a3b8;
-        font-weight:800;
-        letter-spacing:.14em;
-        text-transform:uppercase;
-        font-size:10px;
-        margin-bottom:6px;
-    }
-    /* ✅ value NOT bold */
-    .cbm-v{
-        color:#0f172a;
-        font-weight:500;       /* ✅ bỏ đậm */
-        font-size:14px;
-        line-height:1.25;
-        word-break:break-word;
-    }
-
-    .cbm-amenities{
-        margin-top:12px;
-    }
-    .cbm-amenTitle{
-        font-size:10px;
-        color:#94a3b8;
-        font-weight:800;
-        letter-spacing:.14em;
-        text-transform:uppercase;
-        margin-bottom:8px;
-    }
-    .cbm-chips{
-        display:flex;
-        flex-wrap:wrap;
-        gap:8px;
-    }
-    .cbm-chip{
-        display:inline-flex;
-        align-items:center;
-        padding:7px 10px;
-        border-radius:999px;
-        background:#fff;
-        border:1px solid #eef2f7;
-        font-size:12px;
-        font-weight:500;   /* ✅ bỏ đậm */
-        color:#334155;
-    }
-
-    @media (max-width: 980px){
-        .cb-card{
-            grid-template-columns:1fr;
-        }
-        .cb-slide{
-            min-height:220px;
-        }
-        .cb-actions{
-            justify-content:stretch;
-        }
-        .cb-btn{
-            flex:1;
-            min-width:0;
-        }
-        .cbm-modal{
-            grid-template-columns:1fr;
-            height:min(680px, calc(100vh - 60px));
-        }
-
-    }
-    .cb-status--no-show{
-        background:rgba(254,243,199,.92);
-        color:#92400e;
-    }
-    .cbm-statusPill--no-show{
-        background:#fef3c7;
-        color:#92400e;
-        border-color:rgba(146,64,14,.18);
-    }
-    .cb-status--inhouse{
-        background:rgba(219,234,254,.92);
-        color:#1d4ed8;
-    }
-    .alert-error{
-        background:#fff1f2;
-        color:#b42318;
-        padding:12px 16px;
-        border:1px solid rgba(180,35,24,.25);
-        margin-bottom:16px;
-    }
-    .cbm-statusWrap{
-        margin-bottom:12px;
-    }
-    .cb-pagination{
-        margin-top:18px;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        gap:8px;
-        flex-wrap:wrap;
-    }
-    .cb-page-link{
-        min-width:38px;
-        height:38px;
-        padding:0 12px;
-        border:1px solid #dbe3ee;
-        background:#fff;
-        color:#334155;
-        text-decoration:none;
-        display:inline-flex;
-        align-items:center;
-        justify-content:center;
-        font-weight:700;
-        transition:.15s ease;
-    }
-    .cb-page-link:hover{
-        background:#f8fafc;
-        border-color:#cbd5e1;
-    }
-    .cb-page-link.is-active{
-        background:#0a1b2a;
-        color:#fff;
-        border-color:#0a1b2a;
-        pointer-events:none;
-    }
-    .cb-page-link.is-disabled{
-        opacity:.45;
-        pointer-events:none;
-    }
-    .cb-bottombar{
-        margin-top:18px;
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        gap:16px;
-        flex-wrap:wrap;
-    }
-
-    .cb-size-form{
-        display:flex;
-        align-items:center;
-        gap:8px;
-    }
-
-    .cb-size-label{
-        font-size:13px;
-        color:#64748b;
-        font-weight:600;
-    }
-
-    .cb-size-select{
-        height:38px;
-        padding:0 10px;
-        border:1px solid #dbe3ee;
-        background:#fff;
-        color:#0f172a;
-        font-weight:600;
-    }
-
-    .cb-pagination{
-        margin-top:0;
-        display:flex;
-        justify-content:flex-end;
-        align-items:center;
-        gap:8px;
-    }
-</style>
-
 <div class="cb-page">
     <h2 class="cb-title">Past Stays</h2>
     <p class="cb-sub">Your stay history</p>
@@ -545,7 +9,7 @@
     <c:choose>
         <c:when test="${empty pastStays}">
             <div class="empty">
-                <div class="icon">🏨</div>
+                <div class="icon">&#127970;</div>
                 <h3>No past stays</h3>
                 <p>You haven't completed any stays yet.</p>
             </div>
@@ -643,8 +107,11 @@
                                 <form action="${pageContext.request.contextPath}/booking"
                                       method="get">
                                     <input type="hidden"
-                                           name="bookingId"
-                                           value="${b.bookingId}" />
+                                           name="roomTypeId"
+                                           value="${b.roomTypeId}" />
+                                    <input type="hidden"
+                                           name="roomQty"
+                                           value="${b.quantity}" />
 
                                     <button type="submit"
                                             class="cb-btn">
@@ -662,57 +129,61 @@
         </c:otherwise>
     </c:choose>
 
-    <div class="cb-bottombar">
+    <c:if test="${not empty pastStays}">
+        <div class="cb-bottombar">
 
-        <!-- LEFT: page size -->
-        <form method="get"
-              action="${pageContext.request.contextPath}/customer/dashboard"
-              class="cb-size-form">
+            <form method="get"
+                  action="${pageContext.request.contextPath}/customer/bookings/past"
+                  class="cb-size-form">
+                <input type="hidden" name="pastPage" value="1"/>
 
-            <input type="hidden" name="tab" value="past"/>
-            <input type="hidden" name="pastPage" value="1"/>
+                <label class="cb-size-label">Show</label>
 
-            <label class="cb-size-label">Show</label>
+                <select name="pageSize"
+                        class="cb-size-select"
+                        onchange="this.form.submit()">
 
-            <select name="pageSize"
-                    class="cb-size-select"
-                    onchange="this.form.submit()">
+                    <option value="2" ${pageSize == 2 ? 'selected' : ''}>2</option>
+                    <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
+                    <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
 
-                <option value="2" ${pageSize == 2 ? 'selected' : ''}>2</option>
-                <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
-                <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
+                </select>
 
-            </select>
+                <span class="cb-size-label">per page</span>
+            </form>
 
-            <span class="cb-size-label">per page</span>
-        </form>
+            <c:if test="${pastTotalPages > 1}">
+                <div class="cb-pagination">
 
-
-        <!-- RIGHT: pagination -->
-        <c:if test="${pastTotalPages > 1}">
-            <div class="cb-pagination">
-
-                <a class="cb-page-link ${pastCurrentPage == 1 ? 'is-disabled' : ''}"
-                   href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${pastCurrentPage - 1}&pageSize=${pageSize}">
-                    Previous
-                </a>
-
-                <c:forEach begin="1" end="${pastTotalPages}" var="p">
-                    <a class="cb-page-link ${p == pastCurrentPage ? 'is-active' : ''}"
-                       href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${p}&pageSize=${pageSize}">
-                        ${p}
+                    <a class="cb-page-link ${pastCurrentPage == 1 ? 'is-disabled' : ''}"
+                       href="${pageContext.request.contextPath}/customer/bookings/past?pastPage=${pastCurrentPage - 1}&pageSize=${pageSize}">
+                        Previous
                     </a>
-                </c:forEach>
 
-                <a class="cb-page-link ${pastCurrentPage == pastTotalPages ? 'is-disabled' : ''}"
-                   href="${pageContext.request.contextPath}/customer/dashboard?tab=past&pastPage=${pastCurrentPage + 1}&pageSize=${pageSize}">
-                    Next
-                </a>
+                    <c:forEach var="token" items="${pastPageTokens}">
+                        <c:choose>
+                            <c:when test="${token == '...'}">
+                                <span class="cb-page-link is-disabled">...</span>
+                            </c:when>
+                            <c:otherwise>
+                                <a class="cb-page-link ${token == pastCurrentPage ? 'is-active' : ''}"
+                                   href="${pageContext.request.contextPath}/customer/bookings/past?pastPage=${token}&pageSize=${pageSize}">
+                                    ${token}
+                                </a>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:forEach>
 
-            </div>
-        </c:if>
+                    <a class="cb-page-link ${pastCurrentPage == pastTotalPages ? 'is-disabled' : ''}"
+                       href="${pageContext.request.contextPath}/customer/bookings/past?pastPage=${pastCurrentPage + 1}&pageSize=${pageSize}">
+                        Next
+                    </a>
 
-    </div>
+                </div>
+            </c:if>
+
+        </div>
+    </c:if>
 </div>
 
 <!-- Modal (same as current) -->
@@ -720,22 +191,22 @@
     <div class="cbm-modal" role="dialog">
 
         <div class="cbm-gallery" id="cbmGallery">
-            <button type="button" class="cb-nav cb-prev" id="cbmPrev">‹</button>
-            <button type="button" class="cb-nav cb-next" id="cbmNext">›</button>
+            <button type="button" class="cb-nav cb-prev" id="cbmPrev">&#8249;</button>
+            <button type="button" class="cb-nav cb-next" id="cbmNext">&#8250;</button>
         </div>
 
         <div class="cbm-panel">
 
-            <button type="button" class="cbm-x" id="cbmClose">✕</button>
+            <button type="button" class="cbm-x" id="cbmClose">&#10005;</button>
 
             <div class="cbm-statusWrap">
-                <span class="cbm-statusPill" id="cbmStatusPill">—</span>
+                <span class="cbm-statusPill" id="cbmStatusPill">&mdash;</span>
             </div>
 
             <div class="cbm-head">
                 <div>
-                    <h2 class="cbm-room" id="cbmRoom">—</h2>
-                    <div class="cbm-meta" id="cbmMeta">—</div>
+                    <h2 class="cbm-room" id="cbmRoom">&mdash;</h2>
+                    <div class="cbm-meta" id="cbmMeta">&mdash;</div>
                 </div>
             </div>
 
@@ -744,27 +215,27 @@
             <div class="cbm-grid">
                 <div class="cbm-box">
                     <div class="cbm-k">BOOKING ID</div>
-                    <div class="cbm-v" id="cbmId">—</div>
+                    <div class="cbm-v" id="cbmId">&mdash;</div>
                 </div>
                 <div class="cbm-box">
                     <div class="cbm-k">OCCUPANCY</div>
-                    <div class="cbm-v" id="cbmOcc">—</div>
+                    <div class="cbm-v" id="cbmOcc">&mdash;</div>
                 </div>
                 <div class="cbm-box">
                     <div class="cbm-k">CHECK-IN</div>
-                    <div class="cbm-v" id="cbmCheckin">—</div>
+                    <div class="cbm-v" id="cbmCheckin">&mdash;</div>
                 </div>
                 <div class="cbm-box">
                     <div class="cbm-k">CHECK-OUT</div>
-                    <div class="cbm-v" id="cbmCheckout">—</div>
+                    <div class="cbm-v" id="cbmCheckout">&mdash;</div>
                 </div>
                 <div class="cbm-box">
                     <div class="cbm-k">ROOMS</div>
-                    <div class="cbm-v" id="cbmRooms">—</div>
+                    <div class="cbm-v" id="cbmRooms">&mdash;</div>
                 </div>
                 <div class="cbm-box">
                     <div class="cbm-k">TOTAL</div>
-                    <div class="cbm-v" id="cbmTotal">—</div>
+                    <div class="cbm-v" id="cbmTotal">&mdash;</div>
                 </div>
             </div>
 
@@ -813,8 +284,7 @@
             document.getElementById("cbmCheckin").textContent = card.dataset.checkin;
             document.getElementById("cbmCheckout").textContent = card.dataset.checkout;
             document.getElementById("cbmOcc").textContent = card.dataset.occupancy;
-            document.getElementById("cbmRooms").textContent = card.dataset.rooms || "—";
-
+            document.getElementById("cbmRooms").textContent = card.dataset.rooms || "\u2014";
             const total = Number(card.dataset.total);
             document.getElementById("cbmTotal").textContent =
                     new Intl.NumberFormat('vi-VN', {minimumFractionDigits: 2}).format(total);
@@ -874,3 +344,5 @@
 
     });
 </script>
+
+

@@ -434,7 +434,7 @@
                                 <i class="bi bi-arrow-left"></i>
                                 Back to Registry
                             </a>
-                            <a href="${pageContext.request.contextPath}/manager/room-registry/edit?id=${roomDetail.roomId}" class="rd-btn edit">
+                            <a href="${pageContext.request.contextPath}/manager/room-registry/update?id=${roomDetail.roomId}" class="rd-btn edit">
                                 <i class="bi bi-pencil-square"></i>
                                 Edit Room
                             </a>

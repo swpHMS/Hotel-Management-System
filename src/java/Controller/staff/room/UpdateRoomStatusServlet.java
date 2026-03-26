@@ -17,24 +17,27 @@ public class UpdateRoomStatusServlet extends HttpServlet {
     private final StaffRoomDAO dao = new StaffRoomDAO();
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        try {
-            int roomId = Integer.parseInt(request.getParameter("roomId"));
-            int newStatus = Integer.parseInt(request.getParameter("newStatus"));
+protected void doPost(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    try {
+        int roomId = Integer.parseInt(request.getParameter("roomId"));
+        int newStatus = Integer.parseInt(request.getParameter("newStatus"));
 
-            dao.updateRoomStatus(roomId, newStatus);
-
-            HttpSession session = request.getSession();
-            Set<Integer> cleaningRooms = (Set<Integer>) session.getAttribute("cleaningRooms");
-            if (cleaningRooms != null) {
-                cleaningRooms.remove(roomId);
-                session.setAttribute("cleaningRooms", cleaningRooms);
-            }
-
-            response.sendRedirect(request.getContextPath() + "/staff/room-operations");
-        } catch (Exception e) {
-            throw new ServletException(e);
+        boolean success = dao.updateRoomStatus(roomId, newStatus);
+        if (!success) {
+            throw new ServletException("Không thể cập nhật trạng thái phòng.");
         }
+
+        HttpSession session = request.getSession();
+        Set<Integer> cleaningRooms = (Set<Integer>) session.getAttribute("cleaningRooms");
+        if (cleaningRooms != null) {
+            cleaningRooms.remove(roomId);
+            session.setAttribute("cleaningRooms", cleaningRooms);
+        }
+
+        response.sendRedirect(request.getContextPath() + "/staff/room-operations");
+    } catch (Exception e) {
+        throw new ServletException(e);
     }
+}
 }

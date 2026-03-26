@@ -111,9 +111,6 @@
                 background:#201a10;
             }
 
-            /* =========================
-               STATS
-            ========================= */
             .stats-grid{
                 display: grid;
                 grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -155,21 +152,11 @@
                 pointer-events:none;
             }
 
-            .stat-card.gold-card{
-                --card-blob: rgba(181,131,42,.08);
-            }
-            .stat-card.blue-card{
-                --card-blob: rgba(59,92,204,.08);
-            }
-            .stat-card.green-card{
-                --card-blob: rgba(90,122,92,.09);
-            }
-            .stat-card.orange-card{
-                --card-blob: rgba(194,106,27,.08);
-            }
-            .stat-card.purple-card{
-                --card-blob: rgba(124,76,201,.08);
-            }
+            .stat-card.gold-card{ --card-blob: rgba(181,131,42,.08); }
+            .stat-card.blue-card{ --card-blob: rgba(59,92,204,.08); }
+            .stat-card.green-card{ --card-blob: rgba(90,122,92,.09); }
+            .stat-card.orange-card{ --card-blob: rgba(194,106,27,.08); }
+            .stat-card.purple-card{ --card-blob: rgba(124,76,201,.08); }
 
             .stat-card::before{
                 content: attr(data-tag);
@@ -188,26 +175,11 @@
                 z-index: 2;
             }
 
-            .stat-card.gold-card::before{
-                background: var(--gold-bg);
-                color: var(--gold);
-            }
-            .stat-card.blue-card::before{
-                background: var(--blue-bg);
-                color: var(--blue);
-            }
-            .stat-card.green-card::before{
-                background: rgba(90,122,92,.10);
-                color: var(--sage);
-            }
-            .stat-card.orange-card::before{
-                background: var(--orange-bg);
-                color: var(--orange);
-            }
-            .stat-card.purple-card::before{
-                background: var(--purple-bg);
-                color: var(--purple);
-            }
+            .stat-card.gold-card::before{ background: var(--gold-bg); color: var(--gold); }
+            .stat-card.blue-card::before{ background: var(--blue-bg); color: var(--blue); }
+            .stat-card.green-card::before{ background: rgba(90,122,92,.10); color: var(--sage); }
+            .stat-card.orange-card::before{ background: var(--orange-bg); color: var(--orange); }
+            .stat-card.purple-card::before{ background: var(--purple-bg); color: var(--purple); }
 
             .stat-icon-wrapper{
                 width: 44px;
@@ -222,26 +194,11 @@
                 z-index: 1;
             }
 
-            .bg-guests-icon{
-                background: var(--gold-lt);
-                color: var(--gold);
-            }
-            .bg-pending-icon{
-                background: var(--blue-lt);
-                color: var(--blue);
-            }
-            .bg-checkin-icon{
-                background: var(--sage-lt);
-                color: var(--sage);
-            }
-            .bg-checkout-icon{
-                background: var(--orange-lt);
-                color: var(--orange);
-            }
-            .bg-arrival-icon{
-                background: var(--purple-lt);
-                color: var(--purple);
-            }
+            .bg-guests-icon{ background: var(--gold-lt); color: var(--gold); }
+            .bg-pending-icon{ background: var(--blue-lt); color: var(--blue); }
+            .bg-checkin-icon{ background: var(--sage-lt); color: var(--sage); }
+            .bg-checkout-icon{ background: var(--orange-lt); color: var(--orange); }
+            .bg-arrival-icon{ background: var(--purple-lt); color: var(--purple); }
 
             .stat-data{
                 display: flex;
@@ -275,28 +232,19 @@
             }
 
             @media (max-width: 1200px){
-                .stats-grid{
-                    grid-template-columns: repeat(3, minmax(0, 1fr));
-                }
+                .stats-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
             }
             @media (max-width: 820px){
                 .hms-main{
                     margin-left: 0;
                     width: 100%;
                 }
-                .stats-grid{
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                }
+                .stats-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
             }
             @media (max-width: 520px){
-                .stats-grid{
-                    grid-template-columns: 1fr;
-                }
+                .stats-grid{ grid-template-columns: 1fr; }
             }
 
-            /* =========================
-               FILTER
-            ========================= */
             .filter-card{
                 background: var(--paper) !important;
                 border: 1px solid var(--border) !important;
@@ -352,9 +300,7 @@
                 appearance:none !important;
             }
 
-            .filter-card .f-input{
-                padding-left: 40px !important;
-            }
+            .filter-card .f-input{ padding-left: 40px !important; }
 
             .filter-card .f-input:focus,
             .filter-card .f-select:focus{
@@ -405,17 +351,10 @@
             }
 
             @media (max-width: 980px){
-                .filter-card .filter-row{
-                    grid-template-columns: 1fr !important;
-                }
-                .filter-card .filter-actions{
-                    justify-content:flex-start !important;
-                }
+                .filter-card .filter-row{ grid-template-columns: 1fr !important; }
+                .filter-card .filter-actions{ justify-content:flex-start !important; }
             }
 
-            /* =========================
-               TABLE
-            ========================= */
             .table-card{
                 background: var(--paper);
                 border: 1px solid var(--border);
@@ -436,13 +375,8 @@
                 vertical-align: middle;
             }
 
-            .hms-table .text-left{
-                text-align: left !important;
-            }
-
-            .action-cell{
-                text-align: center !important;
-            }
+            .hms-table .text-left{ text-align: left !important; }
+            .action-cell{ text-align: center !important; }
 
             .action-btns{
                 display: flex;
@@ -468,12 +402,8 @@
                 border-bottom: 1px solid var(--border);
                 transition: background .15s;
             }
-            .hms-table tbody tr:hover{
-                background:#f0ebe0;
-            }
-            .hms-table tbody tr:last-child{
-                border-bottom:none;
-            }
+            .hms-table tbody tr:hover{ background:#f0ebe0; }
+            .hms-table tbody tr:last-child{ border-bottom:none; }
 
             .hms-table td{
                 padding: 16px 18px;
@@ -510,9 +440,7 @@
                 color: var(--gold);
             }
 
-            .action-cell{
-                text-align:right;
-            }
+            .action-cell{ text-align:right; }
             .action-btns{
                 display:flex;
                 justify-content:flex-end;
@@ -558,7 +486,6 @@
                 filter: saturate(1.05);
             }
 
-            /* Footer */
             .table-footer{
                 display:flex;
                 align-items:center;
@@ -632,9 +559,6 @@
                 justify-content:center;
             }
 
-            /* =========================
-               BOOKING ID BUTTON
-            ========================= */
             .booking-id-btn{
                 border: none;
                 background: transparent;
@@ -650,14 +574,11 @@
                 transform: translateY(-1px);
             }
 
-            /* =========================
-               DETAIL DRAWER
-            ========================= */
             .booking-detail-overlay{
                 position: fixed;
                 inset: 0;
-                background: rgba(23, 31, 43, 0.28);
-                backdrop-filter: blur(3px);
+                background: rgba(24, 28, 35, 0.22);
+                backdrop-filter: blur(4px);
                 z-index: 1040;
                 opacity: 0;
                 visibility: hidden;
@@ -668,15 +589,15 @@
                 position: fixed;
                 top: 0;
                 right: 0;
-                width: 520px;
+                width: 500px;
                 max-width: 100%;
                 height: 100vh;
-                background: #f8f6f2;
-                border-left: 1px solid #e4ddd2;
-                box-shadow: -18px 0 40px rgba(0,0,0,.14);
+                background: #fcfaf6;
+                border-left: 1px solid #e6ddd0;
+                box-shadow: -20px 0 50px rgba(36, 30, 20, 0.16);
                 z-index: 1050;
                 transform: translateX(100%);
-                transition: transform .28s ease;
+                transition: transform .3s ease;
                 display: flex;
                 flex-direction: column;
             }
@@ -691,68 +612,69 @@
             }
 
             .booking-detail-header{
-                padding: 28px 28px;
-                border-bottom: 1px solid #e4ddd2;
+                padding: 24px 24px 20px;
+                border-bottom: 1px solid #ece2d4;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                background: #f8f6f2;
+                background: #fcfaf6;
                 flex-shrink: 0;
             }
 
             .booking-detail-title{
                 margin: 0;
-                font-size: 18px;
+                font-size: 16px;
                 font-weight: 900;
-                color: #2b3445;
-                letter-spacing: .02em;
+                color: #23324a;
+                letter-spacing: .08em;
                 text-transform: uppercase;
             }
 
             .booking-detail-close{
-                width: 42px;
-                height: 42px;
+                width: 40px;
+                height: 40px;
                 border: none;
                 background: transparent;
                 border-radius: 12px;
-                font-size: 24px;
+                font-size: 22px;
                 color: #94a3b8;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 cursor: pointer;
-                transition: background .18s ease, color .18s ease;
+                transition: all .18s ease;
             }
             .booking-detail-close:hover{
-                background: #ebe7df;
+                background: #f1ece4;
                 color: #334155;
             }
 
             .booking-detail-body{
                 flex: 1;
                 overflow-y: auto;
-                padding: 26px 28px 36px;
+                padding: 22px 24px 32px;
             }
 
             .detail-profile{
                 display: flex;
                 align-items: center;
-                gap: 18px;
-                margin-bottom: 26px;
+                gap: 16px;
+                margin-bottom: 18px;
             }
 
             .detail-avatar{
-                width: 72px;
-                height: 72px;
+                width: 70px;
+                height: 70px;
                 border-radius: 22px;
-                background: linear-gradient(135deg, #2f5bd3, #3b82f6);
+                background: linear-gradient(135deg, #2f66ff, #4f8cff);
                 color: #fff;
-                font-size: 30px;
+                font-size: 28px;
                 font-weight: 900;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 flex-shrink: 0;
+                box-shadow: 0 10px 24px rgba(47, 102, 255, .20);
             }
 
             .detail-profile-text{
@@ -760,99 +682,22 @@
             }
 
             .detail-guest-name{
-                font-size: 20px;
+                font-size: 18px;
                 font-weight: 900;
-                color: #273142;
-                line-height: 1.2;
+                color: #283548;
+                line-height: 1.25;
                 margin: 0 0 4px;
             }
 
             .detail-booking-code{
                 font-size: 14px;
-                color: #64748b;
-                font-weight: 700;
+                color: #7c8aa0;
+                font-weight: 800;
                 margin: 0;
             }
 
-            .detail-grid{
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 22px 18px;
-                margin-bottom: 30px;
-            }
-
-            .detail-item-label{
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-bottom: 6px;
-                font-size: 12px;
-                font-weight: 900;
-                letter-spacing: .08em;
-                text-transform: uppercase;
-                color: #94a3b8;
-            }
-
-            .detail-item-label i{
-                font-size: 14px;
-            }
-
-            .detail-item-value{
-                font-size: 18px;
-                font-weight: 900;
-                color: #273142;
-                line-height: 1.35;
-            }
-
-            .detail-section{
-                margin-bottom: 26px;
-            }
-
-            .detail-section-title{
-                margin: 0 0 14px;
-                font-size: 13px;
-                font-weight: 900;
-                letter-spacing: .10em;
-                text-transform: uppercase;
-                color: #94a3b8;
-            }
-
-            .detail-contact-box{
-                background: #eef1f5;
-                border-radius: 18px;
-                padding: 18px 18px;
-            }
-
-            .detail-contact-row{
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                color: #334155;
-                font-size: 15px;
-                font-weight: 700;
-            }
-
-            .detail-contact-row + .detail-contact-row{
-                margin-top: 14px;
-            }
-
-            .detail-contact-row i{
-                color: #7c8aa0;
-                font-size: 18px;
-                width: 20px;
-                text-align: center;
-            }
-
-            .detail-note-box{
-                background: #f3eddc;
-                border: 1px solid #eadfb8;
-                border-radius: 18px;
-                padding: 18px 18px;
-                color: #9a5b1f;
-                font-size: 15px;
-                font-weight: 700;
-                line-height: 1.6;
-                min-height: 72px;
+            .detail-section-status{
+                margin-bottom: 18px;
             }
 
             .detail-status-badge{
@@ -865,11 +710,12 @@
                 font-weight: 900;
                 letter-spacing: .08em;
                 text-transform: uppercase;
+                box-shadow: inset 0 0 0 1px rgba(0,0,0,.04);
             }
 
             .status-reserved{
-                background: #fef3c7;
-                color: #b45309;
+                background: #fff4cf;
+                color: #b7791f;
             }
             .status-checkin{
                 background: #dcfce7;
@@ -888,9 +734,115 @@
                 color: #6d28d9;
             }
 
+            .detail-grid{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 18px 16px;
+                margin-bottom: 22px;
+            }
+
+            .detail-grid > div{
+                background: #fffdfa;
+                border: 1px solid #eee4d6;
+                border-radius: 18px;
+                padding: 14px 16px;
+            }
+
+            .detail-item-label{
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 8px;
+                font-size: 11px;
+                font-weight: 900;
+                letter-spacing: .08em;
+                text-transform: uppercase;
+                color: #94a3b8;
+            }
+
+            .detail-item-label i{
+                font-size: 13px;
+            }
+
+            .detail-item-value{
+                font-size: 16px;
+                font-weight: 900;
+                color: #273142;
+                line-height: 1.45;
+                white-space: normal;
+                word-break: break-word;
+            }
+
+            .detail-section{
+                margin-bottom: 22px;
+            }
+
+            .detail-section-title{
+                margin: 0 0 10px;
+                font-size: 12px;
+                font-weight: 900;
+                letter-spacing: .10em;
+                text-transform: uppercase;
+                color: #94a3b8;
+            }
+
+            .detail-contact-box{
+                background: #f5f7fb;
+                border: 1px solid #e5ebf3;
+                border-radius: 20px;
+                padding: 16px 18px;
+            }
+
+            .detail-contact-row{
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                color: #334155;
+                font-size: 15px;
+                font-weight: 800;
+                line-height: 1.5;
+                white-space: normal;
+                word-break: break-word;
+            }
+
+            .detail-contact-row + .detail-contact-row{
+                margin-top: 12px;
+            }
+
+            .detail-contact-row i{
+                color: #7c8aa0;
+                font-size: 18px;
+                width: 20px;
+                text-align: center;
+            }
+
+            .detail-note-box{
+                background: #fffaf0;
+                border: 1px solid #edd9ab;
+                border-radius: 18px;
+                padding: 16px 18px;
+                color: #9a5b1f;
+                font-size: 15px;
+                font-weight: 700;
+                line-height: 1.7;
+                min-height: 64px;
+                white-space: normal;
+                word-break: break-word;
+            }
+
+            #detailAssignedRoomDetails{
+                background: #fffaf0;
+                border: 1px solid #ead6a5;
+                color: #9a6324;
+            }
+
             @media (max-width: 768px){
                 .booking-detail-drawer{
                     width: 100%;
+                }
+
+                .booking-detail-body{
+                    padding: 20px 18px 28px;
                 }
 
                 .detail-grid{
@@ -906,7 +858,6 @@
             <jsp:include page="sidebar.jsp" />
 
             <main class="hms-main">
-                <!-- Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h1 class="dashboard-title">Today Operation</h1>
@@ -920,7 +871,6 @@
                     </a>
                 </div>
 
-                <!-- Stats -->
                 <div class="stats-grid mb-4">
                     <div class="stat-card gold-card" data-tag="Guests">
                         <div class="stat-icon-wrapper bg-guests-icon">
@@ -973,7 +923,6 @@
                     </div>
                 </div>
 
-                <!-- Filter -->
                 <form class="filter-card" method="get" action="dashboard">
                     <input type="hidden" name="index" value="1">
                     <input type="hidden" name="size" value="${currentSize}">
@@ -984,7 +933,7 @@
                             <div class="search-wrap">
                                 <i class="bi bi-search"></i>
                                 <input class="f-input" type="text"
-                                       placeholder="Search by booking_id, guest name"
+                                       placeholder="Search by booking_id, guest name, room number"
                                        name="txtSearch"
                                        value="${searchValue}">
                             </div>
@@ -994,9 +943,9 @@
                             <label>Status</label>
                             <select class="f-select" name="filterStatus">
                                 <option value="0" ${statusValue == '0' ? 'selected' : ''}>All Status</option>
-                                <option value="1" ${statusValue == '1' ? 'selected' : ''}>Reserved</option>
-                                <option value="2" ${statusValue == '2' ? 'selected' : ''}>Checked-in</option>
-                                <option value="3" ${statusValue == '3' ? 'selected' : ''}>Completed</option>
+                                <option value="2" ${statusValue == '2' ? 'selected' : ''}>Reserved</option>
+                                <option value="3" ${statusValue == '3' ? 'selected' : ''}>Checked-in</option>
+                                <option value="4" ${statusValue == '4' ? 'selected' : ''}>Completed</option>
                             </select>
                         </div>
 
@@ -1017,7 +966,6 @@
                     </div>
                 </form>
 
-                <!-- Table -->
                 <div class="table-card">
                     <table class="hms-table">
                         <thead>
@@ -1042,13 +990,16 @@
                                             class="booking-id-btn"
                                             data-booking-id="${b.bookingId}"
                                             data-guest-name="${b.guestName}"
-                                            data-room-type="${b.roomTypeName}"
+                                            data-booked-type="${b.roomTypeName}"
                                             data-checkin="${b.checkInDate}"
                                             data-checkout="${b.checkOutDate}"
                                             data-num-rooms="${b.numRooms}"
-                                            data-room-no="${b.roomNo != null ? b.roomNo : '—'}"
+                                            data-room-no="${b.assignedRoomNos != null ? b.assignedRoomNos : '—'}"
+                                            data-room-detail="${b.assignedRoomDetails != null ? b.assignedRoomDetails : '—'}"
                                             data-num-persons="${b.numPersons > 0 ? b.numPersons : '—'}"
-                                            data-status="${b.bookingStatus}">
+                                            data-status="${b.bookingStatus}"
+                                            data-phone="${b.phone != null ? b.phone : '—'}"
+                                            data-email="${b.email != null ? b.email : '—'}">
                                             #${b.bookingId}
                                         </button>
                                     </td>
@@ -1057,7 +1008,7 @@
                                     <td><span class="tag-pill">${b.roomTypeName}</span></td>
                                     <td class="cell-muted">${b.checkInDate} <br> ${b.checkOutDate}</td>
                                     <td>${b.numRooms}</td>
-                                    <td class="cell-muted">${b.roomNo != null ? b.roomNo : "—"}</td>
+                                    <td class="cell-muted">${b.assignedRoomNos != null ? b.assignedRoomNos : "—"}</td>
                                     <td>
                                         <c:choose>
                                             <c:when test="${b.bookingStatus == 2}">
@@ -1085,14 +1036,20 @@
                                                 </c:when>
 
                                                 <c:when test="${b.bookingStatus == 3}">
-                                                    <a class="btn-action btn-checkout" href="checkout?bookingId=${b.bookingId}">
+                                                    <a class="btn-action btn-checkout" href="checkout-process?bookingId=${b.bookingId}">
                                                         <i class="bi bi-box-arrow-right"></i> Check-out
                                                     </a>
                                                 </c:when>
 
-                                                <c:otherwise>
+                                                <c:when test="${b.bookingStatus == 4}">
                                                     <span class="badge bg-light text-dark border px-3 py-2" style="width: 135px; border-radius: 12px;">
                                                         COMPLETED
+                                                    </span>
+                                                </c:when>
+
+                                                <c:otherwise>
+                                                    <span class="badge bg-light text-dark border px-3 py-2" style="width: 135px; border-radius: 12px;">
+                                                        —
                                                     </span>
                                                 </c:otherwise>
                                             </c:choose>
@@ -1112,7 +1069,6 @@
                         </tbody>
                     </table>
 
-                    <!-- Footer -->
                     <div class="table-footer">
                         <div class="footer-left">
                             Show
@@ -1142,7 +1098,6 @@
             </main>
         </div>
 
-        <!-- DETAIL DRAWER -->
         <div id="bookingDetailOverlay" class="booking-detail-overlay"></div>
 
         <aside id="bookingDetailDrawer" class="booking-detail-drawer" aria-hidden="true">
@@ -1162,7 +1117,7 @@
                     </div>
                 </div>
 
-                <div class="detail-section" style="margin-bottom:20px;">
+                <div class="detail-section-status">
                     <span id="detailStatusBadge" class="detail-status-badge status-other">Status</span>
                 </div>
 
@@ -1186,9 +1141,9 @@
                     <div>
                         <div class="detail-item-label">
                             <i class="bi bi-building"></i>
-                            <span>Loại phòng</span>
+                            <span>Booked Type</span>
                         </div>
-                        <div class="detail-item-value" id="detailRoomType">—</div>
+                        <div class="detail-item-value" id="detailBookedType">—</div>
                     </div>
 
                     <div>
@@ -1210,10 +1165,15 @@
                     <div>
                         <div class="detail-item-label">
                             <i class="bi bi-houses"></i>
-                            <span>Phòng được gán</span>
+                            <span>Assigned Rooms</span>
                         </div>
                         <div class="detail-item-value" id="detailRoomNo">—</div>
                     </div>
+                </div>
+
+                <div class="detail-section">
+                    <h5 class="detail-section-title">Chi tiết phòng đã gán</h5>
+                    <div class="detail-note-box" id="detailAssignedRoomDetails">—</div>
                 </div>
 
                 <div class="detail-section">
@@ -1221,18 +1181,13 @@
                     <div class="detail-contact-box">
                         <div class="detail-contact-row">
                             <i class="bi bi-telephone"></i>
-                            <span id="detailPhone"></span>
+                            <a href="#" id="detailPhone" style="text-decoration:none; color:inherit;">—</a>
                         </div>
                         <div class="detail-contact-row">
                             <i class="bi bi-envelope"></i>
-                            <span id="detailEmail">Chưa có email</span>
+                            <a href="#" id="detailEmail" style="text-decoration:none; color:inherit;">—</a>
                         </div>
                     </div>
-                </div>
-
-                <div class="detail-section">
-                    <h5 class="detail-section-title">Ghi chú</h5>
-                    <div class="detail-note-box" id="detailNote">Không có ghi chú nào.</div>
                 </div>
             </div>
         </aside>
@@ -1278,8 +1233,6 @@
                         return {text: "Checked-in", className: "detail-status-badge status-checkin"};
                     case "4":
                         return {text: "Completed", className: "detail-status-badge status-completed"};
-                    case "6":
-                        return {text: "No-show", className: "detail-status-badge status-noshow"};
                     default:
                         return {text: "Other", className: "detail-status-badge status-other"};
                 }
@@ -1288,23 +1241,38 @@
             function openBookingDetail(btn) {
                 const bookingId = btn.dataset.bookingId || "—";
                 const guestName = btn.dataset.guestName || "—";
-                const roomType = btn.dataset.roomType || "—";
+                const bookedType = btn.dataset.bookedType || "—";
                 const checkin = btn.dataset.checkin || "—";
                 const checkout = btn.dataset.checkout || "—";
                 const numRooms = btn.dataset.numRooms || "—";
                 const roomNo = btn.dataset.roomNo || "—";
+                const roomDetail = btn.dataset.roomDetail || "—";
                 const numPersons = btn.dataset.numPersons || "—";
                 const status = btn.dataset.status || "";
+                const phone = btn.dataset.phone || "—";
+                const email = btn.dataset.email || "—";
 
                 document.getElementById("detailAvatar").textContent = getInitials(guestName);
                 document.getElementById("detailGuestName").textContent = guestName;
                 document.getElementById("detailBookingCode").textContent = "BK-" + bookingId;
                 document.getElementById("detailCheckin").textContent = checkin;
                 document.getElementById("detailCheckout").textContent = checkout;
-                document.getElementById("detailRoomType").textContent = roomType;
+                document.getElementById("detailBookedType").textContent = bookedType;
                 document.getElementById("detailNumPersons").textContent = numPersons;
                 document.getElementById("detailNumRooms").textContent = numRooms;
                 document.getElementById("detailRoomNo").textContent = roomNo;
+
+                document.getElementById("detailAssignedRoomDetails").innerHTML =
+                        (roomDetail || "—").split(", ").join("<br>");
+
+                const phoneEl = document.getElementById("detailPhone");
+                const emailEl = document.getElementById("detailEmail");
+
+                phoneEl.textContent = phone;
+                phoneEl.href = phone !== "—" ? "tel:" + phone : "#";
+
+                emailEl.textContent = email;
+                emailEl.href = email !== "—" ? "mailto:" + email : "#";
 
                 const statusBadge = document.getElementById("detailStatusBadge");
                 const statusInfo = mapStatus(status);

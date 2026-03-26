@@ -136,6 +136,14 @@
     return Array.from(document.querySelectorAll(".bk-qty .qty-input"));
   }
 
+  function getQtyMin(input) {
+    return parseInt(input.dataset.min || input.getAttribute("min") || "1", 10);
+  }
+
+  function getQtyMax(input) {
+    return parseInt(input.dataset.max || input.getAttribute("max") || "20", 10);
+  }
+
   function refreshRoomQtyButtons() {
     const inputs = getAllQtyInputs();
 
@@ -146,8 +154,8 @@
       const plusBtn = wrap.querySelector(".qty-btn.plus");
       const minusBtn = wrap.querySelector(".qty-btn.minus");
       const current = parseInt(input.value || "0", 10);
-      const min = parseInt(input.getAttribute("min") || "0", 10);
-      const max = parseInt(input.getAttribute("max") || "20", 10);
+      const min = getQtyMin(input);
+      const max = getQtyMax(input);
 
       if (minusBtn) {
         minusBtn.disabled = current <= min;
@@ -157,6 +165,21 @@
         plusBtn.disabled = current >= max;
       }
     });
+  }
+
+  function clampTopRoomQty() {
+    const input = document.getElementById("topRoomQty");
+    if (!input) return;
+
+    const min = parseInt(input.getAttribute("min") || "1", 10);
+    const max = parseInt(input.getAttribute("max") || "20", 10);
+    let val = parseInt(input.value || min, 10);
+
+    if (isNaN(val)) val = min;
+    if (val < min) val = min;
+    if (val > max) val = max;
+
+    input.value = val;
   }
 
   /* =========================
@@ -175,9 +198,11 @@
     const input = wrap?.querySelector(".qty-input");
     if (!input) return;
 
-    const max = parseInt(input.getAttribute("max") || "20", 10);
-    const min = parseInt(input.getAttribute("min") || "0", 10);
+    const max = getQtyMax(input);
+    const min = getQtyMin(input);
     let val = parseInt(input.value || "0", 10);
+
+    if (isNaN(val)) val = min;
 
     if (plusBtn) {
       if (val < max) val++;
@@ -186,6 +211,9 @@
     if (minusBtn && val > min) {
       val--;
     }
+
+    if (val < min) val = min;
+    if (val > max) val = max;
 
     input.value = val;
     refreshRoomQtyButtons();
@@ -358,7 +386,9 @@
     const checkIn = document.querySelector('input[name="checkIn"]')?.value || "";
     const checkOut = document.querySelector('input[name="checkOut"]')?.value || "";
 
-    const qty = parseInt(card.querySelector(".qty-input")?.value || "0", 10);
+    const qtyInput = card.querySelector(".qty-input");
+    const qty = parseInt(qtyInput?.value || "0", 10);
+    const maxQty = qtyInput ? getQtyMax(qtyInput) : 0;
 
     if (!checkIn || !checkOut) {
       showCardError(card, "Please select check-in and check-out dates.");
@@ -367,6 +397,11 @@
 
     if (qty <= 0) {
       showCardError(card, "Please select at least 1 room before booking.");
+      return;
+    }
+
+    if (maxQty > 0 && qty > maxQty) {
+      showCardError(card, `Only ${maxQty} room(s) are available for this room type in the selected date range.`);
       return;
     }
 
@@ -403,7 +438,8 @@
       `&children=${encodeURIComponent(children)}` +
       `&checkIn=${encodeURIComponent(checkIn)}` +
       `&checkOut=${encodeURIComponent(checkOut)}`;
-
+// Dòng 441 trong booking.js, trước window.location.href = url;
+console.log("Navigating to:", url);
     window.location.href = url;
   });
 
@@ -424,16 +460,42 @@
     box.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    initSliders();
-    initGuests();
-    refreshRoomQtyButtons();
+  // ✅ FIX: Script load ở cuối trang nên DOM đã sẵn sàng — gọi thẳng, không dùng DOMContentLoaded
+  initSliders();
+  initGuests();
+  refreshRoomQtyButtons();
+  clampTopRoomQty();
 
-    const roomQtyFilter = document.getElementById("roomQty");
-    if (roomQtyFilter) {
-      roomQtyFilter.addEventListener("input", refreshRoomQtyButtons);
-      roomQtyFilter.addEventListener("change", refreshRoomQtyButtons);
-    }
-  });
+  const roomQtyFilter = document.getElementById("topRoomQty");
+  if (roomQtyFilter) {
+    roomQtyFilter.addEventListener("input", clampTopRoomQty);
+    roomQtyFilter.addEventListener("change", clampTopRoomQty);
+  }
 
 })();
+
+function applySort() {
+  const sortSelect = document.getElementById("sortSelect");
+  if (!sortSelect) return;
+
+  const ctx = document.body.getAttribute("data-ctx") || "";
+  const params = new URLSearchParams(window.location.search);
+
+  params.set("sort", sortSelect.value);
+
+  const q = document.querySelector('input[name="q"]')?.value || "";
+  const checkIn = document.querySelector('input[name="checkIn"]')?.value || "";
+  const checkOut = document.querySelector('input[name="checkOut"]')?.value || "";
+  const adults = document.getElementById("bkAdults")?.value || "2";
+  const children = document.getElementById("bkChildren")?.value || "0";
+  const roomQty = document.getElementById("topRoomQty")?.value || "1";
+
+  params.set("q", q);
+  params.set("checkIn", checkIn);
+  params.set("checkOut", checkOut);
+  params.set("adults", adults);
+  params.set("children", children);
+  params.set("roomQty", roomQty);
+
+  window.location.href = `${ctx}/booking?${params.toString()}`;
+}

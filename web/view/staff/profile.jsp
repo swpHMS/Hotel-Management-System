@@ -9,8 +9,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:wght@600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/sidebar-styles.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/staff/app.css">
+    <link rel="stylesheet"
+      href="${pageContext.request.contextPath}/assets/css/staff/app.css">
+
+<link rel="stylesheet"
+      href="${pageContext.request.contextPath}/assets/css/admin/sidebar-styles.css"/>
+
+<link rel="stylesheet"
+      href="${pageContext.request.contextPath}/assets/css/staff/dashboard-styles.css">
+
+<link rel="stylesheet"
+      href="${pageContext.request.contextPath}/assets/css/staff/room.css">
     <style>
         :root {
             --regal-cream: #f5f0e8;
@@ -108,7 +117,7 @@
                                 <div class="edit-mode">
                                     <input type="text" name="fullName" id="fullNameInput" class="form-control" 
                                            value="${staff.fullName}" oninput="checkName(this)">
-                                    <div class="invalid-feedback">Vui lòng nhập tên chỉ chứa chữ cái và khoảng trắng.</div>
+                                    <div class="invalid-feedback">Please enter a name containing only letters and spaces.</div>
                                 </div>
                             </div>
                         </div>
@@ -127,7 +136,7 @@
                                 <div class="edit-mode">
                                     <input type="text" name="phone" id="phoneInput" class="form-control" 
                                            value="${staff.phone}" maxlength="10" oninput="checkPhone(this)">
-                                    <div class="invalid-feedback">Số điện thoại phải có 10 số và bắt đầu bằng số 0.</div>
+                                    <div class="invalid-feedback">Phone numbers must have 10 digits and begin with the number 0.</div>
                                 </div>
                             </div>
                         </div>

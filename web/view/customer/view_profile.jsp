@@ -57,7 +57,7 @@
                 </div>
             </div>
             <a class="vp2-editBtn"
-               href="${pageContext.request.contextPath}/customer/dashboard?tab=editProfile">
+               href="${pageContext.request.contextPath}/customer/profile/edit">
                 ✎ Edit Profile
             </a>
 

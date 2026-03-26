@@ -28,7 +28,7 @@ public class AuthorizationFilter implements Filter {
     }
 
     private boolean mustLogin(String path) {
-        return path.contains("/booking")
+        return path.startsWith("/booking")
                 || path.contains("/search")
                 || path.contains("/rooms/filter")
                 || path.contains("/room/filter")
@@ -37,16 +37,17 @@ public class AuthorizationFilter implements Filter {
     }
 
     private boolean isPublicPath(String path) {
-        return path.startsWith("/login")
-                || path.startsWith("/logout")
-                || path.startsWith("/register")
-                || path.startsWith("/reset-password")
-                || path.startsWith("/verify")
-                || path.startsWith("/home")
-                || path.startsWith("/policy")
-                || path.contains("view/auth");
-                
-    }
+    return path.contains("/login")
+            || path.startsWith("/logout")
+            || path.startsWith("/register")
+            || path.startsWith("/reset-password")
+            || path.startsWith("/verify")
+            || path.startsWith("/home")
+            || path.startsWith("/policy")
+            || path.startsWith("/vnpay-create")
+            || path.startsWith("/vnpay-return")
+            || path.contains("view/auth");
+}
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -72,9 +73,20 @@ public class AuthorizationFilter implements Filter {
             if (user == null) {
                 res.sendRedirect(contextPath + "/login");
                 return;
-            }
-            chain.doFilter(request, response);
+            }else if(user.getRoleId()==2){
+               res.sendRedirect(contextPath + "/manager/dashboard");
+               return;
+            }else if(user.getRoleId()==3){
+                res.sendRedirect(contextPath + "/receptionist/dashboard");
+                return;
+            }else if(user.getRoleId()==4){
+                res.sendRedirect(contextPath + "/staff/room-operations");
+                return;
+            }else{
+                chain.doFilter(request, response);
             return;
+            }
+            
         }
 
         
@@ -111,7 +123,7 @@ public class AuthorizationFilter implements Filter {
 
         // Receptionist
         if (roleId == 3) {
-            if (path.startsWith("/receptionist")
+            if (path.contains("/receptionist")
                     || path.contains("view/staff/profile.jsp")
                     || path.contains("staff-profile")) {
                 chain.doFilter(request, response);
@@ -128,7 +140,7 @@ public class AuthorizationFilter implements Filter {
                     || path.contains("staff-profile")) {
                 chain.doFilter(request, response);
             } else {
-                res.sendRedirect(contextPath + "/staff");
+                res.sendRedirect(contextPath + "/staff/room-operations");
             }
             return;
         }
@@ -138,7 +150,7 @@ public class AuthorizationFilter implements Filter {
             boolean customerAllowed = isPublicPath(path)
                     || mustLogin(path);
 
-            if (customerAllowed) {
+            if (customerAllowed || uri.contains("/customer") || uri.contains("/current_bookings")){
                 chain.doFilter(request, response);
             } else {
                 res.sendRedirect(contextPath + "/home");

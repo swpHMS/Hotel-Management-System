@@ -24,6 +24,7 @@ import model.Room;
 public class CreateRoomServlet extends HttpServlet {
 
     private static final int MAX_BULK_ROOMS = 200;
+    private final RoomDAO dao = new RoomDAO();
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -40,8 +41,6 @@ public class CreateRoomServlet extends HttpServlet {
             out.println("</html>");
         }
     }
-
-    private final RoomDAO dao = new RoomDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -78,23 +77,19 @@ public class CreateRoomServlet extends HttpServlet {
         String floorRaw = safeTrim(request.getParameter("floor"));
         String statusRaw = safeTrim(request.getParameter("status"));
 
-        // Room number required
         if (roomNo.isEmpty()) {
             errors.add("Room number is required.");
         }
 
-        // Room number numeric, max 4 digits
         if (!roomNo.isEmpty() && !roomNo.matches("^\\d{1,4}$")) {
             errors.add("Room number must contain only digits and have at most 4 digits.");
         }
 
-        // Floor: 0 < floor < 99
         int floor = parseInt(floorRaw, -1);
         if (floor <= 0 || floor >= 99) {
             errors.add("Floor must be greater than 0 and less than 99.");
         }
 
-        // Room type exists
         int roomTypeId = parseInt(roomTypeIdRaw, -1);
         if (roomTypeId <= 0) {
             errors.add("Please select a room type.");
@@ -102,13 +97,11 @@ public class CreateRoomServlet extends HttpServlet {
             errors.add("Selected room type does not exist.");
         }
 
-        // Status valid
         int status = parseInt(statusRaw, -1);
         if (!isValidStatus(status)) {
             errors.add("Invalid room status.");
         }
 
-        // Room number match floor
         if (floor > 0 && floor < 99 && roomNo.matches("^\\d{1,4}$")) {
             if (!roomNo.startsWith(String.valueOf(floor))) {
                 errors.add("Room number must match the floor. Example: floor " + floor
@@ -116,7 +109,6 @@ public class CreateRoomServlet extends HttpServlet {
             }
         }
 
-        // Room number unique
         if (roomNo.matches("^\\d{1,4}$") && dao.isRoomNoExists(roomNo)) {
             errors.add("Room number already exists.");
         }
@@ -159,13 +151,11 @@ public class CreateRoomServlet extends HttpServlet {
         String startRoomNoRaw = safeTrim(request.getParameter("startRoomNo"));
         String endRoomNoRaw = safeTrim(request.getParameter("endRoomNo"));
 
-        // Floor: 0 < floor < 99
         int floor = parseInt(floorRaw, -1);
         if (floor <= 0 || floor >= 99) {
             errors.add("Floor must be greater than 0 and less than 99.");
         }
 
-        // Room type exists
         int roomTypeId = parseInt(roomTypeIdRaw, -1);
         if (roomTypeId <= 0) {
             errors.add("Please select a room type.");
@@ -173,7 +163,6 @@ public class CreateRoomServlet extends HttpServlet {
             errors.add("Selected room type does not exist.");
         }
 
-        // Status valid
         int status = parseInt(statusRaw, -1);
         if (!isValidStatus(status)) {
             errors.add("Invalid room status.");
@@ -186,7 +175,6 @@ public class CreateRoomServlet extends HttpServlet {
             errors.add("End room number is required.");
         }
 
-        // numeric, max 4 digits
         if (!startRoomNoRaw.isEmpty() && !startRoomNoRaw.matches("^\\d{1,4}$")) {
             errors.add("Start room number must contain only digits and have at most 4 digits.");
         }
@@ -201,18 +189,15 @@ public class CreateRoomServlet extends HttpServlet {
             startRoomNo = Integer.parseInt(startRoomNoRaw);
             endRoomNo = Integer.parseInt(endRoomNoRaw);
 
-            // Start ≤ End
             if (startRoomNo > endRoomNo) {
                 errors.add("Start room number must be less than or equal to end room number.");
             }
 
-            // Bulk max limit
             int totalRooms = endRoomNo - startRoomNo + 1;
             if (totalRooms > MAX_BULK_ROOMS) {
                 errors.add("You can create at most " + MAX_BULK_ROOMS + " rooms at one time.");
             }
 
-            // Bulk same floor
             String floorPrefix = String.valueOf(floor);
             if (!startRoomNoRaw.startsWith(floorPrefix) || !endRoomNoRaw.startsWith(floorPrefix)) {
                 errors.add("Start room number and end room number must match the selected floor.");
@@ -233,13 +218,11 @@ public class CreateRoomServlet extends HttpServlet {
         for (int i = startRoomNo; i <= endRoomNo; i++) {
             String roomNo = String.valueOf(i);
 
-            // bảo vệ thêm: phải cùng tầng
             if (!roomNo.startsWith(String.valueOf(floor))) {
                 skippedRooms.add(roomNo);
                 continue;
             }
 
-            // không được trùng
             if (dao.isRoomNoExists(roomNo)) {
                 skippedRooms.add(roomNo);
                 continue;
@@ -259,9 +242,13 @@ public class CreateRoomServlet extends HttpServlet {
             }
         }
 
+//        // Sync lại 1 lần nữa cho chắc theo COUNT(*) thực tế
+//        if (!createdRooms.isEmpty()) {
+//            dao.syncInventoryTotalRoomsByRoomType(roomTypeId);
+//        }
+
         request.setAttribute("activeMode", "bulk");
-        request.setAttribute("successMessage",
-                "Created " + createdRooms.size() + " room(s) successfully.");
+        request.setAttribute("successMessage", "Created " + createdRooms.size() + " room(s) successfully.");
         request.setAttribute("createdRooms", createdRooms);
         request.setAttribute("skippedRooms", skippedRooms);
 

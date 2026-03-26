@@ -14,37 +14,43 @@ import model.Room;
 @WebServlet(name = "UpdateRoomServlet", urlPatterns = {"/manager/room-registry/update"})
 public class UpdateRoomServlet extends HttpServlet {
 
-    private final RoomDAO roomDAO = new RoomDAO();
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+   @Override
+protected void doGet(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+    RoomDAO roomDAO = new RoomDAO();
+    String roomIdRaw = request.getParameter("id");
+    System.out.println("DEBUG roomIdRaw = " + roomIdRaw);
 
-        String roomIdRaw = request.getParameter("id");
+    try {
+        int roomId = Integer.parseInt(roomIdRaw);
+        System.out.println("DEBUG parsed roomId = " + roomId);
 
-        try {
-            int roomId = Integer.parseInt(roomIdRaw);
+        Room room = roomDAO.getRoomById(roomId);
+        System.out.println("DEBUG room found = " + (room != null));
 
-            Room room = roomDAO.getRoomById(roomId);
-            if (room == null) {
-                response.sendRedirect(request.getContextPath() + "/manager/room-registry");
-                return;
-            }
-
-            request.setAttribute("room", room);
-            request.setAttribute("roomTypeList", roomDAO.getAllRoomTypes());
-
-            request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
-
-        } catch (Exception e) {
+        if (room == null) {
             response.sendRedirect(request.getContextPath() + "/manager/room-registry");
+            return;
         }
+
+        List<Room> roomTypeList = roomDAO.getAllRoomTypes();
+        System.out.println("DEBUG roomTypeList size = " + roomTypeList.size());
+
+        request.setAttribute("room", room);
+        request.setAttribute("roomTypeList", roomTypeList);
+        request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        throw new ServletException(e);
     }
+}
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+RoomDAO roomDAO = new RoomDAO();
         request.setCharacterEncoding("UTF-8");
 
         List<String> errorList = new ArrayList<>();
@@ -73,6 +79,9 @@ public class UpdateRoomServlet extends HttpServlet {
             errorList.add("Room number is required.");
         } else {
             roomNo = roomNo.trim();
+            if (!roomNo.matches("^\\d{1,4}$")) {
+                errorList.add("Room number must contain only digits and have at most 4 digits.");
+            }
         }
 
         try {
@@ -86,8 +95,8 @@ public class UpdateRoomServlet extends HttpServlet {
 
         try {
             floor = Integer.parseInt(floorRaw);
-            if (floor < 1) {
-                errorList.add("Floor must be greater than or equal to 1.");
+            if (floor <= 0 || floor >= 99) {
+                errorList.add("Floor must be greater than 0 and less than 99.");
             }
         } catch (Exception e) {
             errorList.add("Floor is invalid.");
@@ -100,6 +109,13 @@ public class UpdateRoomServlet extends HttpServlet {
             }
         } catch (Exception e) {
             errorList.add("Status is invalid.");
+        }
+
+        if (roomNo != null && !roomNo.isEmpty() && floor > 0 && floor < 99 && roomNo.matches("^\\d{1,4}$")) {
+            if (!roomNo.startsWith(String.valueOf(floor))) {
+                errorList.add("Room number must match the floor. Example: floor " + floor
+                        + " should use room numbers starting with " + floor + ".");
+            }
         }
 
         if (roomNo != null && !roomNo.isEmpty() && roomDAO.isRoomNoExistsForOtherRoom(roomNo, roomId)) {
@@ -127,9 +143,11 @@ public class UpdateRoomServlet extends HttpServlet {
         } else {
             errorList.add("Update room failed. Please try again.");
             request.setAttribute("errorList", errorList);
-            request.setAttribute("room", room);
-            request.setAttribute("roomTypeList", roomDAO.getAllRoomTypes());
-            request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
+            List<Room> roomTypeList = roomDAO.getAllRoomTypes();
+
+request.setAttribute("room", room);
+request.setAttribute("roomTypeList", roomTypeList);
+request.getRequestDispatcher("/view/manager/update-room.jsp").forward(request, response);
         }
     }
 }

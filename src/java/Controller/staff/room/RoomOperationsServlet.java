@@ -40,6 +40,12 @@ public class RoomOperationsServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
+            String statusParam = request.getParameter("status");
+        if (statusParam == null) {
+            response.sendRedirect(request.getContextPath()
+                    + "/staff/room-operations?status=4&pageSize=10");
+            return;
+        }
             String keyword = request.getParameter("keyword");
             Integer status = parseStatus(request.getParameter("status"));
 

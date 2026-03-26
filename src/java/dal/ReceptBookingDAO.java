@@ -29,6 +29,8 @@ public class ReceptBookingDAO extends DBContext {
     // ================================
     public List<RoomTypeCard> getRoomTypeCards(Date checkIn, Date checkOut, int roomsRequested) {
         List<RoomTypeCard> list = new ArrayList<>();
+        
+        syncInventoryData(checkIn, checkOut);
 
         String sql
                 = "WITH Dates AS ( "
@@ -38,9 +40,10 @@ public class ReceptBookingDAO extends DBContext {
                 + "   FROM Dates "
                 + "   WHERE DATEADD(DAY, 1, d) < ? "
                 + ") "
+                // ---> ĐÃ SỬA: Chuyển phép trừ phòng bảo trì (status = 3) lên SELECT tổng <---
                 + "SELECT rt.room_type_id, rt.name, "
                 + "       COALESCE(rv.price, 0) AS rate_per_night, "
-                + "       COALESCE(inv.min_available, 0) AS available_rooms "
+                + "       COALESCE(inv.min_available, 0) - (SELECT COUNT(*) FROM dbo.rooms rm WHERE rm.room_type_id = rt.room_type_id AND rm.status = 3) AS available_rooms "
                 + "FROM dbo.room_types rt "
                 + "OUTER APPLY ( "
                 + "   SELECT TOP 1 price, rate_version_id "
@@ -50,6 +53,7 @@ public class ReceptBookingDAO extends DBContext {
                 + "   ORDER BY valid_from DESC, rate_version_id DESC "
                 + ") rv "
                 + "OUTER APPLY ( "
+                // ---> ĐÃ SỬA: Trả lại hàm MIN nguyên bản, không chứa SELECT bên trong <---
                 + "   SELECT MIN( "
                 + "       COALESCE(i.total_rooms,0) - COALESCE(i.booked_rooms,0) - COALESCE(i.held_rooms,0) "
                 + "   ) AS min_available "
@@ -72,7 +76,7 @@ public class ReceptBookingDAO extends DBContext {
                 while (rs.next()) {
                     RoomTypeCard c = new RoomTypeCard();
                     c.setRoomTypeId(rs.getInt("room_type_id"));
-c.setRoomTypeName(rs.getString("name"));
+                    c.setRoomTypeName(rs.getString("name"));
                     c.setRatePerNight(rs.getBigDecimal("rate_per_night").longValue());
 
                     int av = rs.getInt("available_rooms");
@@ -92,7 +96,6 @@ c.setRoomTypeName(rs.getString("name"));
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return list;
     }
 
@@ -119,7 +122,9 @@ c.setRoomTypeName(rs.getString("name"));
 
         final String sqlCheckDay
                 = "SELECT 1 FROM dbo.room_type_inventory "
-                + "WHERE room_type_id=? AND inventory_date=? AND (total_rooms - booked_rooms - held_rooms) >= ?";
+                + "WHERE room_type_id=? AND inventory_date=? "
+                + "  AND (total_rooms - booked_rooms - held_rooms "
+                + "       - (SELECT COUNT(*) FROM dbo.rooms WHERE room_type_id = dbo.room_type_inventory.room_type_id AND status = 3)) >= ?";
 
         final String sqlInsertNight
                 = "INSERT INTO dbo.availability_hold_nights(hold_id, room_type_id, inventory_date, quantity) VALUES(?,?,?,?)";
@@ -147,12 +152,11 @@ c.setRoomTypeName(rs.getString("name"));
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (!rs.next()) {
-throw new SQLException("Cannot get hold_id.");
+                        throw new SQLException("Cannot get hold_id.");
                     }
                     holdId = rs.getInt(1);
                 }
             }
-
             try (PreparedStatement ps = con.prepareStatement(sqlInsertItem)) {
                 ps.setInt(1, holdId);
                 ps.setInt(2, roomTypeId);
@@ -228,7 +232,7 @@ throw new SQLException("Cannot get hold_id.");
                 + "   FROM dbo.rate_versions "
                 + "   WHERE room_type_id = i.room_type_id "
                 + "     AND h.check_in_date BETWEEN valid_from AND valid_to "
-+ "   ORDER BY valid_from DESC, rate_version_id DESC "
+                + "   ORDER BY valid_from DESC, rate_version_id DESC "
                 + ") rv "
                 + "WHERE h.hold_id = ?;";
 
@@ -299,7 +303,7 @@ throw new SQLException("Cannot get hold_id.");
                     + "   FROM dbo.rate_versions "
                     + "   WHERE room_type_id = i.room_type_id "
                     + "     AND h.check_in_date BETWEEN valid_from AND valid_to "
-+ "   ORDER BY valid_from DESC, rate_version_id DESC "
+                    + "   ORDER BY valid_from DESC, rate_version_id DESC "
                     + ") rv "
                     + "WHERE h.hold_id = ?;";
 
@@ -358,100 +362,124 @@ throw new SQLException("Cannot get hold_id.");
 
             // ===== 4) UPSERT CUSTOMER =====
             String safeFullName = (fullName == null) ? null : fullName.trim();
-String safePhone = (phone == null) ? null : phone.trim();
-String safeIdentity = (identity == null) ? null : identity.trim();
-String safeAddress = (address == null) ? null : address.trim();
+            String safePhone = (phone == null) ? null : phone.trim();
+            String safeIdentity = (identity == null) ? null : identity.trim();
+            String safeAddress = (address == null) ? null : address.trim();
 
-if (safeFullName == null || safeFullName.isEmpty()) {
-    throw new SQLException("Customer full name is required.");
-}
-if (safePhone != null && safePhone.isEmpty()) safePhone = null;
-if (safeIdentity != null && safeIdentity.isEmpty()) safeIdentity = null;
-if (safeAddress != null && safeAddress.isEmpty()) safeAddress = null;
-
-Integer customerId = null;
-
-if (safePhone != null && !safePhone.isBlank()) {
-    String sqlFindCustomerByPhone =
-            "SELECT TOP 1 customer_id FROM dbo.customers WHERE phone = ? ORDER BY customer_id DESC;";
-    try (PreparedStatement ps = con.prepareStatement(sqlFindCustomerByPhone)) {
-        ps.setString(1, safePhone);
-        try (ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                customerId = rs.getInt("customer_id");
+            if (safeFullName == null || safeFullName.isEmpty()) {
+                throw new SQLException("Customer full name is required.");
             }
-        }
-    }
-}
-
-if (customerId == null && safeIdentity != null && !safeIdentity.isBlank()) {
-    String sqlFindCustomerByIdentity =
-            "SELECT TOP 1 customer_id FROM dbo.customers WHERE identity_number = ? ORDER BY customer_id DESC;";
-    try (PreparedStatement ps = con.prepareStatement(sqlFindCustomerByIdentity)) {
-        ps.setString(1, safeIdentity);
-        try (ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                customerId = rs.getInt("customer_id");
+            if (safePhone != null && safePhone.isEmpty()) {
+                safePhone = null;
             }
-        }
-    }
-}
-System.out.println("safeFullName = [" + safeFullName + "]");
-System.out.println("safePhone = [" + safePhone + "]");
-System.out.println("safeIdentity = [" + safeIdentity + "]");
-System.out.println("safeAddress = [" + safeAddress + "]");
-System.out.println("customerId = " + customerId);
-if (customerId == null) {
-    String sqlInsertCustomer =
-            "INSERT INTO dbo.customers(full_name, phone, identity_number, residence_address) "
-            + "VALUES(?, ?, ?, ?);";
-
-    try (PreparedStatement ps = con.prepareStatement(sqlInsertCustomer, Statement.RETURN_GENERATED_KEYS)) {
-        ps.setString(1, safeFullName);
-
-        if (safePhone == null) ps.setNull(2, Types.VARCHAR);
-        else ps.setString(2, safePhone);
-
-        if (safeIdentity == null) ps.setNull(3, Types.VARCHAR);
-        else ps.setString(3, safeIdentity);
-
-        if (safeAddress == null) ps.setNull(4, Types.NVARCHAR);
-        else ps.setString(4, safeAddress);
-
-        ps.executeUpdate();
-
-        try (ResultSet rs = ps.getGeneratedKeys()) {
-            if (!rs.next()) {
-                throw new SQLException("Cannot get customer_id.");
+            if (safeIdentity != null && safeIdentity.isEmpty()) {
+                safeIdentity = null;
             }
-            customerId = rs.getInt(1);
-        }
-    }
-} else {
-    String sqlUpdateCustomer =
-            "UPDATE dbo.customers "
-            + "SET full_name = ?, "
-            + "    phone = ?, "
-            + "    identity_number = ?, "
-            + "    residence_address = ? "
-            + "WHERE customer_id = ?;";
+            if (safeAddress != null && safeAddress.isEmpty()) {
+                safeAddress = null;
+            }
 
-    try (PreparedStatement ps = con.prepareStatement(sqlUpdateCustomer)) {
-        ps.setString(1, safeFullName);
+            Integer customerId = null;
 
-        if (safePhone == null) ps.setNull(2, Types.VARCHAR);
-        else ps.setString(2, safePhone);
+            if (safePhone != null && !safePhone.isBlank()) {
+                String sqlFindCustomerByPhone
+                        = "SELECT TOP 1 customer_id FROM dbo.customers WHERE phone = ? ORDER BY customer_id DESC;";
+                try (PreparedStatement ps = con.prepareStatement(sqlFindCustomerByPhone)) {
+                    ps.setString(1, safePhone);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            customerId = rs.getInt("customer_id");
+                        }
+                    }
+                }
+            }
 
-        if (safeIdentity == null) ps.setNull(3, Types.VARCHAR);
-else ps.setString(3, safeIdentity);
+            if (customerId == null && safeIdentity != null && !safeIdentity.isBlank()) {
+                String sqlFindCustomerByIdentity
+                        = "SELECT TOP 1 customer_id FROM dbo.customers WHERE identity_number = ? ORDER BY customer_id DESC;";
+                try (PreparedStatement ps = con.prepareStatement(sqlFindCustomerByIdentity)) {
+                    ps.setString(1, safeIdentity);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            customerId = rs.getInt("customer_id");
+                        }
+                    }
+                }
+            }
+            System.out.println("safeFullName = [" + safeFullName + "]");
+            System.out.println("safePhone = [" + safePhone + "]");
+            System.out.println("safeIdentity = [" + safeIdentity + "]");
+            System.out.println("safeAddress = [" + safeAddress + "]");
+            System.out.println("customerId = " + customerId);
+            if (customerId == null) {
+                String sqlInsertCustomer
+                        = "INSERT INTO dbo.customers(full_name, phone, identity_number, residence_address) "
+                        + "VALUES(?, ?, ?, ?);";
 
-        if (safeAddress == null) ps.setNull(4, Types.NVARCHAR);
-        else ps.setString(4, safeAddress);
+                try (PreparedStatement ps = con.prepareStatement(sqlInsertCustomer, Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setString(1, safeFullName);
 
-        ps.setInt(5, customerId);
-        ps.executeUpdate();
-    }
-}
+                    if (safePhone == null) {
+                        ps.setNull(2, Types.VARCHAR);
+                    } else {
+                        ps.setString(2, safePhone);
+                    }
+
+                    if (safeIdentity == null) {
+                        ps.setNull(3, Types.VARCHAR);
+                    } else {
+                        ps.setString(3, safeIdentity);
+                    }
+
+                    if (safeAddress == null) {
+                        ps.setNull(4, Types.NVARCHAR);
+                    } else {
+                        ps.setString(4, safeAddress);
+                    }
+
+                    ps.executeUpdate();
+
+                    try (ResultSet rs = ps.getGeneratedKeys()) {
+                        if (!rs.next()) {
+                            throw new SQLException("Cannot get customer_id.");
+                        }
+                        customerId = rs.getInt(1);
+                    }
+                }
+            } else {
+                String sqlUpdateCustomer
+                        = "UPDATE dbo.customers "
+                        + "SET full_name = ?, "
+                        + "    phone = ?, "
+                        + "    identity_number = ?, "
+                        + "    residence_address = ? "
+                        + "WHERE customer_id = ?;";
+
+                try (PreparedStatement ps = con.prepareStatement(sqlUpdateCustomer)) {
+                    ps.setString(1, safeFullName);
+
+                    if (safePhone == null) {
+                        ps.setNull(2, Types.VARCHAR);
+                    } else {
+                        ps.setString(2, safePhone);
+                    }
+
+                    if (safeIdentity == null) {
+                        ps.setNull(3, Types.VARCHAR);
+                    } else {
+                        ps.setString(3, safeIdentity);
+                    }
+
+                    if (safeAddress == null) {
+                        ps.setNull(4, Types.NVARCHAR);
+                    } else {
+                        ps.setString(4, safeAddress);
+                    }
+
+                    ps.setInt(5, customerId);
+                    ps.executeUpdate();
+                }
+            }
 
             // ===== 5) INSERT BOOKING =====
             String sqlInsertBooking
@@ -493,17 +521,14 @@ else ps.setString(3, safeIdentity);
             try (PreparedStatement ps = con.prepareStatement(sqlInsertPayment)) {
                 ps.setInt(1, bookingId);
                 ps.setBigDecimal(2, new java.math.BigDecimal(depositAmount));
-
                 int methodInt = 1; // CASH
                 if ("QR".equalsIgnoreCase(paymentMethod)) {
                     methodInt = 2;
                 }
-
                 int statusInt = 1; // SUCCESS
                 if ("FAILED".equalsIgnoreCase(paymentStatus)) {
                     statusInt = 0;
                 }
-
                 ps.setInt(3, methodInt);
                 ps.setInt(4, statusInt);
                 ps.executeUpdate();
@@ -515,10 +540,9 @@ else ps.setString(3, safeIdentity);
                     + "SET i.booked_rooms = i.booked_rooms + n.quantity, "
                     + "    i.held_rooms   = i.held_rooms   - n.quantity "
                     + "FROM dbo.room_type_inventory i "
-+ "JOIN dbo.availability_hold_nights n "
+                    + "JOIN dbo.availability_hold_nights n "
                     + "  ON n.room_type_id = i.room_type_id AND n.inventory_date = i.inventory_date "
                     + "WHERE n.hold_id = ?;";
-
             try (PreparedStatement ps = con.prepareStatement(sqlMoveHeldToBooked)) {
                 ps.setInt(1, holdId);
                 int aff = ps.executeUpdate();
@@ -535,10 +559,8 @@ else ps.setString(3, safeIdentity);
                 ps.setInt(2, holdId);
                 ps.executeUpdate();
             }
-
             con.commit();
             return bookingId;
-
         } catch (SQLException ex) {
             if (con != null) {
                 con.rollback();
@@ -577,131 +599,149 @@ else ps.setString(3, safeIdentity);
     }
 
     // ===== internal tx helper =====
-private void releaseHoldByIdTx(Connection con, int holdId) throws SQLException {
-
-    String sqlDec =
-            "UPDATE i " +
-            "SET i.held_rooms = CASE " +
-            "    WHEN i.held_rooms >= n.quantity THEN i.held_rooms - n.quantity " +
-            "    ELSE 0 " +
-            "END " +
-            "FROM dbo.room_type_inventory i " +
-            "JOIN dbo.availability_hold_nights n " +
-            "  ON n.room_type_id = i.room_type_id " +
-            " AND n.inventory_date = i.inventory_date " +
-            "WHERE n.hold_id = ?;";
-
-    try (PreparedStatement ps = con.prepareStatement(sqlDec)) {
-        ps.setInt(1, holdId);
-        ps.executeUpdate();
+    private void releaseHoldByIdTx(Connection con, int holdId) throws SQLException {
+        String sqlDec
+                = "UPDATE i "
+                + "SET i.held_rooms = CASE "
+                + "    WHEN i.held_rooms >= n.quantity THEN i.held_rooms - n.quantity "
+                + "    ELSE 0 "
+                + "END "
+                + "FROM dbo.room_type_inventory i "
+                + "JOIN dbo.availability_hold_nights n "
+                + "  ON n.room_type_id = i.room_type_id "
+                + " AND n.inventory_date = i.inventory_date "
+                + "WHERE n.hold_id = ?;";
+        try (PreparedStatement ps = con.prepareStatement(sqlDec)) {
+            ps.setInt(1, holdId);
+            ps.executeUpdate();
+        }
+        String sqlHold
+                = "UPDATE dbo.availability_holds "
+                + "SET status = ? "
+                + "WHERE hold_id = ? AND status = ?;";
+        try (PreparedStatement ps = con.prepareStatement(sqlHold)) {
+            ps.setInt(1, HOLD_EXPIRED);
+            ps.setInt(2, holdId);
+            ps.setInt(3, HOLD_ACTIVE);
+            ps.executeUpdate();
+        }
     }
-
-    String sqlHold =
-            "UPDATE dbo.availability_holds " +
-            "SET status = ? " +
-            "WHERE hold_id = ? AND status = ?;";
-
-    try (PreparedStatement ps = con.prepareStatement(sqlHold)) {
-        ps.setInt(1, HOLD_EXPIRED);
-        ps.setInt(2, holdId);
-        ps.setInt(3, HOLD_ACTIVE);
-        ps.executeUpdate();
-    }
-}
+    
 // ================================
 // DỌN DẸP CÁC HOLD QUÁ HẠN
 // ================================
-public int expireHolds() throws SQLException {
-
-    Connection con = null;
-
-    try {
-
-        con = connection;
-        con.setAutoCommit(false);
-
-        int affected = expireHoldsTx(con);
-
-        con.commit();
-
-        return affected;
-
-    } catch (SQLException ex) {
-
-        if (con != null) {
-            con.rollback();
-        }
-
-        throw ex;
-
-    } finally {
-
-        if (con != null) {
-            con.setAutoCommit(true);
-        }
-
-    }
-}
-
-private int expireHoldsTx(Connection con) throws SQLException {
-
-    String select =
-            "SELECT hold_id " +
-            "FROM dbo.availability_holds " +
-            "WHERE status = ? " +
-            "AND expires_at < SYSDATETIME()";
-
-    int count = 0;
-
-    try (PreparedStatement psSel = con.prepareStatement(select)) {
-
-        psSel.setInt(1, HOLD_ACTIVE);
-
-        try (ResultSet rs = psSel.executeQuery()) {
-
-            while (rs.next()) {
-
-                int holdId = rs.getInt("hold_id");
-
-                try (PreparedStatement psInv = con.prepareStatement(
-                        "UPDATE inv " +
-                        "SET inv.held_rooms = CASE " +
-                        "    WHEN inv.held_rooms >= hn.quantity THEN inv.held_rooms - hn.quantity " +
-                        "    ELSE 0 " +
-                        "END " +
-                        "FROM dbo.room_type_inventory inv " +
-                        "JOIN dbo.availability_hold_nights hn " +
-                        "  ON hn.room_type_id = inv.room_type_id " +
-                        " AND hn.inventory_date = inv.inventory_date " +
-                        "WHERE hn.hold_id = ?"
-                )) {
-
-                    psInv.setInt(1, holdId);
-                    psInv.executeUpdate();
-
-                }
-
-                try (PreparedStatement psUp = con.prepareStatement(
-                        "UPDATE dbo.availability_holds " +
-                        "SET status = ? " +
-                        "WHERE hold_id = ? AND status = ?"
-                )) {
-
-                    psUp.setInt(1, HOLD_EXPIRED);
-                    psUp.setInt(2, holdId);
-                    psUp.setInt(3, HOLD_ACTIVE);
-                    psUp.executeUpdate();
-
-                }
-
-                count++;
-
+    public int expireHolds() throws SQLException {
+        Connection con = null;
+        try {
+            con = connection;
+            con.setAutoCommit(false);
+            int affected = expireHoldsTx(con);
+            con.commit();
+            return affected;
+        } catch (SQLException ex) {
+            if (con != null) {
+                con.rollback();
             }
-
+            throw ex;
+        } finally {
+            if (con != null) {
+                con.setAutoCommit(true);
+            }
         }
-
     }
 
-    return count;
-}
+    private int expireHoldsTx(Connection con) throws SQLException {
+        String select
+                = "SELECT hold_id "
+                + "FROM dbo.availability_holds "
+                + "WHERE status = ? "
+                + "AND expires_at < SYSDATETIME()";
+        int count = 0;
+        try (PreparedStatement psSel = con.prepareStatement(select)) {
+            psSel.setInt(1, HOLD_ACTIVE);
+            try (ResultSet rs = psSel.executeQuery()) {
+                while (rs.next()) {
+                    int holdId = rs.getInt("hold_id");
+                    try (PreparedStatement psInv = con.prepareStatement(
+                            "UPDATE inv "
+                            + "SET inv.held_rooms = CASE "
+                            + "    WHEN inv.held_rooms >= hn.quantity THEN inv.held_rooms - hn.quantity "
+                            + "    ELSE 0 "
+                            + "END "
+                            + "FROM dbo.room_type_inventory inv "
+                            + "JOIN dbo.availability_hold_nights hn "
+                            + "  ON hn.room_type_id = inv.room_type_id "
+                            + " AND hn.inventory_date = inv.inventory_date "
+                            + "WHERE hn.hold_id = ?"
+                    )) {
+                        psInv.setInt(1, holdId);
+                        psInv.executeUpdate();
+                    }
+                    try (PreparedStatement psUp = con.prepareStatement(
+                            "UPDATE dbo.availability_holds "
+                            + "SET status = ? "
+                            + "WHERE hold_id = ? AND status = ?"
+                    )) {
+                        psUp.setInt(1, HOLD_EXPIRED);
+                        psUp.setInt(2, holdId);
+                        psUp.setInt(3, HOLD_ACTIVE);
+                        psUp.executeUpdate();
+                    }
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+    
+    // ================================
+    // HÀM TỰ ĐỘNG KHỞI TẠO & CẬP NHẬT KHO PHÒNG (LAZY INITIALIZATION)
+    // ================================
+    private void syncInventoryData(Date checkIn, Date checkOut) {
+        if (checkIn == null || checkOut == null) return;
+
+        // LỆNH 1: Tự động Insert các ngày còn thiếu trong khoảng Check-in đến Check-out
+        String sqlInsert = 
+            "WITH Dates AS ( " +
+            "   SELECT CAST(? AS DATE) AS d " +
+            "   UNION ALL " +
+            "   SELECT DATEADD(DAY, 1, d) FROM Dates WHERE DATEADD(DAY, 1, d) < CAST(? AS DATE) " +
+            ") " +
+            "INSERT INTO dbo.room_type_inventory (room_type_id, inventory_date, total_rooms, booked_rooms, held_rooms) " +
+            "SELECT rt.room_type_id, x.d, " +
+            "       (SELECT COUNT(*) FROM dbo.rooms r WHERE r.room_type_id = rt.room_type_id), " +
+            "       0, 0 " +
+            "FROM dbo.room_types rt " +
+            "CROSS JOIN Dates x " +
+            "WHERE rt.status = 1 " +
+            "  AND NOT EXISTS ( " +
+            "      SELECT 1 FROM dbo.room_type_inventory i " +
+            "      WHERE i.room_type_id = rt.room_type_id AND i.inventory_date = x.d " +
+            ") OPTION (MAXRECURSION 400);";
+
+        // LỆNH 2: Tự động Update đếm lại total_rooms nếu nó đang = 0 hoặc NULL
+        String sqlUpdate = 
+            "UPDATE i " +
+            "SET i.total_rooms = (SELECT COUNT(*) FROM dbo.rooms r WHERE r.room_type_id = i.room_type_id) " +
+            "FROM dbo.room_type_inventory i " +
+            "WHERE i.inventory_date >= ? AND i.inventory_date < ? " +
+            "  AND (i.total_rooms = 0 OR i.total_rooms IS NULL);";
+
+        try (PreparedStatement ps1 = connection.prepareStatement(sqlInsert);
+             PreparedStatement ps2 = connection.prepareStatement(sqlUpdate)) {
+
+            // Chạy lệnh Insert
+            ps1.setDate(1, checkIn);
+            ps1.setDate(2, checkOut);
+            ps1.executeUpdate();
+
+            // Chạy lệnh Update
+            ps2.setDate(1, checkIn);
+            ps2.setDate(2, checkOut);
+            ps2.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }
