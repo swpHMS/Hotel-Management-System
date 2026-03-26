@@ -5,9 +5,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import model.ManagerDashboardKpi;
 
 public class ManagerDashboardDAO extends DBContext {
 
@@ -21,7 +20,7 @@ public class ManagerDashboardDAO extends DBContext {
         }
     }
 
-    public Map<String, Integer> getRoomStatusCounts() {
+    public ManagerDashboardKpi getRoomStatusCounts() {
         String sql = """
             SELECT
               COUNT(*) AS total,
@@ -32,22 +31,22 @@ public class ManagerDashboardDAO extends DBContext {
             FROM dbo.rooms
         """;
 
-        Map<String, Integer> m = new HashMap<>();
+        ManagerDashboardKpi kpi = new ManagerDashboardKpi();
         try (Connection con = getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             if (rs.next()) {
-                m.put("totalInventory", rs.getInt("total"));
-                m.put("liveSuites", rs.getInt("available"));
-                m.put("guestStays", rs.getInt("occupied"));
-                m.put("servicing", rs.getInt("dirty"));
-                m.put("outOfOrder", rs.getInt("maintenance"));
+                kpi.setTotalInventory(rs.getInt("total"));
+                kpi.setAvailable(rs.getInt("available"));
+                kpi.setOccupied(rs.getInt("occupied"));
+                kpi.setDirty(rs.getInt("dirty"));
+                kpi.setMaintenance(rs.getInt("maintenance"));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return m;
+        return kpi;
     }
 
     public List<TrendPoint> getBookingVelocityDaily(int daysBack) {
