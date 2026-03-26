@@ -44,7 +44,7 @@ public class CustomerListServlet extends HttpServlet {
             req.setAttribute("q", q);
             req.setAttribute("gender", genderStr == null ? "all" : genderStr);
             req.setAttribute("status", status == null ? "all" : status);
-             req.setAttribute("active", "customers");
+            req.setAttribute("active", "customers");
             req.getRequestDispatcher("/view/admin/customer_list.jsp").forward(req, resp);
 
         } catch (Exception e) {

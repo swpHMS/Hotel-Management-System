@@ -27,6 +27,7 @@ public class AdminPolicyServlet extends HttpServlet {
             request.setAttribute("activeKey", "");
             request.setAttribute("selectedPolicy", null);
             request.setAttribute("active", "system");
+            
             request.getRequestDispatcher("/view/admin/policy_list.jsp").forward(request, response);
             return;
         }
@@ -45,7 +46,8 @@ public class AdminPolicyServlet extends HttpServlet {
         request.setAttribute("policies", policies);
         request.setAttribute("activeKey", key);
         request.setAttribute("selectedPolicy", selected);
-       request.setAttribute("active", "system");
+        request.setAttribute("active", "system_config");
+
         request.getRequestDispatcher("/view/admin/policy_list.jsp").forward(request, response);
     }
 
