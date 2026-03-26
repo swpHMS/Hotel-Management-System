@@ -162,7 +162,11 @@ public class BookingConfirmServlet extends HttpServlet {
 
         LocalDate checkIn = parseDate(checkInRaw);
         LocalDate checkOut = parseDate(checkOutRaw);
-
+System.out.println("=== CONFIRM GET ===");
+System.out.println("roomTypeId=" + roomTypeId + ", roomQty=" + roomQty);
+System.out.println("adults=" + adults + ", children=" + children);
+System.out.println("checkIn=" + checkIn + ", checkOut=" + checkOut);
+System.out.println("totalGuests=" + (adults+children));
         if (roomTypeId <= 0 || roomQty <= 0 || adults <= 0 || children < 0
                 || checkIn == null || checkOut == null || !checkOut.isAfter(checkIn)) {
             resp.sendRedirect(req.getContextPath() + "/booking?err=invalid");

@@ -36,7 +36,7 @@
                 <div class="toolbar">
 
                     <div class="tabs">
-                        <a class="tab ${empty selectedStatus || selectedStatus == 'all' ? 'active' : ''}"
+                        <a class="tab ${selectedStatus == 'all' ? 'active' : ''}"
                            href="${pageContext.request.contextPath}/staff/room-operations?status=all&pageSize=${pageSize}&keyword=${keyword}">
                             All
                         </a>
