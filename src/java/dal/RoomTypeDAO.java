@@ -19,26 +19,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RoomTypeDAO {
+
     private static final String SQL_GET_MAX_INVENTORY_DATE
-        = "SELECT MAX(inventory_date) AS max_date FROM dbo.room_type_inventory";
+            = "SELECT MAX(inventory_date) AS max_date FROM dbo.room_type_inventory";
 
-private static final String SQL_GET_LAST_TOTAL_ROOMS_BY_ROOM_TYPE
-        = "SELECT rti.room_type_id, rti.total_rooms "
-        + "FROM dbo.room_type_inventory rti "
-        + "JOIN ( "
-        + "    SELECT room_type_id, MAX(inventory_date) AS max_date "
-        + "    FROM dbo.room_type_inventory "
-        + "    GROUP BY room_type_id "
-        + ") x ON x.room_type_id = rti.room_type_id "
-        + "   AND x.max_date = rti.inventory_date";
+    private static final String SQL_GET_LAST_TOTAL_ROOMS_BY_ROOM_TYPE
+            = "SELECT rti.room_type_id, rti.total_rooms "
+            + "FROM dbo.room_type_inventory rti "
+            + "JOIN ( "
+            + "    SELECT room_type_id, MAX(inventory_date) AS max_date "
+            + "    FROM dbo.room_type_inventory "
+            + "    GROUP BY room_type_id "
+            + ") x ON x.room_type_id = rti.room_type_id "
+            + "   AND x.max_date = rti.inventory_date";
 
-private static final String SQL_GET_ACTIVE_ROOM_TYPES
-        = "SELECT room_type_id FROM dbo.room_types WHERE status = 1";
+    private static final String SQL_GET_ACTIVE_ROOM_TYPES
+            = "SELECT room_type_id FROM dbo.room_types WHERE status = 1";
 
-private static final String SQL_INSERT_INVENTORY_DAY
-        = "INSERT INTO dbo.room_type_inventory "
-        + "(room_type_id, inventory_date, total_rooms, booked_rooms, held_rooms) "
-        + "VALUES (?, ?, ?, 0, 0)";
+    private static final String SQL_INSERT_INVENTORY_DAY
+            = "INSERT INTO dbo.room_type_inventory "
+            + "(room_type_id, inventory_date, total_rooms, booked_rooms, held_rooms) "
+            + "VALUES (?, ?, ?, 0, 0)";
 
     private volatile String lastErrorMessage;
     private static final LocalDateTime OPEN_ENDED_RATE_DATE_TIME
@@ -98,7 +99,8 @@ private static final String SQL_INSERT_INVENTORY_DAY
             + "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id "
             + "   FROM dbo.rate_versions "
             + "   WHERE room_type_id = rt.room_type_id "
-            + "     AND ? BETWEEN valid_from AND valid_to "
+            + "     AND valid_from <= ? "
+            + "     AND valid_to >= ? "
             + "   ORDER BY valid_from DESC, rate_version_id DESC "
             + ") rv "
             + "WHERE rt.status=1 "
@@ -106,7 +108,6 @@ private static final String SQL_INSERT_INVENTORY_DAY
             + "  AND ( ? = '' OR rt.name LIKE '%%' + ? + '%%' OR rt.description LIKE '%%' + ? + '%%' ) "
             + "  AND ( ? <= rt.max_adult * ? ) "
             + "  AND ( ? <= rt.max_children * ? ) ";
-
     // =====================================================
     // NORMAL HOME LOAD (NO DATE FILTER)
     // =====================================================
@@ -171,109 +172,104 @@ private static final String SQL_INSERT_INVENTORY_DAY
      * Booking search with date range + keyword + capacity by roomQty + sort
      */
     public List<RoomType> searchForBooking(LocalDate checkIn,
-        LocalDate checkOut,
-        String q,
-        int adults,
-        int children,
-        int roomQty,
-        int limit,
-        String sort) {
+            LocalDate checkOut,
+            String q,
+            int adults,
+            int children,
+            int roomQty,
+            int limit,
+            String sort) {
         ensureInventoryUntil(checkOut);
 
-    List<RoomType> list = new ArrayList<>();
-    DBContext db = new DBContext();
+        List<RoomType> list = new ArrayList<>();
+        DBContext db = new DBContext();
 
-    String keyword = (q == null) ? "" : q.trim();
+        String keyword = (q == null) ? "" : q.trim();
 
-    // Số khách / 1 phòng
-    int adultsPerRoom = (int) Math.ceil(adults * 1.0 / Math.max(roomQty, 1));
-    int childrenPerRoom = (int) Math.ceil(children * 1.0 / Math.max(roomQty, 1));
+        // Số khách / 1 phòng
+        int adultsPerRoom = (int) Math.ceil(adults * 1.0 / Math.max(roomQty, 1));
+        int childrenPerRoom = (int) Math.ceil(children * 1.0 / Math.max(roomQty, 1));
 
-    String orderBy;
-    if ("priceAsc".equalsIgnoreCase(sort)) {
-        orderBy = " ORDER BY COALESCE(rv.price, 999999999) ASC, rt.room_type_id DESC";
-    } else if ("priceDesc".equalsIgnoreCase(sort)) {
-        orderBy = " ORDER BY COALESCE(rv.price, 0) DESC, rt.room_type_id DESC";
-    } else {
-        orderBy = " ORDER BY "
-                + " CASE "
-                + "   WHEN rt.max_adult = ? AND rt.max_children = ? THEN 0 "
-                + "   WHEN rt.max_adult = ? AND rt.max_children > ? THEN 1 "
-                + "   WHEN rt.max_adult > ? THEN 2 "
-                + "   ELSE 3 "
-                + " END, "
-                + " (rt.max_adult - ?) ASC, "
-                + " (rt.max_children - ?) ASC, "
-                + " COALESCE(rv.price, 999999999) ASC, "
-                + " COALESCE(inv.available_rooms, 0) DESC, "
-                + " rt.room_type_id DESC";
-    }
-
-    String sql = String.format(SQL_SEARCH_BOOKING_BASE, limit) + orderBy;
-
-    try (Connection con = db.getConnection();
-         PreparedStatement ps = con.prepareStatement(sql)) {
-
-        int idx = 1;
-
-        // inventory range params
-        ps.setDate(idx++, Date.valueOf(checkIn));
-        ps.setDate(idx++, Date.valueOf(checkOut));
-
-        // rate at checkIn
-        ps.setDate(idx++, Date.valueOf(checkIn));
-
-        // availability >= roomQty
-        ps.setInt(idx++, roomQty);
-
-        // keyword
-        ps.setString(idx++, keyword);
-        ps.setString(idx++, keyword);
-        ps.setString(idx++, keyword);
-
-        // tổng sức chứa phải đủ cho tổng số khách
-        ps.setInt(idx++, adults);
-        ps.setInt(idx++, roomQty);
-
-        ps.setInt(idx++, children);
-        ps.setInt(idx++, roomQty);
-
-        // default sort: bind thêm param
-        if (!"priceAsc".equalsIgnoreCase(sort) && !"priceDesc".equalsIgnoreCase(sort)) {
-            ps.setInt(idx++, adultsPerRoom);    // rt.max_adult = ?
-            ps.setInt(idx++, childrenPerRoom);  // rt.max_children = ?
-
-            ps.setInt(idx++, adultsPerRoom);    // rt.max_adult = ?
-            ps.setInt(idx++, childrenPerRoom);  // rt.max_children > ?
-
-            ps.setInt(idx++, adultsPerRoom);    // rt.max_adult > ?
-
-            ps.setInt(idx++, adultsPerRoom);    // (rt.max_adult - ?)
-            ps.setInt(idx++, childrenPerRoom);  // (rt.max_children - ?)
+        String orderBy;
+        if ("priceAsc".equalsIgnoreCase(sort)) {
+            orderBy = " ORDER BY COALESCE(rv.price, 999999999) ASC, rt.room_type_id DESC";
+        } else if ("priceDesc".equalsIgnoreCase(sort)) {
+            orderBy = " ORDER BY COALESCE(rv.price, 0) DESC, rt.room_type_id DESC";
+        } else {
+            orderBy = " ORDER BY "
+                    + " CASE "
+                    + "   WHEN rt.max_adult = ? AND rt.max_children = ? THEN 0 "
+                    + "   WHEN rt.max_adult = ? AND rt.max_children > ? THEN 1 "
+                    + "   WHEN rt.max_adult > ? THEN 2 "
+                    + "   ELSE 3 "
+                    + " END, "
+                    + " (rt.max_adult - ?) ASC, "
+                    + " (rt.max_children - ?) ASC, "
+                    + " COALESCE(rv.price, 999999999) ASC, "
+                    + " COALESCE(inv.available_rooms, 0) DESC, "
+                    + " rt.room_type_id DESC";
         }
 
-        try (ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                RoomType rt = new RoomType();
-                rt.setRoomTypeId(rs.getInt("room_type_id"));
-                rt.setName(rs.getString("name"));
-                rt.setDescription(rs.getString("description"));
-                rt.setMaxAdult(rs.getInt("max_adult"));
-                rt.setMaxChildren(rs.getInt("max_children"));
-                rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
-                rt.setStatus(rs.getInt("status"));
-                rt.setPriceToday(rs.getBigDecimal("price_today"));
-                rt.setAvailableQty(rs.getInt("available_rooms"));
-                list.add(rt);
+        String sql = String.format(SQL_SEARCH_BOOKING_BASE, limit) + orderBy;
+
+        try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+            int idx = 1;
+
+            ps.setDate(idx++, Date.valueOf(checkIn));   // 1 - inventory >= checkIn
+            ps.setDate(idx++, Date.valueOf(checkOut));  // 2 - inventory < checkOut
+
+            ps.setDate(idx++, Date.valueOf(checkIn));   // 3 - valid_from <= checkIn  ← param mới thêm
+            ps.setDate(idx++, Date.valueOf(checkIn));   // 4 - valid_to >= checkIn    ← param mới thêm
+
+            ps.setInt(idx++, roomQty);                 // 5 - available >= roomQty
+
+            ps.setString(idx++, keyword);              // 6 - ? = ''
+            ps.setString(idx++, keyword);              // 7 - name LIKE
+            ps.setString(idx++, keyword);              // 8 - description LIKE
+
+            ps.setInt(idx++, adults);                  // 9 - adults <=
+            ps.setInt(idx++, roomQty);                 // 10 - max_adult * roomQty
+
+            ps.setInt(idx++, children);               // 11 - children <=
+            ps.setInt(idx++, roomQty);                // 12 - max_children * roomQty
+
+            // default sort: bind thêm param
+            if (!"priceAsc".equalsIgnoreCase(sort) && !"priceDesc".equalsIgnoreCase(sort)) {
+                ps.setInt(idx++, adultsPerRoom);    // rt.max_adult = ?
+                ps.setInt(idx++, childrenPerRoom);  // rt.max_children = ?
+
+                ps.setInt(idx++, adultsPerRoom);    // rt.max_adult = ?
+                ps.setInt(idx++, childrenPerRoom);  // rt.max_children > ?
+
+                ps.setInt(idx++, adultsPerRoom);    // rt.max_adult > ?
+
+                ps.setInt(idx++, adultsPerRoom);    // (rt.max_adult - ?)
+                ps.setInt(idx++, childrenPerRoom);  // (rt.max_children - ?)
             }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    RoomType rt = new RoomType();
+                    rt.setRoomTypeId(rs.getInt("room_type_id"));
+                    rt.setName(rs.getString("name"));
+                    rt.setDescription(rs.getString("description"));
+                    rt.setMaxAdult(rs.getInt("max_adult"));
+                    rt.setMaxChildren(rs.getInt("max_children"));
+                    rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
+                    rt.setStatus(rs.getInt("status"));
+                    rt.setPriceToday(rs.getBigDecimal("price_today"));
+                    rt.setAvailableQty(rs.getInt("available_rooms"));
+                    list.add(rt);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-    } catch (Exception e) {
-        e.printStackTrace();
+        return list;
     }
-
-    return list;
-}
 
     /**
      * Overload có sort, limit mặc định = 200
@@ -329,7 +325,7 @@ private static final String SQL_INSERT_INVENTORY_DAY
         if (roomTypeId <= 0 || checkIn == null || checkOut == null || !checkOut.isAfter(checkIn)) {
             return 0;
         }
-ensureInventoryUntil(checkOut);
+        ensureInventoryUntil(checkOut);
         DBContext db = new DBContext();
 
         try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_GET_AVAILABLE_ROOM_QTY)) {
@@ -396,45 +392,47 @@ ensureInventoryUntil(checkOut);
     // EXISTING: get room type by id with rate (keep)
     // =====================================================
     public RoomType getRoomTypeByIdWithRate(int roomTypeId, LocalDate atDate) {
-        String sql
-                = "SELECT rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, "
-                + "       rv.price AS price_today "
-                + "FROM dbo.room_types rt "
-                + "OUTER APPLY ( "
-                + "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id "
-                + "   FROM dbo.rate_versions "
-                + "   WHERE room_type_id = rt.room_type_id "
-                + "     AND ? BETWEEN valid_from AND valid_to "
-                + "   ORDER BY valid_from DESC, rate_version_id DESC "
-                + ") rv "
-                + "WHERE rt.room_type_id = ? AND rt.status = 1";
+    String sql
+            = "SELECT rt.room_type_id, rt.name, rt.description, rt.max_adult, rt.max_children, rt.image_url, rt.status, "
+            + "       rv.price AS price_today "
+            + "FROM dbo.room_types rt "
+            + "OUTER APPLY ( "
+            + "   SELECT TOP 1 price, valid_from, valid_to, rate_version_id "
+            + "   FROM dbo.rate_versions "
+            + "   WHERE room_type_id = rt.room_type_id "
+            + "     AND valid_from <= ? "
+            + "     AND valid_to >= ? "
+            + "   ORDER BY valid_from DESC, rate_version_id DESC "
+            + ") rv "
+            + "WHERE rt.room_type_id = ? AND rt.status = 1";
 
-        DBContext db = new DBContext();
+    DBContext db = new DBContext();
 
-        try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+    try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setDate(1, Date.valueOf(atDate));
-            ps.setInt(2, roomTypeId);
+        ps.setDate(1, Date.valueOf(atDate));   // valid_from <= atDate
+        ps.setDate(2, Date.valueOf(atDate));   // valid_to >= atDate  ← THÊM DÒNG NÀY
+        ps.setInt(3, roomTypeId);             // rt.room_type_id = ? ← ĐỔI TỪ 2 → 3
 
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    RoomType rt = new RoomType();
-                    rt.setRoomTypeId(rs.getInt("room_type_id"));
-                    rt.setName(rs.getString("name"));
-                    rt.setDescription(rs.getString("description"));
-                    rt.setMaxAdult(rs.getInt("max_adult"));
-                    rt.setMaxChildren(rs.getInt("max_children"));
-                    rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
-                    rt.setStatus(rs.getInt("status"));
-                    rt.setPriceToday(rs.getBigDecimal("price_today"));
-                    return rt;
-                }
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                RoomType rt = new RoomType();
+                rt.setRoomTypeId(rs.getInt("room_type_id"));
+                rt.setName(rs.getString("name"));
+                rt.setDescription(rs.getString("description"));
+                rt.setMaxAdult(rs.getInt("max_adult"));
+                rt.setMaxChildren(rs.getInt("max_children"));
+                rt.setImageUrl(normalizeImageUrl(rs.getString("image_url")));
+                rt.setStatus(rs.getInt("status"));
+                rt.setPriceToday(rs.getBigDecimal("price_today"));
+                return rt;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return null;
+    } catch (Exception e) {
+        e.printStackTrace();
     }
+    return null;
+}
 
     public List<RoomType> getAllActiveRoomTypesForHome() {
         List<RoomType> withRate;
@@ -530,8 +528,7 @@ ensureInventoryUntil(checkOut);
         List<RoomTypeManagementView> list = new ArrayList<>();
         DBContext db = new DBContext();
 
-        try (Connection con = db.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             String search = keyword == null ? null : keyword.trim();
             ps.setString(1, search);
             ps.setString(2, search);
@@ -587,9 +584,7 @@ ensureInventoryUntil(checkOut);
         List<Amenity> list = new ArrayList<>();
         DBContext db = new DBContext();
 
-        try (Connection con = db.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Amenity a = new Amenity();
                 a.setAmenityId(rs.getInt("amenity_id"));
@@ -620,8 +615,7 @@ ensureInventoryUntil(checkOut);
                 """;
 
         DBContext db = new DBContext();
-        try (Connection con = db.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, name.trim());
             if (excludeRoomTypeId == null) {
                 ps.setNull(2, Types.INTEGER);
@@ -680,8 +674,7 @@ ensureInventoryUntil(checkOut);
             }
 
             if (roomTypeId <= 0) {
-                try (PreparedStatement psIdentity = con.prepareStatement(selectIdentity);
-                     ResultSet key = psIdentity.executeQuery()) {
+                try (PreparedStatement psIdentity = con.prepareStatement(selectIdentity); ResultSet key = psIdentity.executeQuery()) {
                     if (key != null && key.next()) {
                         roomTypeId = key.getInt("room_type_id");
                         if (key.wasNull()) {
@@ -858,8 +851,7 @@ ensureInventoryUntil(checkOut);
                 """;
 
         DBContext db = new DBContext();
-        try (Connection con = db.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, roomTypeId);
             ps.setInt(2, imageId);
             return ps.executeUpdate() > 0;
@@ -1052,21 +1044,27 @@ ensureInventoryUntil(checkOut);
 
         String plain = storedDescription == null ? "" : storedDescription;
         plain = plain.replaceAll("\\[BED:[^\\]]*\\]", "")
-                     .replaceAll("\\[VIEW:[^\\]]*\\]", "")
-                     .replaceAll("\\[SIZE:[^\\]]*\\]", "")
-                     .trim();
+                .replaceAll("\\[VIEW:[^\\]]*\\]", "")
+                .replaceAll("\\[SIZE:[^\\]]*\\]", "")
+                .trim();
         if (view.getDescriptionPlain() == null || view.getDescriptionPlain().isBlank()) {
             view.setDescriptionPlain(plain);
         }
     }
 
     private String extractToken(String text, String token) {
-        if (text == null) return null;
+        if (text == null) {
+            return null;
+        }
         String marker = "[" + token + ":";
         int start = text.indexOf(marker);
-        if (start < 0) return null;
+        if (start < 0) {
+            return null;
+        }
         int end = text.indexOf("]", start);
-        if (end < 0) return null;
+        if (end < 0) {
+            return null;
+        }
         return text.substring(start + marker.length(), end).trim();
     }
 
@@ -1141,83 +1139,82 @@ ensureInventoryUntil(checkOut);
     }
 
     private static class LegacyDescriptionParts {
+
         private String bedType;
         private String viewType;
         private String roomSize;
         private String plainDescription;
     }
+
     public void ensureInventoryUntil(LocalDate targetDateExclusive) {
-    if (targetDateExclusive == null) {
-        return;
-    }
-
-    DBContext db = new DBContext();
-
-    try (Connection con = db.getConnection()) {
-        con.setAutoCommit(false);
-
-        LocalDate maxDate = null;
-
-        try (PreparedStatement ps = con.prepareStatement(SQL_GET_MAX_INVENTORY_DATE);
-             ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                Date d = rs.getDate("max_date");
-                if (d != null) {
-                    maxDate = d.toLocalDate();
-                }
-            }
-        }
-
-        // Nếu bảng chưa có dữ liệu hoặc đã đủ đến targetDateExclusive - 1 thì không cần làm gì thêm
-        if (maxDate == null || !maxDate.isBefore(targetDateExclusive.minusDays(1))) {
-            con.commit();
+        if (targetDateExclusive == null) {
             return;
         }
 
-        // Lấy total_rooms gần nhất của từng room type
-        Map<Integer, Integer> lastTotalRoomsByType = new HashMap<>();
+        DBContext db = new DBContext();
 
-        try (PreparedStatement ps = con.prepareStatement(SQL_GET_LAST_TOTAL_ROOMS_BY_ROOM_TYPE);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                lastTotalRoomsByType.put(
-                        rs.getInt("room_type_id"),
-                        rs.getInt("total_rooms")
-                );
-            }
-        }
+        try (Connection con = db.getConnection()) {
+            con.setAutoCommit(false);
 
-        // Nếu có room type active nhưng chưa có inventory trước đó, fallback = 0
-        List<Integer> activeRoomTypeIds = new ArrayList<>();
-        try (PreparedStatement ps = con.prepareStatement(SQL_GET_ACTIVE_ROOM_TYPES);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                activeRoomTypeIds.add(rs.getInt("room_type_id"));
-            }
-        }
+            LocalDate maxDate = null;
 
-        LocalDate d = maxDate.plusDays(1);
-
-        try (PreparedStatement psInsert = con.prepareStatement(SQL_INSERT_INVENTORY_DAY)) {
-            while (d.isBefore(targetDateExclusive)) {
-                for (Integer roomTypeId : activeRoomTypeIds) {
-                    int totalRooms = lastTotalRoomsByType.getOrDefault(roomTypeId, 0);
-
-                    psInsert.setInt(1, roomTypeId);
-                    psInsert.setDate(2, Date.valueOf(d));
-                    psInsert.setInt(3, totalRooms);
-                    psInsert.addBatch();
+            try (PreparedStatement ps = con.prepareStatement(SQL_GET_MAX_INVENTORY_DATE); ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Date d = rs.getDate("max_date");
+                    if (d != null) {
+                        maxDate = d.toLocalDate();
+                    }
                 }
-                d = d.plusDays(1);
             }
 
-            psInsert.executeBatch();
+            // Nếu bảng chưa có dữ liệu hoặc đã đủ đến targetDateExclusive - 1 thì không cần làm gì thêm
+            if (maxDate == null || !maxDate.isBefore(targetDateExclusive.minusDays(1))) {
+                con.commit();
+                return;
+            }
+
+            // Lấy total_rooms gần nhất của từng room type
+            Map<Integer, Integer> lastTotalRoomsByType = new HashMap<>();
+
+            try (PreparedStatement ps = con.prepareStatement(SQL_GET_LAST_TOTAL_ROOMS_BY_ROOM_TYPE); ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lastTotalRoomsByType.put(
+                            rs.getInt("room_type_id"),
+                            rs.getInt("total_rooms")
+                    );
+                }
+            }
+
+            // Nếu có room type active nhưng chưa có inventory trước đó, fallback = 0
+            List<Integer> activeRoomTypeIds = new ArrayList<>();
+            try (PreparedStatement ps = con.prepareStatement(SQL_GET_ACTIVE_ROOM_TYPES); ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    activeRoomTypeIds.add(rs.getInt("room_type_id"));
+                }
+            }
+
+            LocalDate d = maxDate.plusDays(1);
+
+            try (PreparedStatement psInsert = con.prepareStatement(SQL_INSERT_INVENTORY_DAY)) {
+                while (d.isBefore(targetDateExclusive)) {
+                    for (Integer roomTypeId : activeRoomTypeIds) {
+                        int totalRooms = lastTotalRoomsByType.getOrDefault(roomTypeId, 0);
+
+                        psInsert.setInt(1, roomTypeId);
+                        psInsert.setDate(2, Date.valueOf(d));
+                        psInsert.setInt(3, totalRooms);
+                        psInsert.addBatch();
+                    }
+                    d = d.plusDays(1);
+                }
+
+                psInsert.executeBatch();
+            }
+
+            con.commit();
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        con.commit();
-
-    } catch (Exception e) {
-        e.printStackTrace();
     }
-}
 }
