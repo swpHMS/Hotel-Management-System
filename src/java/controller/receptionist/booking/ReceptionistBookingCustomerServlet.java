@@ -68,31 +68,32 @@ public class ReceptionistBookingCustomerServlet extends HttpServlet {
         // ===== 1. Lấy dữ liệu từ Form =====
         String fullName = utils.Validation.trimToNull(req.getParameter("fullName"));
         String phone = utils.Validation.trimToNull(req.getParameter("phone"));
-        String email = utils.Validation.trimToNull(req.getParameter("email"));
         String identity = utils.Validation.trimToNull(req.getParameter("identity"));
         String address = utils.Validation.trimToNull(req.getParameter("address"));
 
         java.util.List<String> errors = new java.util.ArrayList<>();
 
-        // ===== 2. Kiểm tra lỗi (Validate) =====
+        // ===== 2. Kiểm tra lỗi bắt buộc (Validate) =====
         if (fullName == null) {
             errors.add("Full Name is required.");
         } else if (!utils.Validation.isValidFullNameNoNumber(fullName)) {
             errors.add("Full Name is invalid (no numbers).");
         }
+
         if (phone == null) {
             errors.add("Phone is required.");
         } else if (!utils.Validation.isPhoneVN(phone)) {
             errors.add("Phone number is invalid (VN format: 0xxxxxxxxx).");
         }
 
-        String emailRegex = "^[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}$";
-        if (!email.matches(emailRegex)) {
-            errors.add("Invalid email format.");
-        }
-        if (identity != null && !utils.Validation.isCCCD(identity)) {
+// BẮT BUỘC NHẬP CCCD
+        if (identity == null) {
+            errors.add("Identity/Passport is required.");
+        } else if (!utils.Validation.isCCCD(identity)) {
             errors.add("Identity/CCCD must be 12 digits.");
         }
+
+// BẮT BUỘC NHẬP ADDRESS
         if (address == null) {
             errors.add("Address is required.");
         } else if (!utils.Validation.minLen(address, 5)) {
@@ -104,7 +105,6 @@ public class ReceptionistBookingCustomerServlet extends HttpServlet {
             req.setAttribute("errors", errors);
             req.setAttribute("fullName", fullName);
             req.setAttribute("phone", phone);
-            req.setAttribute("email", email);
             req.setAttribute("identity", identity);
             req.setAttribute("address", address);
             try {
@@ -130,7 +130,6 @@ public class ReceptionistBookingCustomerServlet extends HttpServlet {
         HttpSession session = req.getSession();
         session.setAttribute("cus_fullName", fullName);
         session.setAttribute("cus_phone", phone);
-        session.setAttribute("cus_email", email);
         session.setAttribute("cus_identity", identity);
         session.setAttribute("cus_address", address);
 
