@@ -16,15 +16,16 @@
         <title>Staff | Service Orders</title>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <link rel="stylesheet"
-      href="${pageContext.request.contextPath}/assets/css/staff/app.css">
+              href="${pageContext.request.contextPath}/assets/css/staff/app.css">
 
-<link rel="stylesheet"
-      href="${pageContext.request.contextPath}/assets/css/admin/sidebar-styles.css"/>
+        <link rel="stylesheet"
+              href="${pageContext.request.contextPath}/assets/css/admin/sidebar-styles.css"/>
 
-<link rel="stylesheet"
-      href="${pageContext.request.contextPath}/assets/css/staff/dashboard-styles.css">
+        <link rel="stylesheet"
+              href="${pageContext.request.contextPath}/assets/css/staff/dashboard-styles.css">
 
         <style>
+            
             :root {
                 --cream:       #f5f0e8;
                 --cream-dark:  #ede7d9;
@@ -88,6 +89,7 @@
             }
 
             .btn-primary {
+                height: 48px;
                 background: var(--amber);
                 color: #fff;
                 border: 0;
@@ -147,6 +149,7 @@
                 color: var(--text);
                 font-family: 'DM Sans', sans-serif;
                 transition: border-color .18s, box-shadow .18s;
+                height: 48px;
             }
             .input::placeholder {
                 color: var(--muted);
@@ -428,7 +431,7 @@
             <div class="staff-content">
                 <div class="topbar">
                     <div>
-                        <div class="title">Manage Services</div>
+                        <div class="title">List Service Order</div>
                     </div>
                     <a class="btn-primary"
                        href="${pageContext.request.contextPath}/staff/service-orders/create?returnId=${selected != null ? selected.serviceOrderId : ''}">
@@ -446,8 +449,8 @@
                                 <div class="tabs">
                                     <form method="get" action="${pageContext.request.contextPath}/staff/service-orders" style="display:contents;">
                                         <button class="tab ${empty param.status ? 'active' : ''}" name="status" value="">All</button>
-                                        <button class="tab ${param.status == '0' ? 'active' : ''}" name="status" value="0">Draft</button>
-                                        <button class="tab ${param.status == '1' ? 'active' : ''}" name="status" value="1">Posted</button>
+                                        <button class="tab ${param.status == '0' ? 'active' : ''}" name="status" value="0">Unfinished</button>
+                                        <button class="tab ${param.status == '1' ? 'active' : ''}" name="status" value="1">Finished</button>
                                         <button class="tab ${param.status == '2' ? 'active' : ''}" name="status" value="2">Cancelled</button>
                                     </form>
                                 </div>
@@ -456,16 +459,31 @@
 
                                 <form method="get" action="${pageContext.request.contextPath}/staff/service-orders">
                                     <input type="hidden" name="status" value="${fn:escapeXml(param.status)}"/>
-                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                                        <input class="input" name="roomNo"    placeholder="Room Number…"  value="${fn:escapeXml(param.roomNo)}"/>
-                                        <input class="input" name="bookingId" placeholder="Booking ID…"  value="${fn:escapeXml(param.bookingId)}"/>
-                                    </div>
-                                    <div style="height:12px;"></div>
-                                    <div style="display:flex; justify-content:flex-end;">
-                                        <button class="btn-primary" type="submit" style="background:var(--brown); box-shadow:0 6px 20px rgba(92,61,46,.22);">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                            Apply Filter
+
+                                    <div style="display:grid; grid-template-columns:1fr 180px auto; gap:12px; align-items:end;">
+
+                                        <!-- Search Room -->
+                                        <input class="input"
+                                               name="roomNo"
+                                               placeholder="Search Room Number..."
+                                               value="${fn:escapeXml(param.roomNo)}"/>
+
+                                        <!-- Search Date -->
+                                        <input class="input"
+                                               type="date"
+                                               name="createdDate"
+                                               value="${fn:escapeXml(param.createdDate)}"/>
+
+                                        <!-- Button -->
+                                        <button class="btn-primary" type="submit"
+                                                style="background:var(--brown); box-shadow:0 6px 20px rgba(92,61,46,.22); height:46px;">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <circle cx="11" cy="11" r="8"/>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                            </svg>
+                                            Apply
                                         </button>
+
                                     </div>
                                 </form>
                             </div>
@@ -476,30 +494,55 @@
                                         <tr>
                                             <th style="width:130px;">Order ID</th>
                                             <th style="width:100px;">Room Number</th>
-                                            <th style="width:110px;">Booking ID</th>
+                                            <th style="width:170px;">Created At</th>
                                             <th style="width:100px;">Status</th>
                                             <th style="text-align:right; padding-right:18px;">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <c:forEach var="o" items="${orders}">
-                                            <tr class="click"
-                                                onclick="location.href = '${pageContext.request.contextPath}/staff/service-orders?id=${o.serviceOrderId}&status=${fn:escapeXml(param.status)}&roomId=${fn:escapeXml(param.roomId)}&bookingId=${fn:escapeXml(param.bookingId)}'">
+                                            <tr class="click ${selected != null && selected.serviceOrderId == o.serviceOrderId ? 'selected' : ''}"
+                                                onclick="location.href = '${pageContext.request.contextPath}/staff/service-orders?id=${o.serviceOrderId}&status=${fn:escapeXml(param.status)}&roomNo=${fn:escapeXml(param.roomNo)}'">
+
                                                 <td>#${o.serviceOrderId}</td>
+
                                                 <td>
                                                     <c:choose>
-                                                        <c:when test="${o.roomNo == null}"><span style="color:var(--muted);">—</span></c:when>
-                                                        <c:otherwise><c:out value="${o.roomNo}"/></c:otherwise>
+                                                        <c:when test="${empty o.roomNo}">
+                                                            <span style="color:var(--muted);">—</span>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <c:out value="${o.roomNo}"/>
+                                                        </c:otherwise>
                                                     </c:choose>
                                                 </td>
-                                                <td>${o.bookingId}</td>
+
                                                 <td>
                                                     <c:choose>
-                                                        <c:when test="${o.status == 0}"><span class="badge b-draft">Draft</span></c:when>
-                                                        <c:when test="${o.status == 1}"><span class="badge b-posted">Posted</span></c:when>
-                                                        <c:otherwise><span class="badge b-cancel">Cancelled</span></c:otherwise>
+                                                        <c:when test="${o.createdAt != null}">
+                                                            <fmt:parseDate value="${o.createdAt}" pattern="yyyy-MM-dd'T'HH:mm:ss" var="createdAtDate" type="both"/>
+                                                            <fmt:formatDate value="${createdAtDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <span style="color:var(--muted);">—</span>
+                                                        </c:otherwise>
                                                     </c:choose>
                                                 </td>
+
+                                                <td>
+                                                    <c:choose>
+                                                        <c:when test="${o.status == 0}">
+                                                            <span class="badge b-draft">Unfinished</span>
+                                                        </c:when>
+                                                        <c:when test="${o.status == 1}">
+                                                            <span class="badge b-posted">Finished</span>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <span class="badge b-cancel">Cancelled</span>
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </td>
+
                                                 <td style="text-align:right; padding-right:18px; color:var(--amber); font-weight:800;">
                                                     <fmt:formatNumber value="${o.total}" type="number" maxFractionDigits="0"/>
                                                 </td>
@@ -510,7 +553,12 @@
                                             <tr>
                                                 <td colspan="5">
                                                     <div class="empty-state">
-                                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15" x2="12" y2="15"/></svg>
+                                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                        <rect x="3" y="3" width="18" height="18" rx="3"/>
+                                                        <line x1="9" y1="9" x2="15" y2="9"/>
+                                                        <line x1="9" y1="12" x2="15" y2="12"/>
+                                                        <line x1="9" y1="15" x2="12" y2="15"/>
+                                                        </svg>
                                                         <p>No service orders found</p>
                                                     </div>
                                                 </td>
@@ -539,16 +587,13 @@
                                         <div class="so-code">Order ID #${selected.serviceOrderId}</div>
                                         <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
                                             <c:choose>
-                                                <c:when test="${selected.status == 0}"><span class="badge b-draft">Draft</span></c:when>
-                                                <c:when test="${selected.status == 1}"><span class="badge b-posted">Posted</span></c:when>
+                                                <c:when test="${selected.status == 0}"><span class="badge b-draft">Unfinished</span></c:when>
+                                                <c:when test="${selected.status == 1}"><span class="badge b-posted">Finished</span></c:when>
                                                 <c:otherwise><span class="badge b-cancel">Cancelled</span></c:otherwise>
                                             </c:choose>
                                         </div>
                                         <div class="meta" style="margin-top:10px;">
-                                            Booking ID : ${selected.bookingId}
-                                            <c:if test="${selected.postedAt != null}">
-                                                &nbsp;·&nbsp; Posted: <c:out value="${selected.postedAt}"/>
-                                            </c:if>
+                                            Booking ID: ${selected.bookingId}
                                         </div>
                                     </div>
                                     <div style="text-align:right;">
@@ -564,6 +609,96 @@
                                             <a href="${pageContext.request.contextPath}/staff/service-orders?id=${selected.serviceOrderId}&modal=addItems&type=1"
                                                class="link-primary">+ Add Items</a>
                                         </c:if>
+                                    </div>
+                                    <div style="margin-top:16px; padding:16px 18px; background:var(--cream); border:1.5px solid var(--border); border-radius:14px;">
+                                        <div style="display:grid; grid-template-columns: 180px 1fr; row-gap:10px; column-gap:14px; font-size:13px;">
+
+                                            <div style="font-weight:800; color:var(--brown);">Created At</div>
+                                            <div>
+                                                <c:choose>
+                                                    <c:when test="${selected.createdAt != null}">
+                                                        <fmt:parseDate value="${selected.createdAt}" pattern="yyyy-MM-dd'T'HH:mm:ss" var="selectedCreatedAtDate" type="both"/>
+                                                        <fmt:formatDate value="${selectedCreatedAtDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                                    </c:when>
+                                                    <c:otherwise>—</c:otherwise>
+                                                </c:choose>
+                                            </div>
+
+                                            <div style="font-weight:800; color:var(--brown);">Created By</div>
+                                            <div>
+                                                <c:choose>
+                                                    <c:when test="${not empty selected.createdByStaffName}">
+                                                        <c:out value="${selected.createdByStaffName}"/>
+                                                    </c:when>
+                                                    <c:otherwise>Staff #${selected.createdByStaffId}</c:otherwise>
+                                                </c:choose>
+                                            </div>
+
+                                            <div style="font-weight:800; color:var(--brown);">Note</div>
+                                            <div>
+                                                <c:choose>
+                                                    <c:when test="${not empty selected.note}">
+                                                        <c:out value="${selected.note}"/>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <span style="color:var(--muted);">No note</span>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </div>
+
+                                            <c:if test="${selected.status == 1}">
+                                                <div style="font-weight:800; color:var(--brown);">Finished At</div>
+                                                <div>
+                                                    <c:choose>
+                                                        <c:when test="${selected.completedAt != null}">
+                                                            <fmt:parseDate value="${selected.completedAt}" pattern="yyyy-MM-dd'T'HH:mm:ss" var="selectedCompletedAtDate" type="both"/>
+                                                            <fmt:formatDate value="${selectedCompletedAtDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                                        </c:when>
+                                                        <c:otherwise>—</c:otherwise>
+                                                    </c:choose>
+                                                </div>
+
+                                                <div style="font-weight:800; color:var(--brown);">Finished By</div>
+                                                <div>
+                                                    <c:choose>
+                                                        <c:when test="${not empty selected.completedByStaffName}">
+                                                            <c:out value="${selected.completedByStaffName}"/>
+                                                        </c:when>
+                                                        <c:when test="${selected.completedByStaffId != null}">
+                                                            Staff #${selected.completedByStaffId}
+                                                        </c:when>
+                                                        <c:otherwise>—</c:otherwise>
+                                                    </c:choose>
+                                                </div>
+                                            </c:if>
+
+                                            <c:if test="${selected.status == 2}">
+                                                <div style="font-weight:800; color:var(--brown);">Cancelled At</div>
+                                                <div>
+                                                    <c:choose>
+                                                        <c:when test="${selected.cancelledAt != null}">
+                                                            <fmt:parseDate value="${selected.cancelledAt}" pattern="yyyy-MM-dd'T'HH:mm:ss" var="selectedCancelledAtDate" type="both"/>
+                                                            <fmt:formatDate value="${selectedCancelledAtDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                                        </c:when>
+                                                        <c:otherwise>—</c:otherwise>
+                                                    </c:choose>
+                                                </div>
+
+                                                <div style="font-weight:800; color:var(--brown);">Cancelled By</div>
+                                                <div>
+                                                    <c:choose>
+                                                        <c:when test="${not empty selected.cancelledByStaffName}">
+                                                            <c:out value="${selected.cancelledByStaffName}"/>
+                                                        </c:when>
+                                                        <c:when test="${selected.cancelledByStaffId != null}">
+                                                            Staff #${selected.cancelledByStaffId}
+                                                        </c:when>
+                                                        <c:otherwise>—</c:otherwise>
+                                                    </c:choose>
+                                                </div>
+                                            </c:if>
+
+                                        </div>
                                     </div>
 
                                     <div class="items-box">
@@ -664,19 +799,19 @@
                                             </form>
 
                                             <form method="post" action="${pageContext.request.contextPath}/staff/service-orders/status">
-                                                <input type="hidden" name="action"  value="post"/>
+                                                <input type="hidden" name="action"  value="finish"/>
                                                 <input type="hidden" name="orderId" value="${selected.serviceOrderId}"/>
                                                 <button class="btn-primary" type="submit">
                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                                     <polyline points="20 6 9 17 4 12"/>
                                                     </svg>
-                                                    Mark as Posted
+                                                    Mark as Finished
                                                 </button>
                                             </form>
                                         </c:if>
 
                                         <c:if test="${selected.status == 1}">
-                                            <span class="badge b-posted" style="padding:10px 16px;">✓ Posted</span>
+                                            <span class="badge b-posted" style="padding:10px 16px;">✓ Finished</span>
                                         </c:if>
 
                                         <c:if test="${selected.status == 2}">

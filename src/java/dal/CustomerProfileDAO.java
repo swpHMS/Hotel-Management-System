@@ -5,15 +5,19 @@ import model.ProfileView;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CustomerProfileDAO extends DBContext {
+
+    private static final Logger LOGGER = Logger.getLogger(CustomerProfileDAO.class.getName());
 
     public ProfileView getCustomerProfileByUserId(int userId) {
         String sql = """
             SELECT
                 u.user_id, u.email, u.status AS user_status, r.role_name,
                 c.customer_id, c.full_name, c.gender, c.date_of_birth,
-                c.phone, c.residence_address
+                c.identity_number, c.phone, c.residence_address
             FROM dbo.users u
             JOIN dbo.roles r ON r.role_id = u.role_id
             JOIN dbo.customers c ON c.user_id = u.user_id
@@ -33,17 +37,18 @@ public class CustomerProfileDAO extends DBContext {
                     p.setCustomerId(rs.getInt("customer_id"));
                     p.setFullName(rs.getString("full_name"));
 
-                    int g = rs.getInt("gender");
-                    p.setGender(rs.wasNull() ? null : g);
+                    int gender = rs.getInt("gender");
+                    p.setGender(rs.wasNull() ? null : gender);
 
                     p.setDateOfBirth(rs.getDate("date_of_birth"));
+                    p.setIdentityNumber(rs.getString("identity_number"));
                     p.setPhone(rs.getString("phone"));
                     p.setResidenceAddress(rs.getString("residence_address"));
                     return p;
                 }
             }
         } catch (Exception e) {
-            System.out.println(e);
+            LOGGER.log(Level.SEVERE, "Failed to load customer profile for userId=" + userId, e);
         }
         return null;
     }
@@ -53,18 +58,20 @@ public class CustomerProfileDAO extends DBContext {
             String fullName,
             Integer gender,
             java.sql.Date dateOfBirth,
+            String identityNumber,
             String phone,
             String residenceAddress) {
 
         String sql = """
-        UPDATE dbo.customers
-        SET full_name = ?,
-            gender = ?,
-            date_of_birth = ?,
-            phone = ?,
-            residence_address = ?
-        WHERE user_id = ?
-    """;
+            UPDATE dbo.customers
+            SET full_name = ?,
+                gender = ?,
+                date_of_birth = ?,
+                identity_number = ?,
+                phone = ?,
+                residence_address = ?
+            WHERE user_id = ?
+        """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, fullName);
@@ -81,28 +88,29 @@ public class CustomerProfileDAO extends DBContext {
                 ps.setDate(3, dateOfBirth);
             }
 
-            // phone -> param #4
-            if (phone == null || phone.isBlank()) {
+            if (identityNumber == null || identityNumber.isBlank()) {
                 ps.setNull(4, java.sql.Types.VARCHAR);
             } else {
-                ps.setString(4, phone);
+                ps.setString(4, identityNumber);
             }
 
-            // address -> param #5
-            if (residenceAddress == null || residenceAddress.isBlank()) {
-                ps.setNull(5, java.sql.Types.NVARCHAR);
+            if (phone == null || phone.isBlank()) {
+                ps.setNull(5, java.sql.Types.VARCHAR);
             } else {
-                ps.setString(5, residenceAddress);
+                ps.setString(5, phone);
             }
 
-            // user_id -> param #6
-            ps.setInt(6, userId);
+            if (residenceAddress == null || residenceAddress.isBlank()) {
+                ps.setNull(6, java.sql.Types.NVARCHAR);
+            } else {
+                ps.setString(6, residenceAddress);
+            }
 
+            ps.setInt(7, userId);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
-            e.printStackTrace(); // để thấy lỗi thật
+            LOGGER.log(Level.SEVERE, "Failed to update customer profile for userId=" + userId, e);
             return false;
         }
     }
-
 }

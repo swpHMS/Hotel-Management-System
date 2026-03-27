@@ -162,7 +162,11 @@ public class BookingConfirmServlet extends HttpServlet {
 
         LocalDate checkIn = parseDate(checkInRaw);
         LocalDate checkOut = parseDate(checkOutRaw);
-
+System.out.println("=== CONFIRM GET ===");
+System.out.println("roomTypeId=" + roomTypeId + ", roomQty=" + roomQty);
+System.out.println("adults=" + adults + ", children=" + children);
+System.out.println("checkIn=" + checkIn + ", checkOut=" + checkOut);
+System.out.println("totalGuests=" + (adults+children));
         if (roomTypeId <= 0 || roomQty <= 0 || adults <= 0 || children < 0
                 || checkIn == null || checkOut == null || !checkOut.isAfter(checkIn)) {
             resp.sendRedirect(req.getContextPath() + "/booking?err=invalid");
@@ -235,7 +239,7 @@ if (totalGuests < roomQty) {
         req.setAttribute("total", total);
         req.setAttribute("deposit", deposit);
 
-        req.setAttribute("holdMs", 60 * 60 * 1000);
+        req.setAttribute("holdMs", 1 * 60 * 1000);
 
         // ✅ FIX: set customerEmail cho confirm.jsp + lưu tạm vào session để doPost dùng nếu form không submit email
         String resolved = resolveCustomerEmail(req);

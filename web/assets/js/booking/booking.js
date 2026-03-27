@@ -438,7 +438,8 @@
       `&children=${encodeURIComponent(children)}` +
       `&checkIn=${encodeURIComponent(checkIn)}` +
       `&checkOut=${encodeURIComponent(checkOut)}`;
-
+// Dòng 441 trong booking.js, trước window.location.href = url;
+console.log("Navigating to:", url);
     window.location.href = url;
   });
 
@@ -459,18 +460,17 @@
     box.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    initSliders();
-    initGuests();
-    refreshRoomQtyButtons();
-    clampTopRoomQty();
+  // ✅ FIX: Script load ở cuối trang nên DOM đã sẵn sàng — gọi thẳng, không dùng DOMContentLoaded
+  initSliders();
+  initGuests();
+  refreshRoomQtyButtons();
+  clampTopRoomQty();
 
-    const roomQtyFilter = document.getElementById("topRoomQty");
-    if (roomQtyFilter) {
-      roomQtyFilter.addEventListener("input", clampTopRoomQty);
-      roomQtyFilter.addEventListener("change", clampTopRoomQty);
-    }
-  });
+  const roomQtyFilter = document.getElementById("topRoomQty");
+  if (roomQtyFilter) {
+    roomQtyFilter.addEventListener("input", clampTopRoomQty);
+    roomQtyFilter.addEventListener("change", clampTopRoomQty);
+  }
 
 })();
 

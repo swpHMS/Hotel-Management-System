@@ -8,10 +8,12 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import model.ManagerDashboardKpi;
+import model.ManagerDashboardTrendSeries;
 
 @WebServlet("/manager/dashboard")
 public class ManagerDashboardServlet extends HttpServlet {
@@ -40,37 +42,38 @@ public class ManagerDashboardServlet extends HttpServlet {
         return sb.toString();
     }
 
+    private static ManagerDashboardTrendSeries toTrendSeries(List<TrendPoint> points) {
+        List<String> labels = new ArrayList<>();
+        List<Double> values = new ArrayList<>();
+        double totalValue = 0;
+
+        for (TrendPoint point : points) {
+            labels.add(point.label);
+            values.add(point.value);
+            totalValue += point.value;
+        }
+
+        return new ManagerDashboardTrendSeries(
+                toJsStringArray(labels),
+                toJsNumberArray(values),
+                totalValue
+        );
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        ManagerDashboardDAO dao = new ManagerDashboardDAO();
+        ManagerDashboardKpi kpi = dao.getRoomStatusCounts();
+        ManagerDashboardTrendSeries dailyTrend = toTrendSeries(dao.getBookingVelocityDaily(7));
+        ManagerDashboardTrendSeries monthlyTrend = toTrendSeries(dao.getBookingVelocityMonthly(7));
+        boolean useDailyByDefault = dailyTrend.getTotalValue() >= monthlyTrend.getTotalValue();
+        DecimalFormat percentFormat = new DecimalFormat("0.00");
 
-        Map<String, Integer> kpi = new ManagerDashboardDAO().getRoomStatusCounts();
-        req.setAttribute("totalInventory", kpi.getOrDefault("totalInventory", 0));
-        req.setAttribute("liveSuites", kpi.getOrDefault("liveSuites", 0));
-        req.setAttribute("guestStays", kpi.getOrDefault("guestStays", 0));
-        req.setAttribute("servicing", kpi.getOrDefault("servicing", 0));
-        req.setAttribute("outOfOrder", kpi.getOrDefault("outOfOrder", 0));
-
-        List<TrendPoint> daily = new ManagerDashboardDAO().getBookingVelocityDaily(7);
-        List<TrendPoint> monthly = new ManagerDashboardDAO().getBookingVelocityMonthly(7);
-
-        List<String> dailyLabels = new ArrayList<>();
-        List<Double> dailyValues = new ArrayList<>();
-        for (TrendPoint p : daily) {
-            dailyLabels.add(p.label);
-            dailyValues.add(p.value);
-        }
-
-        List<String> monthlyLabels = new ArrayList<>();
-        List<Double> monthlyValues = new ArrayList<>();
-        for (TrendPoint p : monthly) {
-            monthlyLabels.add(p.label);
-            monthlyValues.add(p.value);
-        }
-
-        req.setAttribute("dailyLabelsJs", toJsStringArray(dailyLabels));
-        req.setAttribute("dailyValuesJs", toJsNumberArray(dailyValues));
-        req.setAttribute("monthlyLabelsJs", toJsStringArray(monthlyLabels));
-        req.setAttribute("monthlyValuesJs", toJsNumberArray(monthlyValues));
+        req.setAttribute("kpi", kpi);
+        req.setAttribute("dailyTrend", dailyTrend);
+        req.setAttribute("monthlyTrend", monthlyTrend);
+        req.setAttribute("initialTrendMode", useDailyByDefault ? "daily" : "monthly");
+        req.setAttribute("fullHousePercentText", percentFormat.format(kpi.getOccupancyPercent()) + "%");
 
         req.setAttribute("active", "dashboard");
         req.setAttribute("pageTitle", "Dashboard");

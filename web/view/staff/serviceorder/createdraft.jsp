@@ -437,6 +437,29 @@
         cursor: not-allowed;
         transform: none;
     }
+    .so-textarea {
+        width: 100%;
+        min-height: 96px;
+        padding: 10px 13px;
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        background: #fff;
+        color: #111827;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        outline: none;
+        resize: vertical;
+        transition: border-color .18s, box-shadow .18s;
+    }
+    .so-textarea:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+    }
+    .so-textarea::placeholder {
+        color: #94a3b8;
+    }
+
 </style>
 
 <!-- MODAL -->
@@ -506,7 +529,7 @@
                                     <option value="">Select a service...</option>
                                     <c:forEach var="s" items="${svMinibar}">
                                         <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}" data-type="MINIBAR">
-                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" maxFractionDigits="0"/>)
+                                            <c:out value="${s.name}"/> (<fmt:formatNumber value="${s.unitPrice}" type="number" maxFractionDigits="0"/>)
                                         </option>
                                     </c:forEach>
                                 </select>
@@ -515,7 +538,7 @@
                                     <option value="">Select a service...</option>
                                     <c:forEach var="s" items="${svLaundry}">
                                         <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}" data-type="LAUNDRY">
-                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" maxFractionDigits="0"/>)
+                                            <c:out value="${s.name}"/> (<fmt:formatNumber value="${s.unitPrice}" type="number" maxFractionDigits="0"/>)
                                         </option>
                                     </c:forEach>
                                 </select>
@@ -524,7 +547,7 @@
                                     <option value="">Select a service...</option>
                                     <c:forEach var="s" items="${svCleaning}">
                                         <option value="${s.serviceId}" data-price="${s.unitPrice}" data-name="${fn:escapeXml(s.name)}" data-type="CLEANING">
-                                            <c:out value="${s.name}"/> ($<fmt:formatNumber value="${s.unitPrice}" type="number" maxFractionDigits="0"/>)
+                                            <c:out value="${s.name}"/> (<fmt:formatNumber value="${s.unitPrice}" type="number" maxFractionDigits="0"/>)
                                         </option>
                                     </c:forEach>
                                 </select>
@@ -542,6 +565,22 @@
                     </div>
                 </div>
 
+                <!-- Step 4: Note -->
+                <div class="so-step">
+                    <div class="so-step-h">
+                        <div class="so-badge">4</div>
+                        <div class="so-step-title">Note</div>
+                    </div>
+
+                    <div class="so-card">
+                        <div class="so-label">Customer Note / Staff Note</div>
+                        <textarea
+                            id="noteInput"
+                            name="note"
+                            class="so-textarea"
+                            placeholder="">${fn:escapeXml(noteVal)}</textarea>
+                    </div>
+                </div>
             </div>
 
             <!-- RIGHT: Preview -->
@@ -561,266 +600,273 @@
                 <div class="so-right-foot">
                     <div>
                         <div class="so-label-foot">Estimated Total</div>
-                        <div class="so-total"><span class="so-total-sym">$</span><span id="estTotal">0</span></div>          </div>
-                    <div style="text-align:right;">
-                        <div class="so-label-foot">New Items</div>
-                        <div class="so-newitems-num" id="newItems">0</div>
+                        <div class="so-total">
+                            <span id="estTotal">0 đ</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="so-label-foot">New Items</div>
+                            <div class="so-newitems-num" id="newItems">0</div>
+                        </div>
                     </div>
                 </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="so-foot">
+                <button type="button" class="so-btn-cancel" onclick="closeSOModal()">Cancel</button>
+
+                <form id="createDraftForm" method="post"
+                      action="${pageContext.request.contextPath}/staff/service-orders/create"
+                      class="so-form">
+                    <input type="hidden" name="bookingId" id="bookingIdHidden"/>
+                    <input type="hidden" name="roomId"    id="roomIdHidden"/>
+                    <input type="hidden" name="note"      id="noteHidden"/>
+                    <div id="hiddenItems"></div>
+                    <button type="submit" class="so-btn-create" onclick="return beforeSubmitCreateDraft()">
+                        Create Service Ticket (Unfinished) →
+                    </button>
+                </form>
             </div>
 
         </div>
-
-        <!-- FOOTER -->
-        <div class="so-foot">
-            <button type="button" class="so-btn-cancel" onclick="closeSOModal()">Cancel</button>
-
-            <form id="createDraftForm" method="post"
-                  action="${pageContext.request.contextPath}/staff/service-orders/create"
-                  class="so-form">
-                <input type="hidden" name="bookingId" id="bookingIdHidden"/>
-                <input type="hidden" name="roomId"    id="roomIdHidden"/>
-                <div id="hiddenItems"></div>
-                <button type="submit" class="so-btn-create" onclick="return beforeSubmitCreateDraft()">
-                    Create Service Ticket (Draft) →
-                </button>
-            </form>
-        </div>
-
     </div>
-</div>
 
-<script>
-    const contextPath = "${pageContext.request.contextPath}";
+    <script>
+        const contextPath = "${pageContext.request.contextPath}";
 
-    const roomNoEl = document.getElementById("roomNo");
-    const bookingIdEl = document.getElementById("bookingId");
-    const errEl = document.getElementById("ctxErr");
+        const roomNoEl = document.getElementById("roomNo");
+        const bookingIdEl = document.getElementById("bookingId");
+        const errEl = document.getElementById("ctxErr");
 
-    const bookingHidden = document.getElementById("bookingIdHidden");
-    const roomHidden = document.getElementById("roomIdHidden");
-    const submitBtn = document.querySelector("#createDraftForm .so-btn-create");
+        const bookingHidden = document.getElementById("bookingIdHidden");
+        const roomHidden = document.getElementById("roomIdHidden");
+        const submitBtn = document.querySelector("#createDraftForm .so-btn-create");
 
-    let timer = null;
+        let timer = null;
 
-    function setCtx(ok, msg, data) {
-        if (errEl)
-            errEl.textContent = ok ? "" : (msg || "No active booking for this room");
+        function setCtx(ok, msg, data) {
+            if (errEl)
+                errEl.textContent = ok ? "" : (msg || "No active booking for this room");
 
-        if (ok) {
-            bookingIdEl.value = data.bookingId;
-            bookingHidden.value = data.bookingId;
-            roomHidden.value = data.roomId;
-            submitBtn.disabled = false;
-        } else {
-            bookingIdEl.value = "";
-            bookingHidden.value = "";
-            roomHidden.value = "";
-            submitBtn.disabled = true;
+            if (ok) {
+                bookingIdEl.value = data.bookingId;
+                bookingHidden.value = data.bookingId;
+                roomHidden.value = data.roomId;
+                submitBtn.disabled = false;
+            } else {
+                bookingIdEl.value = "";
+                bookingHidden.value = "";
+                roomHidden.value = "";
+                submitBtn.disabled = true;
+            }
         }
-    }
 
-    submitBtn.disabled = true;
+        submitBtn.disabled = true;
 
-    roomNoEl.addEventListener("input", () => {
-        clearTimeout(timer);
-        timer = setTimeout(async () => {
-            const roomNo = roomNoEl.value.trim();
-            if (!roomNo) {
-                setCtx(false, "Please enter room number.");
+        roomNoEl.addEventListener("input", () => {
+            clearTimeout(timer);
+            timer = setTimeout(async () => {
+                const roomNo = roomNoEl.value.trim();
+                if (!roomNo) {
+                    setCtx(false, "Please enter room number.");
+                    return;
+                }
+
+                try {
+                    const res = await fetch(contextPath + "/staff/service-orders/lookup-booking?roomNo=" + encodeURIComponent(roomNo));
+                    const data = await res.json();
+                    if (data.ok)
+                        setCtx(true, "", data);
+                    else
+                        setCtx(false, data.message);
+                } catch (e) {
+                    setCtx(false, "Lookup failed. Please try again.");
+                }
+            }, 300);
+        });
+    </script>
+
+    <script>
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('beforeunload', () => document.body.style.overflow = '');
+
+        let currentType = 'MINIBAR';
+        const ticket = [];
+
+
+        function formatMoney(value) {
+            return Number(value).toLocaleString('vi-VN', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+        }
+
+        function updateQtyVisibility() {
+            const qtyBlock = document.getElementById('qtyBlock');
+            const qtyInput = document.getElementById('qtyInput');
+
+            if (currentType === 'CLEANING') {
+                qtyBlock.style.display = 'none';
+                qtyInput.value = 1;
+            } else {
+                qtyBlock.style.display = 'block';
+            }
+        }
+
+        function openSOModal() {
+            document.getElementById('soModal').style.display = 'flex';
+        }
+
+        function closeSOModal() {
+            const params = new URLSearchParams(window.location.search);
+            const returnId = params.get("returnId");
+            let url = "${pageContext.request.contextPath}/staff/service-orders";
+            if (returnId && returnId.trim() !== "") {
+                url += "?id=" + encodeURIComponent(returnId);
+            }
+            window.location.href = url;
+        }
+
+        function switchType(type) {
+            currentType = type;
+            document.querySelectorAll('.so-tab').forEach(b => b.classList.remove('active'));
+            document.querySelector('.so-tab[data-type="' + type + '"]').classList.add('active');
+
+            ['MINIBAR', 'LAUNDRY', 'CLEANING'].forEach(t => {
+                document.getElementById('serviceSelect_' + t).style.display = (t === type) ? 'block' : 'none';
+            });
+
+            document.getElementById('qtyInput').value = 1;
+            updateQtyVisibility();
+        }
+
+        function getCurrentSelect() {
+            return document.getElementById('serviceSelect_' + currentType);
+        }
+
+        function addToList() {
+            const sel = getCurrentSelect();
+            const opt = sel.options[sel.selectedIndex];
+            const serviceId = sel.value;
+
+            if (!serviceId) {
+                showToast('Please select a service.');
                 return;
             }
 
-            try {
-                const res = await fetch(contextPath + "/staff/service-orders/lookup-booking?roomNo=" + encodeURIComponent(roomNo));
-                const data = await res.json();
-                if (data.ok)
-                    setCtx(true, "", data);
-                else
-                    setCtx(false, data.message);
-            } catch (e) {
-                setCtx(false, "Lookup failed. Please try again.");
+            const price = parseFloat(opt.getAttribute('data-price'));
+            const name = opt.getAttribute('data-name');
+            const type = opt.getAttribute('data-type');
+
+            let qty = 1;
+            if (type !== 'CLEANING') {
+                qty = parseInt(document.getElementById('qtyInput').value || '1', 10);
+                if (isNaN(qty) || qty < 1) {
+                    showToast('Quantity must be at least 1.');
+                    return;
+                }
             }
-        }, 300);
-    });
-</script>
 
-<script>
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('beforeunload', () => document.body.style.overflow = '');
-
-    let currentType = 'MINIBAR';
-    const ticket = [];
-
-
-    function formatMoney(value) {
-        return Number(value).toLocaleString('en-US', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        });
-    }
-
-    function updateQtyVisibility() {
-        const qtyBlock = document.getElementById('qtyBlock');
-        const qtyInput = document.getElementById('qtyInput');
-
-        if (currentType === 'CLEANING') {
-            qtyBlock.style.display = 'none';
-            qtyInput.value = 1;
-        } else {
-            qtyBlock.style.display = 'block';
+            ticket.push({serviceId, name, type, price, qty});
+            sel.value = '';
+            document.getElementById('qtyInput').value = 1;
+            renderTicket();
         }
-    }
 
-    function openSOModal() {
-        document.getElementById('soModal').style.display = 'flex';
-    }
-
-    function closeSOModal() {
-        const params = new URLSearchParams(window.location.search);
-        const returnId = params.get("returnId");
-        let url = "${pageContext.request.contextPath}/staff/service-orders";
-        if (returnId && returnId.trim() !== "") {
-            url += "?id=" + encodeURIComponent(returnId);
+        function removeItem(idx) {
+            ticket.splice(idx, 1);
+            renderTicket();
         }
-        window.location.href = url;
-    }
 
-    function switchType(type) {
-        currentType = type;
-        document.querySelectorAll('.so-tab').forEach(b => b.classList.remove('active'));
-        document.querySelector('.so-tab[data-type="' + type + '"]').classList.add('active');
+        function renderTicket() {
+            const wrap = document.getElementById('ticketItems');
+            wrap.innerHTML = '';
 
-        ['MINIBAR', 'LAUNDRY', 'CLEANING'].forEach(t => {
-            document.getElementById('serviceSelect_' + t).style.display = (t === type) ? 'block' : 'none';
-        });
+            if (ticket.length === 0) {
+                wrap.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:30px;"><div style="font-size:30px;opacity:.25;">🛒</div><div style="font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;">No items added yet</div></div>';
+                document.getElementById('itemCount').innerText = 0;
+                document.getElementById('newItems').innerText = 0;
+                document.getElementById('estTotal').innerText = '0';
+                return;
+            }
 
-        document.getElementById('qtyInput').value = 1;
+            let total = 0;
+
+            ticket.forEach((it, idx) => {
+                const line = it.price * it.qty;
+                total += line;
+
+                const qtyText = it.type === 'CLEANING'
+                        ? ''
+                        : '<span>QTY × ' + it.qty + '</span>';
+
+                const div = document.createElement('div');
+                div.className = 'so-item';
+                div.innerHTML =
+                        '<div class="so-item-type">' + it.type + '</div>' +
+                        '<div class="so-item-name">' + it.name + '</div>' +
+                        '<div class="so-item-sub">' +
+                        qtyText +
+                        '<span>' + formatMoney(line) + '</span>' +
+                        '</div>' +
+                        '<div class="so-item-actions"><button type="button" class="so-mini-btn" onclick="removeItem(' + idx + ')">Remove</button></div>';
+
+                wrap.appendChild(div);
+            });
+
+            document.getElementById('itemCount').innerText = ticket.length;
+            document.getElementById('newItems').innerText = ticket.length;
+            document.getElementById('estTotal').innerText = formatMoney(total) + ' đ';
+        }
+
+        function beforeSubmitCreateDraft() {
+            const bookingId = document.getElementById('bookingIdHidden').value.trim();
+            const roomId = document.getElementById('roomIdHidden').value.trim();
+            const note = document.getElementById('noteInput').value.trim();
+
+            if (!bookingId || !roomId) {
+                showToast('Please enter a valid Room Number (IN_HOUSE).');
+                return false;
+            }
+            if (ticket.length === 0) {
+                showToast('Please add at least 1 item.');
+                return false;
+            }
+
+            document.getElementById('noteHidden').value = note;
+
+            const hiddenWrap = document.getElementById('hiddenItems');
+            hiddenWrap.innerHTML = '';
+            ticket.forEach(it => {
+                const s = document.createElement('input');
+                s.type = 'hidden';
+                s.name = 'serviceId';
+                s.value = it.serviceId;
+                hiddenWrap.appendChild(s);
+
+                const q = document.createElement('input');
+                q.type = 'hidden';
+                q.name = 'quantity';
+                q.value = it.qty;
+                hiddenWrap.appendChild(q);
+            });
+            return true;
+        }
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#f1f5f9;padding:10px 20px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:500;z-index:9999999;box-shadow:0 8px 24px rgba(0,0,0,.2);';
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#f1f5f9;padding:10px 20px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:500;z-index:9999999;box-shadow:0 8px 24px rgba(0,0,0,.2);';
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
         updateQtyVisibility();
-    }
-
-    function getCurrentSelect() {
-        return document.getElementById('serviceSelect_' + currentType);
-    }
-
-    function addToList() {
-        const sel = getCurrentSelect();
-        const opt = sel.options[sel.selectedIndex];
-        const serviceId = sel.value;
-
-        if (!serviceId) {
-            showToast('Please select a service.');
-            return;
-        }
-
-        const price = parseFloat(opt.getAttribute('data-price'));
-        const name = opt.getAttribute('data-name');
-        const type = opt.getAttribute('data-type');
-
-        let qty = 1;
-        if (type !== 'CLEANING') {
-            qty = parseInt(document.getElementById('qtyInput').value || '1', 10);
-            if (isNaN(qty) || qty < 1) {
-                showToast('Quantity must be at least 1.');
-                return;
-            }
-        }
-
-        ticket.push({serviceId, name, type, price, qty});
-        sel.value = '';
-        document.getElementById('qtyInput').value = 1;
-        renderTicket();
-    }
-
-    function removeItem(idx) {
-        ticket.splice(idx, 1);
-        renderTicket();
-    }
-
-    function renderTicket() {
-        const wrap = document.getElementById('ticketItems');
-        wrap.innerHTML = '';
-
-        if (ticket.length === 0) {
-            wrap.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:30px;"><div style="font-size:30px;opacity:.25;">🛒</div><div style="font-size:11px;font-weight:600;color:#94a3b8;letter-spacing:.08em;text-transform:uppercase;">No items added yet</div></div>';
-            document.getElementById('itemCount').innerText = 0;
-            document.getElementById('newItems').innerText = 0;
-            document.getElementById('estTotal').innerText = '0';
-            return;
-        }
-
-        let total = 0;
-
-        ticket.forEach((it, idx) => {
-            const line = it.price * it.qty;
-            total += line;
-
-            const qtyText = it.type === 'CLEANING'
-                    ? ''
-                    : '<span>QTY × ' + it.qty + '</span>';
-
-            const div = document.createElement('div');
-            div.className = 'so-item';
-            div.innerHTML =
-                    '<div class="so-item-type">' + it.type + '</div>' +
-                    '<div class="so-item-name">' + it.name + '</div>' +
-                    '<div class="so-item-sub">' +
-                    qtyText +
-                    '<span>$' + formatMoney(line) + '</span>' +
-                    '</div>' +
-                    '<div class="so-item-actions"><button type="button" class="so-mini-btn" onclick="removeItem(' + idx + ')">Remove</button></div>';
-
-            wrap.appendChild(div);
-        });
-
-        document.getElementById('itemCount').innerText = ticket.length;
-        document.getElementById('newItems').innerText = ticket.length;
-        document.getElementById('estTotal').innerText = formatMoney(total);
-    }
-
-    function beforeSubmitCreateDraft() {
-        const bookingId = document.getElementById('bookingIdHidden').value.trim();
-        const roomId = document.getElementById('roomIdHidden').value.trim();
-
-        if (!bookingId || !roomId) {
-            showToast('Please enter a valid Room Number (IN_HOUSE).');
-            return false;
-        }
-        if (ticket.length === 0) {
-            showToast('Please add at least 1 item.');
-            return false;
-        }
-        const hiddenWrap = document.getElementById('hiddenItems');
-        hiddenWrap.innerHTML = '';
-        ticket.forEach(it => {
-            const s = document.createElement('input');
-            s.type = 'hidden';
-            s.name = 'serviceId';
-            s.value = it.serviceId;
-            hiddenWrap.appendChild(s);
-
-            const q = document.createElement('input');
-            q.type = 'hidden';
-            q.name = 'quantity';
-            q.value = it.qty;
-            hiddenWrap.appendChild(q);
-        });
-        return true;
-    }
-    function showToast(msg) {
-        const t = document.createElement('div');
-        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#f1f5f9;padding:10px 20px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:500;z-index:9999999;box-shadow:0 8px 24px rgba(0,0,0,.2);';
-        t.innerText = msg;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2500);
-    }
-    function showToast(msg) {
-        const t = document.createElement('div');
-        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#f1f5f9;padding:10px 20px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:500;z-index:9999999;box-shadow:0 8px 24px rgba(0,0,0,.2);';
-        t.innerText = msg;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2500);
-    }
-
-    updateQtyVisibility();
-</script>
+    </script>
