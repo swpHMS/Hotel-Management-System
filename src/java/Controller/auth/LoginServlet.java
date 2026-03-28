@@ -73,7 +73,7 @@ public class LoginServlet extends HttpServlet {
                 if (c.getName().equals("cookRem")) {
                     request.setAttribute("remember", c.getValue());
                 }
-            }
+}
         }
         request.setAttribute("nameHotel", nameHotel);
         request.getRequestDispatcher("/view/auth/login.jsp").forward(request, response);
@@ -147,7 +147,7 @@ public class LoginServlet extends HttpServlet {
             cEmail.setMaxAge(0);
             cRem.setMaxAge(0);
         }
-        response.addCookie(cEmail);
+response.addCookie(cEmail);
         response.addCookie(cRem);
     }
 

@@ -1,6 +1,14 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="model.HotelInformation" %>
+<%@ page import="dal.HotelInformationDAO" %>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/sidebar-styles.css"/>
-
+<%
+    HotelInformation hotel = (HotelInformation) request.getAttribute("hotel");
+    if (hotel == null) {
+        hotel = new HotelInformationDAO().getSingleHotel();
+        request.setAttribute("hotel", hotel);
+    }
+%>
 <%
 String userName = (String) session.getAttribute("adminName");
 if (userName == null || userName.trim().isEmpty()) userName = "Administrator";
@@ -18,7 +26,7 @@ String initials = parts.length >= 2
 
     <div class="sb-brand">
         <div class="diamond-icons" style="display:flex;align-items:center;margin-bottom:5px;">
-                <a href="${ctx}/home"
+                <a href="${pageContext.request.contextPath}/home"
                    style="text-decoration:none !important;display:flex;gap:1px;border:none;outline:none;color:transparent !important;">
                     <span style="color:#D4B78F !important;font-size:14px;line-height:1;margin-right:-2px;">◆</span>
                     <span style="color:#FFABAB !important;font-size:14px;line-height:1;margin-right:-2px;">◆</span>
@@ -26,7 +34,7 @@ String initials = parts.length >= 2
                 </a>
             </div>
         <div>
-            <div class="sb-title">Admin Panel</div>
+            <div class="sb-title">${hotel.name}</div>
             <div class="sb-sub">Hotel System</div>
         </div>
     </div>
