@@ -92,7 +92,7 @@
 
             <form action="${pageContext.request.contextPath}/register" method="post">
                 <div class="form-group">
-                    <label>Identity <span class="required-star">*</span></label>
+                    <label>Full name <span class="required-star">*</span></label>
                     <input type="text" name="fullName" placeholder="Full Name" value="${fullName}" required>
                 </div>
 
