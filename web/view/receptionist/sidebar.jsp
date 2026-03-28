@@ -1,8 +1,18 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="model.User" %>
+<%@ page import="model.HotelInformation" %>
+<%@ page import="dal.HotelInformationDAO" %>
+<c:set var="ctx" value="${pageContext.request.contextPath}" />
 <%-- Link tới file CSS chung của hệ thống --%>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/admin/sidebar-styles.css"/>
 
+<%
+    HotelInformation hotel = (HotelInformation) request.getAttribute("hotel");
+    if (hotel == null) {
+        hotel = new HotelInformationDAO().getSingleHotel();
+        request.setAttribute("hotel", hotel);
+    }
+%>
 <%
     
     Object obj = session.getAttribute("userAccount");
@@ -37,20 +47,16 @@
 <aside class="sb">
 
     <div class="sb-brand">
-        <div class="diamond-icons" style="display: flex; align-items: center; margin-bottom: 5px;">
-            <a href="${pageContext.request.contextPath}/home" 
-               style="text-decoration: none; display: flex; gap: 1px; border: none; outline: none; align-items: center;">
-
-                <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
-
-                <span style="color: #FF0000; font-size: 18px; line-height: 1; text-shadow: 0 0 0px #FF0000, 0 0 10px rgba(255, 0, 0, 0.4);">◆</span>
-
-                <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
-
-            </a>
-        </div>
+        <div class="diamond-icons" style="display:flex;align-items:center;margin-bottom:5px;">
+                <a href="${pageContext.request.contextPath}/home"
+                   style="text-decoration:none !important;display:flex;gap:1px;border:none;outline:none;color:transparent !important;">
+                    <span style="color:#D4B78F !important;font-size:14px;line-height:1;margin-right:-2px;">◆</span>
+                    <span style="color:#FFABAB !important;font-size:14px;line-height:1;margin-right:-2px;">◆</span>
+                    <span style="color:#D4B78F !important;font-size:14px;line-height:1;">◆</span>
+                </a>
+            </div>
         <div class="sb-brand-text">
-            <div class="sb-title">Regal Quintet Hotel</div>
+            <div class="sb-title">${hotel.name}</div>
             <div class="sb-sub">Receptionist Panel</div>
         </div>
     </div>
