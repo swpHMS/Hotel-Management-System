@@ -46,18 +46,14 @@
     <div class="banner-side">
         <div class="logo-area">
             <a href="${pageContext.request.contextPath}/home" style="text-decoration: none; color: inherit">
-                <div class="diamond-icons" style="display: flex; align-items: center; margin-bottom: 5px;">
-                    <a href="${pageContext.request.contextPath}/home" 
-                       style="text-decoration: none; display: flex; gap: 1px; border: none; outline: none; align-items: center;">
-
-                        <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
-
-                        <span style="color: #FF0000; font-size: 18px; line-height: 1; text-shadow: 0 0 0px #FF0000, 0 0 10px rgba(255, 0, 0, 0.4);">◆</span>
-
-                        <span style="color: #FFD700; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
-
-                    </a>
-                </div>
+                <div class="diamond-icons" style="display:flex;align-items:center;margin-bottom:5px;">
+                <a href="${ctx}/home"
+                   style="text-decoration:none !important;display:flex;gap:1px;border:none;outline:none;color:transparent !important;">
+                    <span style="color:#D4B78F !important;font-size:14px;line-height:1;margin-right:-2px;">◆</span>
+                    <span style="color:#FFABAB !important;font-size:14px;line-height:1;margin-right:-2px;">◆</span>
+                    <span style="color:#D4B78F !important;font-size:14px;line-height:1;">◆</span>
+                </a>
+            </div>
             </a>
             <h1><a href="${pageContext.request.contextPath}/home" style="text-decoration: none; color: inherit">${nameHotel}</a></h1>
             <p>HERITAGE OF EXCELLENCE</p>
