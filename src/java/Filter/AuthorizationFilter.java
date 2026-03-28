@@ -41,6 +41,7 @@ public class AuthorizationFilter implements Filter {
             || path.startsWith("/logout")
             || path.startsWith("/register")
             || path.startsWith("/reset-password")
+            || path.contains("/forgot-password")
             || path.startsWith("/verify")
             || path.startsWith("/home")
             || path.startsWith("/policy")

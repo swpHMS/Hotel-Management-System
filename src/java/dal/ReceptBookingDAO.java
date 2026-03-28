@@ -89,7 +89,6 @@ public class ReceptBookingDAO extends DBContext {
                     } else {
                         c.setUiStatus("ok");
                     }
-
                     list.add(c);
                 }
             }

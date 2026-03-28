@@ -56,7 +56,7 @@
                     <input type="hidden" name="adults"   value="${fn:escapeXml(not empty adults ? adults : param.adults)}">
                     <input type="hidden" name="children" value="${fn:escapeXml(not empty children ? children : param.children)}">
                     <input type="hidden" name="roomTypeId" value="${fn:escapeXml(not empty roomTypeId ? roomTypeId : param.roomTypeId)}">
-<input type="hidden" name="holdId" value="${fn:escapeXml(not empty holdId ? holdId : param.holdId)}">                    <div class="cb-wrap cb-wrap-step2">
+                    <input type="hidden" name="holdId" value="${fn:escapeXml(not empty holdId ? holdId : param.holdId)}">                    <div class="cb-wrap cb-wrap-step2">
                         <!-- LEFT: CUSTOMER INFO (NO inner form) -->
                         <div class="card-soft p-4">
                             <div class="section-title mb-3">
@@ -64,33 +64,27 @@
                             </div>
 
                             <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Full Name </label>
-                                    <input class="form-control" name="fullName" required
+                                <div class="col-md-12">
+                                    <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                                    <input class="form-control" name="fullName" required 
                                            value="${fn:escapeXml(not empty fullName ? fullName : param.fullName)}">
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label">Phone </label>
-                                    <input class="form-control" name="phone" required
+                                <div class="col-md-12">
+                                    <label class="form-label">Phone <span class="text-danger">*</span></label>
+                                    <input class="form-control" name="phone" required 
                                            value="${fn:escapeXml(not empty phone ? phone : param.phone)}">
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label">Email</label>
-                                    <input class="form-control" name="email"
-                                           value="${fn:escapeXml(not empty email ? email : param.email)}">
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label class="form-label">Identity / Passport</label>
-                                    <input class="form-control" name="identity"
+                                <div class="col-md-12">
+                                    <label class="form-label">Identity / Passport <span class="text-danger">*</span></label>
+                                    <input class="form-control" name="identity" required 
                                            value="${fn:escapeXml(not empty identity ? identity : param.identity)}">
                                 </div>
 
                                 <div class="col-md-12">
-                                    <label class="form-label">Address </label>
-                                    <input class="form-control" name="address" required
+                                    <label class="form-label">Address <span class="text-danger">*</span></label>
+                                    <input class="form-control" name="address" required 
                                            value="${fn:escapeXml(not empty address ? address : param.address)}">
                                 </div>
                             </div>

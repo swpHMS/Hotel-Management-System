@@ -10,32 +10,32 @@ import java.util.List;
 public class ServiceOrder {
 
     private int serviceOrderId;
-    private int bookingId;               // INT
-    private Integer roomId;              // nullable
+    private int bookingId;
+    private Integer roomId;
     private String roomNo;
+
     private int createdByStaffId;
-    private int status;                  // 0 draft, 1 posted, 2 cancelled
-    private LocalDateTime postedAt;      // datetime2 NULL
+    private String createdByStaffName;
+
+    private int status; // 0 = Unfinished, 1 = Finished, 2 = Cancelled
+
+    private LocalDateTime createdAt;
+    private LocalDateTime completedAt;
+    private Integer completedByStaffId;
+    private String completedByStaffName;
+
+    private LocalDateTime cancelledAt;
+    private Integer cancelledByStaffId;
+    private String cancelledByStaffName;
+
+    private String note;
     private Double total;
 
-    // UI fields (join, không lưu DB)
+    // UI fields
     private String staffName;
     private List<ServiceOrderItem> items;
 
-    public String getRoomNo() {
-        return roomNo;
-    }
-
-    public void setRoomNo(String roomNo) {
-        this.roomNo = roomNo;
-    }
-
-    public Double getTotal() {
-        return total;
-    }
-
-    public void setTotal(Double total) {
-        this.total = total;
+    public ServiceOrder() {
     }
 
     public int getServiceOrderId() {
@@ -62,12 +62,28 @@ public class ServiceOrder {
         this.roomId = roomId;
     }
 
+    public String getRoomNo() {
+        return roomNo;
+    }
+
+    public void setRoomNo(String roomNo) {
+        this.roomNo = roomNo;
+    }
+
     public int getCreatedByStaffId() {
         return createdByStaffId;
     }
 
     public void setCreatedByStaffId(int createdByStaffId) {
         this.createdByStaffId = createdByStaffId;
+    }
+
+    public String getCreatedByStaffName() {
+        return createdByStaffName;
+    }
+
+    public void setCreatedByStaffName(String createdByStaffName) {
+        this.createdByStaffName = createdByStaffName;
     }
 
     public int getStatus() {
@@ -78,12 +94,76 @@ public class ServiceOrder {
         this.status = status;
     }
 
-    public LocalDateTime getPostedAt() {
-        return postedAt;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setPostedAt(LocalDateTime postedAt) {
-        this.postedAt = postedAt;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(LocalDateTime completedAt) {
+        this.completedAt = completedAt;
+    }
+
+    public Integer getCompletedByStaffId() {
+        return completedByStaffId;
+    }
+
+    public void setCompletedByStaffId(Integer completedByStaffId) {
+        this.completedByStaffId = completedByStaffId;
+    }
+
+    public String getCompletedByStaffName() {
+        return completedByStaffName;
+    }
+
+    public void setCompletedByStaffName(String completedByStaffName) {
+        this.completedByStaffName = completedByStaffName;
+    }
+
+    public LocalDateTime getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(LocalDateTime cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+
+    public Integer getCancelledByStaffId() {
+        return cancelledByStaffId;
+    }
+
+    public void setCancelledByStaffId(Integer cancelledByStaffId) {
+        this.cancelledByStaffId = cancelledByStaffId;
+    }
+
+    public String getCancelledByStaffName() {
+        return cancelledByStaffName;
+    }
+
+    public void setCancelledByStaffName(String cancelledByStaffName) {
+        this.cancelledByStaffName = cancelledByStaffName;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
+    public Double getTotal() {
+        return total;
+    }
+
+    public void setTotal(Double total) {
+        this.total = total;
     }
 
     public String getStaffName() {
@@ -101,5 +181,4 @@ public class ServiceOrder {
     public void setItems(List<ServiceOrderItem> items) {
         this.items = items;
     }
-
 }
