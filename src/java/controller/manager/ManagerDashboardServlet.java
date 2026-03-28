@@ -64,8 +64,8 @@ public class ManagerDashboardServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         ManagerDashboardDAO dao = new ManagerDashboardDAO();
         ManagerDashboardKpi kpi = dao.getRoomStatusCounts();
-        ManagerDashboardTrendSeries dailyTrend = toTrendSeries(dao.getBookingVelocityDaily(7));
-        ManagerDashboardTrendSeries monthlyTrend = toTrendSeries(dao.getBookingVelocityMonthly(7));
+        ManagerDashboardTrendSeries dailyTrend = toTrendSeries(dao.getDailyOccupancyTrend(7));
+        ManagerDashboardTrendSeries monthlyTrend = toTrendSeries(dao.getMonthlyOccupancyTrend(7));
         boolean useDailyByDefault = dailyTrend.getTotalValue() >= monthlyTrend.getTotalValue();
         DecimalFormat percentFormat = new DecimalFormat("0.00");
 

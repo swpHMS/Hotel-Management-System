@@ -64,7 +64,7 @@
             </div>
 
             <div style="height:420px; flex:1; display:flex; align-items:center;">
-                <canvas id="velocityChart"></canvas>
+                <canvas id="occupancyTrendChart"></canvas>
             </div>
         </div>
     </div>
@@ -176,8 +176,8 @@
         btnMonthly.classList.toggle("active", mode === "monthly");
     };
 
-    const ctxV = document.getElementById("velocityChart");
-    const velocityChart = new Chart(ctxV, {
+    const ctxV = document.getElementById("occupancyTrendChart");
+    const occupancyTrendChart = new Chart(ctxV, {
         type: "line",
         data: {
             labels: initialLabels,
@@ -270,10 +270,10 @@
     });
 
     const updateTrendChart = (labels, values) => {
-        velocityChart.data.labels = labels;
-        velocityChart.data.datasets[0].data = values;
-        velocityChart.options.scales.y.suggestedMax = getTrendMax(values);
-        velocityChart.update();
+        occupancyTrendChart.data.labels = labels;
+        occupancyTrendChart.data.datasets[0].data = values;
+        occupancyTrendChart.options.scales.y.suggestedMax = getTrendMax(values);
+        occupancyTrendChart.update();
     };
 
     setActiveTrendMode(initialTrendMode);
