@@ -33,6 +33,7 @@ public class EditProfileServlet extends HttpServlet {
         }
 
         pageSupport.prepareEditProfile(request, userId);
+        populateEditProfileFormState(request);
         pageSupport.forwardLayout(request, response);
     }
 
@@ -158,5 +159,26 @@ public class EditProfileServlet extends HttpServlet {
 
         session.setAttribute("flash_error", "Update failed. Please try again.");
         response.sendRedirect(request.getContextPath() + "/customer/profile/edit");
+    }
+
+    private void populateEditProfileFormState(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session == null) {
+            return;
+        }
+
+        request.setAttribute("form_fullName", session.getAttribute("form_fullName"));
+        request.setAttribute("form_gender", session.getAttribute("form_gender"));
+        request.setAttribute("form_dob", session.getAttribute("form_dob"));
+        request.setAttribute("form_identity", session.getAttribute("form_identity"));
+        request.setAttribute("form_phone", session.getAttribute("form_phone"));
+        request.setAttribute("form_address", session.getAttribute("form_address"));
+
+        session.removeAttribute("form_fullName");
+        session.removeAttribute("form_gender");
+        session.removeAttribute("form_dob");
+        session.removeAttribute("form_identity");
+        session.removeAttribute("form_phone");
+        session.removeAttribute("form_address");
     }
 }

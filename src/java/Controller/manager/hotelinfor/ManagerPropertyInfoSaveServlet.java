@@ -56,11 +56,7 @@ public class ManagerPropertyInfoSaveServlet extends HttpServlet {
             errors.put("address", "Official address phải từ 10 đến 255 ký tự.");
         }
 
-        if (phone.isEmpty()) {
-            errors.put("phone", "Primary hotline không được để trống.");
-        } else if (!phone.matches("^\\+?[0-9\\s-]{10,20}$")) {
-            errors.put("phone", "Primary hotline không đúng định dạng.");
-        }
+        
 
         if (email.isEmpty()) {
             errors.put("email", "Official email không được để trống.");
