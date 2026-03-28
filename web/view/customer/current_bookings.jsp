@@ -115,7 +115,7 @@
                                 </button>
 
                                 <c:if test="${b.canCancel}">
-                                    <form action="${pageContext.request.contextPath}/customer/bookings/current/cancel"
+                                    <form action="${pageContext.request.contextPath}/customer/bookings/current"
                                           method="post"
                                           class="js-cancel-form">
 
