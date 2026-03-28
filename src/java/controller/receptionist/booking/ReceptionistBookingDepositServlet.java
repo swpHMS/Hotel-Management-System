@@ -77,26 +77,15 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
     // ===== Lấy thông tin khách từ session =====
     String fullName = (String) session.getAttribute("cus_fullName");
     String phone    = (String) session.getAttribute("cus_phone");
-    String email    = (String) session.getAttribute("cus_email");
     String identity = (String) session.getAttribute("cus_identity");
     String address  = (String) session.getAttribute("cus_address");
 
     // ===== CHỐT CHẶN 2: phải có thông tin khách =====
-    if (fullName == null || phone == null || address == null) {
-
-        session.setAttribute(
-                "errorMsg",
-                "Customer information is missing. Please re-enter customer details."
-        );
-
-        resp.sendRedirect(
-                req.getContextPath()
-                + "/receptionist/booking/customer?holdId="
-                + holdId
-        );
-
-        return;
-    }
+    if (fullName == null || phone == null || identity == null || address == null) {
+    session.setAttribute("errorMsg", "Customer information is missing. Please re-enter customer details.");
+    resp.sendRedirect(req.getContextPath() + "/receptionist/booking/customer?holdId=" + holdId);
+    return;
+}
 
     try {
 
@@ -139,7 +128,7 @@ protected void doPost(HttpServletRequest req, HttpServletResponse resp)
                 holdId,
                 fullName,
                 phone,
-                email,
+                null,
                 identity,
                 address,
                 0.5,

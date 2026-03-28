@@ -176,12 +176,6 @@
                         </c:if>
                         <input type="hidden" name="status"
                                value="${formValue != null ? formValue.status : (editing != null ? editing.status : 1)}"/>
-                        <c:if test="${not empty preservedThumbnailUrl}">
-                            <input type="hidden" name="existingThumbnailUrl" value="${preservedThumbnailUrl}"/>
-                        </c:if>
-                        <c:forEach var="preservedGalleryUrl" items="${preservedGalleryUrls}">
-                            <input type="hidden" name="existingGalleryUrls" value="${preservedGalleryUrl}"/>
-                        </c:forEach>
                         <div id="rtDeletedGalleryInputs">
                             <c:forEach var="deletedImageId" items="${deletedGalleryImageIds}">
                                 <input type="hidden" name="deletedGalleryImageIds" value="${deletedImageId}"/>
@@ -197,11 +191,6 @@
                                         <input id="rtThumbnailInput" type="file" name="thumbnailImage" accept=".jpg,.jpeg,.png"/>
                                         <span id="rtThumbnailPreview">
                                             <c:choose>
-                                                <c:when test="${not empty preservedThumbnailUrl}">
-                                                    <img src="${pageContext.request.contextPath}/${preservedThumbnailUrl}"
-                                                         alt="Thumbnail"
-                                                         onerror="this.onerror=null;this.src='${fallbackRoomImage}';"/>
-                                                </c:when>
                                                 <c:when test="${mode == 'edit' && editing != null && editing.thumbnailImage != null}">
                                                     <img src="${pageContext.request.contextPath}/${editing.thumbnailImage.imageUrl}"
                                                          alt="Thumbnail"
@@ -222,7 +211,7 @@
                                             </c:choose>
                                         </span>
                                     </label>
-                                    <small class="rt-help-text">Click the thumbnail area to replace it with a new image. Supported formats: JPG, JPEG, PNG. Files larger than 300 KB will be resized automatically.</small>
+                                    <small class="rt-help-text">Click the thumbnail area to replace it with a new image. Supported formats: JPG, JPEG, PNG. Large images will be resized automatically before storage.</small>
                                 </div>
 
                                 <div class="rt-gallery-panel">
@@ -236,14 +225,6 @@
                                     </div>
 
                                     <div class="rt-gallery-grid" id="rtGalleryPreview">
-                                        <c:forEach var="preservedGalleryUrl" items="${preservedGalleryUrls}">
-                                            <div class="rt-gallery-item rt-gallery-item-preview">
-                                                <img src="${pageContext.request.contextPath}/${preservedGalleryUrl}"
-                                                     alt="Gallery preview"
-                                                     onerror="this.onerror=null;this.src='${fallbackRoomImage}';"/>
-                                                <span class="rt-preview-badge">New</span>
-                                            </div>
-                                        </c:forEach>
                                         <c:if test="${mode == 'edit' && editing != null && not empty editing.galleryImages}">
                                             <c:forEach var="image" items="${editing.galleryImages}">
                                                 <c:set var="deletedClass" value="" />
@@ -265,11 +246,11 @@
                                             </c:forEach>
                                         </c:if>
                                     </div>
-                                    <div class="rt-gallery-empty ${(not empty preservedGalleryUrls) || (mode == 'edit' && editing != null && not empty editing.galleryImages) ? 'is-hidden' : ''}"
+                                    <div class="rt-gallery-empty ${(mode == 'edit' && editing != null && not empty editing.galleryImages) ? 'is-hidden' : ''}"
                                          id="rtGalleryEmpty"
-                                         data-create-message="Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG. Files larger than 300 KB will be resized automatically."
+                                         data-create-message="Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG. Large images will be resized automatically before storage."
                                          data-edit-message="No gallery images will remain after saving. You can add new JPG, JPEG, or PNG images before clicking Save Changes.">
-                                        ${mode == 'edit' ? 'No gallery images will remain after saving. You can add new JPG, JPEG, or PNG images before clicking Save Changes.' : 'Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG. Files larger than 300 KB will be resized automatically.'}
+                                        ${mode == 'edit' ? 'No gallery images will remain after saving. You can add new JPG, JPEG, or PNG images before clicking Save Changes.' : 'Upload one or more non-thumbnail images for this room type. Supported formats: JPG, JPEG, PNG. Large images will be resized automatically before storage.'}
                                     </div>
                                 </div>
                             </div>
@@ -323,7 +304,7 @@
                                 </label>
                                 <div class="rt-static-note">
                                     <strong>Automatic Price Period</strong>
-                                    <span>${mode == 'create' ? 'The first price starts from tomorrow. When you change the price later, the previous price period will be closed automatically.' : 'When you change the price, the new price starts today and the previous price period will be closed automatically.'}</span>
+                                    <span>${mode == 'create' ? 'The first price starts from tomorrow. When you change the price later, the previous price period will be closed automatically.' : 'When you change the price, the new price starts immediately after save and the previous price period will be closed automatically.'}</span>
                                 </div>
                             </div>
                         </div>
@@ -374,6 +355,7 @@
     const clientImageError = document.getElementById('rtClientImageError');
     const deletedGalleryInputs = document.getElementById('rtDeletedGalleryInputs');
     const allowedImageExtensions = ['jpg', 'jpeg', 'png'];
+    const pendingGalleryFiles = [];
     let searchTimer;
 
     if (successAlert) {
@@ -439,9 +421,12 @@
             clearClientImageError();
 
             files.forEach((file) => {
+                pendingGalleryFiles.push(file);
+                const previewIndex = pendingGalleryFiles.length - 1;
                 const url = URL.createObjectURL(file);
                 const item = document.createElement('div');
                 item.className = 'rt-gallery-item rt-gallery-item-preview';
+                item.dataset.previewIndex = String(previewIndex);
                 const image = document.createElement('img');
                 image.src = url;
                 image.alt = 'Gallery preview';
@@ -450,14 +435,31 @@
                 badge.className = 'rt-preview-badge';
                 badge.textContent = 'New';
 
+                const removeButton = document.createElement('button');
+                removeButton.className = 'rt-delete-image';
+                removeButton.type = 'button';
+                removeButton.title = 'Remove image';
+                removeButton.innerHTML = '<i class="bi bi-x-lg"></i>';
+                removeButton.addEventListener('click', () => {
+                    const index = Number(item.dataset.previewIndex);
+                    if (!Number.isNaN(index)) {
+                        pendingGalleryFiles.splice(index, 1);
+                    }
+                    URL.revokeObjectURL(url);
+                    item.remove();
+                    reindexPreviewItems();
+                    syncGalleryInputFiles();
+                    toggleGalleryEmptyState();
+                });
+
                 item.appendChild(image);
                 item.appendChild(badge);
+                item.appendChild(removeButton);
                 galleryPreview.appendChild(item);
             });
 
-            if (galleryEmpty) {
-                galleryEmpty.classList.add('is-hidden');
-            }
+            syncGalleryInputFiles();
+            toggleGalleryEmptyState();
         });
     }
 
@@ -519,6 +521,25 @@
                 ? galleryEmpty.dataset.editMessage
                 : galleryEmpty.dataset.createMessage;
         }
+    }
+
+    function syncGalleryInputFiles() {
+        if (!galleryInput || typeof DataTransfer === 'undefined') {
+            return;
+        }
+        const dataTransfer = new DataTransfer();
+        pendingGalleryFiles.forEach((file) => dataTransfer.items.add(file));
+        galleryInput.files = dataTransfer.files;
+    }
+
+    function reindexPreviewItems() {
+        if (!galleryPreview) {
+            return;
+        }
+        const previewItems = galleryPreview.querySelectorAll('.rt-gallery-item-preview');
+        previewItems.forEach((item, index) => {
+            item.dataset.previewIndex = String(index);
+        });
     }
 })();
 </script>

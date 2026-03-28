@@ -51,7 +51,6 @@
                     <label class="ep-label" for="email">Email</label>
                     <input class="ep-input" id="email" name="email" type="email"
                            value="${profile.email}" readonly>
-                    <div class="ep-help">Email cannot be changed.</div>
                 </div>
 
                 <!-- Phone -->
@@ -59,7 +58,18 @@
                     <label class="ep-label" for="phone">Phone Number</label>
                     <input class="ep-input" id="phone" name="phone" type="text"
                            value="${not empty form_phone ? form_phone : profile.phone}"
-                           placeholder="e.g. 0987654321">
+                           placeholder="e.g. 0987654321"
+                           inputmode="numeric"
+                           required>
+                    <div class="ep-help">Vietnam format: exactly 10 digits, starting with 0.</div>
+                </div>
+
+                <div class="ep-field">
+                    <label class="ep-label" for="identityNumber">Identity Number</label>
+                    <input class="ep-input" id="identityNumber" name="identityNumber" type="text"
+                           value="${not empty form_identity ? form_identity : profile.identityNumber}"
+                           placeholder="12 digits">
+                    <div class="ep-help">If provided, identity number must contain exactly 12 digits.</div>
                 </div>
 
                 <!-- Gender -->
@@ -106,7 +116,7 @@
 
             <div class="ep-actions">
                 <a class="ep-btn ep-btn--ghost"
-                   href="${pageContext.request.contextPath}/customer/dashboard?tab=viewProfile">
+                   href="${pageContext.request.contextPath}/customer/profile">
                     Cancel
                 </a>
 

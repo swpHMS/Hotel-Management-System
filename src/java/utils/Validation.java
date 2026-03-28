@@ -17,7 +17,7 @@ public class Validation {
 
     // VN phone basic: 10 digits, starts 0
     private static final Pattern VN_PHONE =
-            Pattern.compile("^0\\d{9,10}$");
+            Pattern.compile("^0\\d{9}$");
 
     // CCCD 12 digits (bạn nói muốn chuẩn CCCD)
     private static final Pattern CCCD =

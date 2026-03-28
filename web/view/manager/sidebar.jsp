@@ -69,7 +69,7 @@
 
         <a class="sb-item <%= "propertyInfo".equals(active) ? "active" : "" %>"
            href="${pageContext.request.contextPath}/manager/property-info">
-            <i class="bi bi-info-circle-fill"></i> <span>Property Info</span>
+            <i class="bi bi-info-circle-fill"></i> <span>Property Infomation</span>
         </a>
     </nav>
 

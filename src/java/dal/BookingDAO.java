@@ -484,7 +484,7 @@ public List<BookingCardView> getPastStaysByCustomerIdPaging(int customerId, int 
 
         b.setRoomTypeId(rs.getInt("roomTypeId"));
         b.setRoomTypeName(rs.getString("roomTypeName"));
-        b.setRoomMeta(rs.getString("roomMeta"));
+        b.setRoomMeta(formatRoomMeta(rs.getString("roomMeta")));
         b.setMaxAdult(rs.getInt("maxAdult"));
         b.setMaxChildren(rs.getInt("maxChildren"));
 
@@ -509,6 +509,57 @@ public List<BookingCardView> getPastStaysByCustomerIdPaging(int customerId, int 
         b.setAmenitiesText(rs.getString("amenitiesText"));
 
         return b;
+    }
+
+    private String formatRoomMeta(String rawRoomMeta) {
+        if (rawRoomMeta == null || rawRoomMeta.isBlank()) {
+            return "";
+        }
+
+        String bed = extractToken(rawRoomMeta, "BED");
+        String roomView = extractToken(rawRoomMeta, "VIEW");
+        String size = extractToken(rawRoomMeta, "SIZE");
+
+        List<String> parts = new ArrayList<>();
+        if (bed != null && !bed.isBlank()) {
+            parts.add(bed);
+        }
+        if (roomView != null && !roomView.isBlank()) {
+            parts.add(roomView);
+        }
+        if (size != null && !size.isBlank()) {
+            parts.add(size + " sqm");
+        }
+
+        if (!parts.isEmpty()) {
+            return String.join(" • ", parts);
+        }
+
+        return rawRoomMeta
+                .replaceAll("\\[BED:[^\\]]*\\]", "")
+                .replaceAll("\\[VIEW:[^\\]]*\\]", "")
+                .replaceAll("\\[SIZE:[^\\]]*\\]", "")
+                .trim();
+    }
+
+    private String extractToken(String text, String token) {
+        if (text == null || token == null) {
+            return null;
+        }
+
+        String marker = "[" + token + ":";
+        int start = text.indexOf(marker);
+        if (start < 0) {
+            return null;
+        }
+
+        int end = text.indexOf("]", start);
+        if (end < 0) {
+            return null;
+        }
+
+        String value = text.substring(start + marker.length(), end).trim();
+        return value.isEmpty() ? null : value;
     }
 
     public List<BookingCardView> getPastStaysByCustomerId(int customerId) {

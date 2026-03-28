@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="uri" value="${pageContext.request.requestURI}" />
-<c:set var="isCustomerDashboard" value="${uri.contains('/customer/dashboard')}" />
+<c:set var="isCustomerDashboard" value="${uri.contains('/customer/')}" />
 
 <header class="hms-header">
   <div class="hms-inner">
@@ -34,7 +34,7 @@
       <div class="hms-menu" role="menu">
         <c:if test="${not isCustomerDashboard}">
           <a role="menuitem" class="hms-item"
-             href="${pageContext.request.contextPath}/customer/dashboard">
+             href="${pageContext.request.contextPath}/customer/bookings/current">
             Dashboard
           </a>
           <div class="hms-divider"></div>

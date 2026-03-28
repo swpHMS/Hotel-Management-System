@@ -8,6 +8,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import model.User;
 
 @WebServlet(name = "StaffServiceOrderCreateServlet", urlPatterns = {"/staff/service-orders/create"})
 public class StaffServiceOrderCreateServlet extends HttpServlet {
@@ -25,40 +26,62 @@ public class StaffServiceOrderCreateServlet extends HttpServlet {
         }
     }
 
+    private Integer getLoginStaffId(HttpServletRequest req) {
+        HttpSession session = req.getSession(false);
+        if (session == null) {
+            return null;
+        }
+
+        User user = (User) session.getAttribute("userAccount");
+        if (user == null) {
+            return null;
+        }
+
+        return dao.getStaffIdByUserId(user.getUserId());
+    }
+
     private void loadServiceDropdown(HttpServletRequest req) {
-        // service_type: 1 MINIBAR, 2 LAUNDRY, 3 CLEANING, 0 SURCHARGE (theo bạn đang dùng)
+        // service_type: 1 MINIBAR, 2 LAUNDRY, 3 CLEANING
         req.setAttribute("svMinibar", dao.listServicesByType(1));
         req.setAttribute("svLaundry", dao.listServicesByType(2));
         req.setAttribute("svCleaning", dao.listServicesByType(3));
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
         loadServiceDropdown(req);
         req.getRequestDispatcher("/view/staff/serviceorder/createdraft.jsp").forward(req, resp);
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException, ServletException {
+
         req.setCharacterEncoding("UTF-8");
 
         Integer bookingId = parseIntOrNull(req.getParameter("bookingId"));
         Integer roomId = parseIntOrNull(req.getParameter("roomId"));
-
-        // staffId từ session
-        HttpSession session = req.getSession(false);
-        Integer staffId = (session != null) ? (Integer) session.getAttribute("staffId") : null;
-        if (staffId == null) {
-            staffId = 1;
+        String note = req.getParameter("note");
+        if (note != null) {
+            note = note.trim();
+            if (note.isEmpty()) {
+                note = null;
+            }
         }
 
-        // items arrays
+        Integer staffId = getLoginStaffId(req);
+        if (staffId == null) {
+            resp.sendRedirect(req.getContextPath() + "/login");
+            return;
+        }
+
         String[] serviceIdsRaw = req.getParameterValues("serviceId");
         String[] qtyRaw = req.getParameterValues("quantity");
 
-        // giữ lại input để JSP refill
         req.setAttribute("bookingIdVal", bookingId);
         req.setAttribute("roomIdVal", roomId);
+        req.setAttribute("noteVal", note);
 
         if (bookingId == null || roomId == null) {
             loadServiceDropdown(req);
@@ -66,6 +89,7 @@ public class StaffServiceOrderCreateServlet extends HttpServlet {
             req.getRequestDispatcher("/view/staff/serviceorder/createdraft.jsp").forward(req, resp);
             return;
         }
+
         if (!dao.isRoomInHouseForBooking(bookingId, roomId)) {
             loadServiceDropdown(req);
             req.setAttribute("err", "room_booking_mismatch");
@@ -90,8 +114,8 @@ public class StaffServiceOrderCreateServlet extends HttpServlet {
             req.getRequestDispatcher("/view/staff/serviceorder/createdraft.jsp").forward(req, resp);
             return;
         }
+        int newId = dao.createDraftWithItems(bookingId, roomId, staffId, note, items);
 
-        int newId = dao.createDraftWithItems(bookingId, roomId, staffId, items);
         if (newId <= 0) {
             loadServiceDropdown(req);
             req.setAttribute("err", "create_failed");
