@@ -20,7 +20,6 @@ import model.RoomTypeImage;
 public class BookingServlet extends HttpServlet {
 
     private static final int MAX_STAY_NIGHTS = 30;
-    private static final int MAX_ADVANCE_BOOKING_DAYS = 180;
 
     private int parseIntOrDefault(String s, int def) {
         try {
@@ -92,7 +91,7 @@ public class BookingServlet extends HttpServlet {
         LocalDate today = LocalDate.now();
         LocalDate checkIn = parseDateOrNull(request.getParameter("checkIn"));
         LocalDate checkOut = parseDateOrNull(request.getParameter("checkOut"));
-        LocalDate maxAdvanceDate = today.plusDays(MAX_ADVANCE_BOOKING_DAYS);
+        LocalDate maxAdvanceDate = today.plusMonths(3);
         int adults = clamp(parseIntOrDefault(request.getParameter("adults"), 2), 1, 30);
         int children = clamp(parseIntOrDefault(request.getParameter("children"), 0), 0, 15);
         int roomQty = clamp(parseIntOrDefault(request.getParameter("roomQty"), 1), 1, 20);
@@ -103,15 +102,27 @@ public class BookingServlet extends HttpServlet {
         if (checkOut == null) {
             checkOut = checkIn.plusDays(1);
         }
-if (checkIn.isAfter(maxAdvanceDate)) {
-    checkIn = maxAdvanceDate;
-    checkOut = checkIn.plusDays(1);
-    request.setAttribute("dateError",
-            "You can only book up to " + MAX_ADVANCE_BOOKING_DAYS + " days in advance.");
-}
+
+// Không cho chọn check-in trong quá khứ
+        if (checkIn.isBefore(today)) {
+            checkIn = today;
+            request.setAttribute("dateError", "Check-in date cannot be in the past.");
+        }
+
+// Không cho đặt quá xa trong tương lai
+        if (checkIn.isAfter(maxAdvanceDate)) {
+            checkIn = maxAdvanceDate;
+            checkOut = checkIn.plusDays(1);
+            request.setAttribute("dateError",
+                    "You can only book up to 3 months in advance.");
+        }
+
+// Check-out phải sau check-in ít nhất 1 đêm
         if (!checkOut.isAfter(checkIn)) {
             checkOut = checkIn.plusDays(1);
         }
+
+// Tối đa số đêm lưu trú
         long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
         if (nights > MAX_STAY_NIGHTS) {
             checkOut = checkIn.plusDays(MAX_STAY_NIGHTS);
