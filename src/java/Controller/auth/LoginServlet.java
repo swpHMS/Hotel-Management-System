@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.GoogleUserDTO;
+import model.HotelInformation;
 import model.User;
 
 @WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
@@ -23,8 +24,16 @@ public class LoginServlet extends HttpServlet {
         String code = request.getParameter("code");
         String contextPath = request.getContextPath();
 
-        HotelInformationDAO hotel=new HotelInformationDAO();
-        String name=hotel.getSingleHotel().getName();
+        HotelInformationDAO daoHotel=new HotelInformationDAO();
+        String nameHotel="Regal Quintet";
+        try {
+            HotelInformation hotel = daoHotel.getSingleHotel();
+            if (hotel != null && hotel.getName() != null && !hotel.getName().trim().isEmpty()) {
+                nameHotel = hotel.getName();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         
         if (code != null && !code.isEmpty()) {
             try {
@@ -64,9 +73,9 @@ public class LoginServlet extends HttpServlet {
                 if (c.getName().equals("cookRem")) {
                     request.setAttribute("remember", c.getValue());
                 }
-            }
+}
         }
-        request.setAttribute("nameHotel", name);
+        request.setAttribute("nameHotel", nameHotel);
         request.getRequestDispatcher("/view/auth/login.jsp").forward(request, response);
     }
 
@@ -138,7 +147,7 @@ public class LoginServlet extends HttpServlet {
             cEmail.setMaxAge(0);
             cRem.setMaxAge(0);
         }
-        response.addCookie(cEmail);
+response.addCookie(cEmail);
         response.addCookie(cRem);
     }
 

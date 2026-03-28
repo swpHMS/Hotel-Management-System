@@ -1,7 +1,15 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
 <%@ page import="model.User" %>
-
+<%@ page import="dal.HotelInformationDAO" %>
+<%@ page import="model.HotelInformation" %>
+<%
+    HotelInformation hotel = (HotelInformation) request.getAttribute("hotel");
+    if (hotel == null) {
+        hotel = new HotelInformationDAO().getSingleHotel();
+        request.setAttribute("hotel", hotel);
+    }
+%>
 <%
 User user = (User) session.getAttribute("userAccount");
 
@@ -21,19 +29,16 @@ String initials = parts.length >= 2
 <aside class="sb">
 
     <div class="sb-brand">
-        <div class="diamond-icons" style="display:flex; align-items:center; margin-bottom:5px;">
-            <a href="${pageContext.request.contextPath}/home"
-               style="text-decoration:none; display:flex; gap:1px; border:none; outline:none; align-items:center;">
-
-                <span style="color:#FFD700; font-size:14px; line-height:1; text-shadow:0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
-                <span style="color:#FF0000; font-size:18px; line-height:1; text-shadow:0 0 10px rgba(255, 0, 0, 0.4);">◆</span>
-                <span style="color:#FFD700; font-size:14px; line-height:1; text-shadow:0 0 8px rgba(255, 215, 0, 0.4);">◆</span>
-
-            </a>
-        </div>
-
+        <div class="diamond-icons" style="display:flex;align-items:center;margin-bottom:5px;">
+                <a href="${pageContext.request.contextPath}/home"
+                   style="text-decoration:none !important;display:flex;gap:1px;border:none;outline:none;color:transparent !important;">
+                    <span style="color:#D4B78F !important;font-size:14px;line-height:1;margin-right:-2px;">◆</span>
+                    <span style="color:#FFABAB !important;font-size:14px;line-height:1;margin-right:-2px;">◆</span>
+                    <span style="color:#D4B78F !important;font-size:14px;line-height:1;">◆</span>
+                </a>
+            </div>
         <div>
-            <div class="sb-title">Staff Panel</div>
+            <div class="sb-title">${hotel.name}</div>
             <div class="sb-sub">Hotel System</div>
         </div>
     </div>
