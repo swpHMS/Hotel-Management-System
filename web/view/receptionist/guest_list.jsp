@@ -415,7 +415,7 @@
 
     <body>
         <div class="d-flex">
-            <% request.setAttribute("active", "guest-list"); %>
+            <% request.setAttribute("active", "guest_list"); %>
             <jsp:include page="sidebar.jsp"/>
 
             <main class="hms-main">

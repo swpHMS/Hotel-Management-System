@@ -101,7 +101,7 @@ public class ReceptionistGuestListServlet extends HttpServlet {
         request.setAttribute("currentSize", size);
         request.setAttribute("totalRecords", totalRecords);
         request.setAttribute("errorMessage", errorMessage);
-
+        request.setAttribute("active", "guest_list");
         request.getRequestDispatcher("/view/receptionist/guest_list.jsp").forward(request, response);
     }
 }

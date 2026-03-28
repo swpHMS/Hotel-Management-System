@@ -581,19 +581,16 @@
                         </div>
 
                         <div class="rr-field">
-                            <label>Room Type</label>
-                            <select name="roomType" class="rr-select">
-                                <option value="">All Types</option>
-                                <option value="Standard Single" ${roomType == 'Standard Single' ? 'selected' : ''}>Standard Single</option>
-                                <option value="Standard Double" ${roomType == 'Standard Double' ? 'selected' : ''}>Standard Double</option>
-                                <option value="Deluxe View Sea" ${roomType == 'Deluxe View Sea' ? 'selected' : ''}>Deluxe View Sea</option>
-                                <option value="Deluxe View City" ${roomType == 'Deluxe View City' ? 'selected' : ''}>Deluxe View City</option>
-                                <option value="Suite View Sea" ${roomType == 'Suite View Sea' ? 'selected' : ''}>Suite View Sea</option>
-                                <option value="Suite View City" ${roomType == 'Suite View City' ? 'selected' : ''}>Suite View City</option>
-                                <option value="Connecting Room" ${roomType == 'Connecting Room' ? 'selected' : ''}>Connecting Room</option>
-                                <option value="Family Room" ${roomType == 'Family Room' ? 'selected' : ''}>Family Room</option>
-                            </select>
-                        </div>
+    <label>Room Type</label>
+    <select name="roomType" class="rr-select">
+        <option value="">All Types</option>
+        <c:forEach var="rt" items="${roomTypeList}">
+            <option value="${rt.roomTypeName}" ${roomType == rt.roomTypeName ? 'selected' : ''}>
+                ${rt.roomTypeName}
+            </option>
+        </c:forEach>
+    </select>
+</div>
                     </div>
 
                     <input type="hidden" name="page" value="1">

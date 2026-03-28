@@ -22,7 +22,7 @@
 
     // Xác định trạng thái active
     String active = (String) request.getAttribute("active");
-    if (active == null) active = "dashboard";
+if (active == null) active = "";
 
     // Xử lý tạo Avatar initials (Tên viết tắt)
     String initials = "R";
