@@ -28,6 +28,26 @@ final class CustomerPageSupport {
     private final CustomerProfileDAO profileDAO = new CustomerProfileDAO();
     private final BookingDAO bookingDAO = new BookingDAO();
 
+    static int normalizePage(String pageParam) {
+        try {
+            int page = Integer.parseInt(pageParam);
+            return Math.max(page, 1);
+        } catch (Exception e) {
+            return 1;
+        }
+    }
+
+    static int normalizePageSize(String raw) {
+        try {
+            int size = Integer.parseInt(raw);
+            if (size == 2 || size == 5 || size == 10) {
+                return size;
+            }
+        } catch (Exception e) {
+        }
+        return 2;
+    }
+
     Integer requireUserId(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Integer userId = AuthUtils.getUserId(request);
         if (userId == null) {
@@ -55,20 +75,6 @@ final class CustomerPageSupport {
                 request.setAttribute("flash_success", flashSuccess);
                 session.removeAttribute("flash_success");
             }
-
-            request.setAttribute("form_fullName", session.getAttribute("form_fullName"));
-            request.setAttribute("form_gender", session.getAttribute("form_gender"));
-            request.setAttribute("form_dob", session.getAttribute("form_dob"));
-            request.setAttribute("form_identity", session.getAttribute("form_identity"));
-            request.setAttribute("form_phone", session.getAttribute("form_phone"));
-            request.setAttribute("form_address", session.getAttribute("form_address"));
-
-            session.removeAttribute("form_fullName");
-            session.removeAttribute("form_gender");
-            session.removeAttribute("form_dob");
-            session.removeAttribute("form_identity");
-            session.removeAttribute("form_phone");
-            session.removeAttribute("form_address");
         }
     }
 
@@ -76,11 +82,11 @@ final class CustomerPageSupport {
         prepareBaseData(request, userId);
 
         Integer customerId = resolveCustomerId((ProfileView) request.getAttribute("profile"), userId);
-        int pageSize = parsePageSize(request.getParameter("pageSize"));
+        int pageSize = normalizePageSize(request.getParameter("pageSize"));
         request.setAttribute("pageSize", pageSize);
 
         if (customerId != null) {
-            int currentPage = parsePage(request.getParameter("currentPage"));
+            int currentPage = normalizePage(request.getParameter("currentPage"));
             int totalItems = bookingDAO.countCurrentBookingsByCustomerId(customerId);
             int totalPages = (int) Math.ceil((double) totalItems / pageSize);
 
@@ -113,11 +119,11 @@ final class CustomerPageSupport {
         prepareBaseData(request, userId);
 
         Integer customerId = resolveCustomerId((ProfileView) request.getAttribute("profile"), userId);
-        int pageSize = parsePageSize(request.getParameter("pageSize"));
+        int pageSize = normalizePageSize(request.getParameter("pageSize"));
         request.setAttribute("pageSize", pageSize);
 
         if (customerId != null) {
-            int pastPage = parsePage(request.getParameter("pastPage"));
+            int pastPage = normalizePage(request.getParameter("pastPage"));
             int totalItems = bookingDAO.countPastStaysByCustomerId(customerId);
             int totalPages = (int) Math.ceil((double) totalItems / pageSize);
 
@@ -200,26 +206,6 @@ final class CustomerPageSupport {
             return profile.getCustomerId();
         }
         return bookingDAO.getCustomerIdByUserId(userId);
-    }
-
-    private int parsePage(String pageParam) {
-        try {
-            int page = Integer.parseInt(pageParam);
-            return Math.max(page, 1);
-        } catch (Exception e) {
-            return 1;
-        }
-    }
-
-    private int parsePageSize(String raw) {
-        try {
-            int size = Integer.parseInt(raw);
-            if (size == 2 || size == 5 || size == 10) {
-                return size;
-            }
-        } catch (Exception e) {
-        }
-        return 2;
     }
 
     private List<String> buildPageTokens(int currentPage, int totalPages) {
