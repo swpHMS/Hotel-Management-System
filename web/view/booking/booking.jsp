@@ -54,14 +54,19 @@
                     <div class="bk-field">
                         <label>Check-in</label>
                         <!-- ✅ ADDED id -->
-                        <input type="date" name="checkIn" id="checkIn" value="${ci}">
+                        <input type="date"
+                               name="checkIn"
+                               id="checkIn"
+                               value="${ci}"
+                               min="<%= java.time.LocalDate.now() %>"
+                               max="<%= java.time.LocalDate.now().plusMonths(3) %>">
                     </div>
 
                     <!-- Check-out -->
                     <div class="bk-field">
                         <label>Check-out</label>
                         <!-- ✅ ADDED id -->
-                        <input type="date" name="checkOut" id="checkOut" value="${co}">
+                        <input type="date" name="checkOut" id="checkOut" value="${co}" min="${ci}">
                     </div>
 
                     <!-- Guests -->
