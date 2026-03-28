@@ -69,7 +69,7 @@ public class RoomRegistryServlet extends HttpServlet {
         int totalRooms = dao.getTotalRoomCount(keyword, status, roomType);
         int totalPages = (int) Math.ceil((double) totalRooms / pageSize);
 
-        // 5. Đẩy dữ liệu ra view
+        
         request.setAttribute("listR", list);
         request.setAttribute("currentPage", pageIndex);
         request.setAttribute("totalPages", totalPages);

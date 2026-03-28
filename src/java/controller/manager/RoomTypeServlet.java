@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import model.RoomTypeForm;
 import model.RoomTypeManagementView;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;

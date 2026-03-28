@@ -434,10 +434,8 @@
                                     <div class="field">
                                         <label>Primary Hotline</label>
                                         <input type="text" name="phone" value="${hotel.phone}"
-                                               class="${not empty errors.phone ? 'input-error' : ''}" required>
-                                        <c:if test="${not empty errors.phone}">
-                                            <div class="field-error">${errors.phone}</div>
-                                        </c:if>
+                                               >
+                                        
                                     </div>
 
                                     <div class="field">

@@ -35,7 +35,6 @@ public class ReceptionistBookingDepositServlet extends HttpServlet {
             }
 
             long deposit = Math.round(s.total * 0.5); // 50%
-
             req.setAttribute("holdId", s.holdId);
             req.setAttribute("roomTypeName", s.roomTypeName);
             req.setAttribute("checkIn", s.checkIn);

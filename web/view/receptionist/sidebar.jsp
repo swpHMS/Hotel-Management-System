@@ -89,13 +89,13 @@
            href="${pageContext.request.contextPath}/receptionist/rooms">
            <i class="bi bi-door-open"></i>
            <span>Room Dashboard</span>
-        </a>
+        </a>-->
 
         <a class="sb-item <%= "guest_list".equals(active)?"active":"" %>"
-           href="${pageContext.request.contextPath}/receptionist/guests">
+           href="${pageContext.request.contextPath}/receptionist/guest-list">
            <i class="bi bi-people"></i>
            <span>Guest List</span>
-        </a>-->
+        </a>
 
     </nav>
 
