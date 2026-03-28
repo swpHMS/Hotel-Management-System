@@ -30,7 +30,7 @@ public class HomeServlet extends HttpServlet {
     private final RoomTypeImageDAO roomTypeImageRepo = new RoomTypeImageDAO();
     private static final int DEFAULT_LIMIT = 8;
     private static final int MAX_STAY_NIGHTS = 30;
-    private static final int MAX_ADVANCE_BOOKING_DAYS = 30;
+    private static final int MAX_ADVANCE_BOOKING_MONTHS = 3;
 
     private int parseIntOrDefault(String s, int def) {
         try {
@@ -82,7 +82,7 @@ public class HomeServlet extends HttpServlet {
         LocalDate checkIn = parseDateOrDefault(checkInStr, defaultIn);
         LocalDate checkOut = parseDateOrDefault(checkOutStr, defaultOut);
         LocalDate today = LocalDate.now();
-        LocalDate maxAdvanceDate = today.plusDays(MAX_ADVANCE_BOOKING_DAYS);
+        LocalDate maxAdvanceDate = today.plusMonths(MAX_ADVANCE_BOOKING_MONTHS);
 
         if (checkIn.isBefore(today)) {
             checkIn = today;
@@ -94,7 +94,7 @@ public class HomeServlet extends HttpServlet {
             checkIn = maxAdvanceDate;
             checkOut = checkIn.plusDays(1);
             req.setAttribute("dateError",
-                    "You can only book up to " + MAX_ADVANCE_BOOKING_DAYS + " days in advance.");
+        "You can only book up to " + MAX_ADVANCE_BOOKING_MONTHS + " months in advance.");
         }
 
         if (!checkOut.isAfter(checkIn)) {

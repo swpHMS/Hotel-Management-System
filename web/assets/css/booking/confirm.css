@@ -552,3 +552,116 @@
   border-radius:12px;
   line-height:1.7;
 }
+.cf-rightCol {
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+}
+
+.cf-back-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 60px;
+    margin-top: 16px;
+    padding: 0 20px;
+    border-radius: 22px;
+    border: 1.5px solid #0f2343;
+    background: #ffffff;
+    color: #0f2343;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.cf-back-link:hover {
+    background: #f4f7fb;
+    color: #0f2343;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.cf-back-link:visited,
+.cf-back-link:focus,
+.cf-back-link:active {
+    color: #0f2343;
+    text-decoration: none;
+}
+.cf-back-link {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-height: 60px !important;
+    margin-top: 16px !important;
+    padding: 0 20px !important;
+    border-radius: 22px !important;
+    border: 1.5px solid #0f2343 !important;
+    background: #ffffff !important;
+    color: #0f2343 !important;
+    text-decoration: none !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+    transition: all 0.2s ease !important;
+}
+
+.cf-back-link:hover {
+    background: #f4f7fb !important;
+    color: #0f2343 !important;
+    text-decoration: none !important;
+    transform: translateY(-1px);
+}
+
+.cf-back-link:visited,
+.cf-back-link:focus,
+.cf-back-link:active {
+    color: #0f2343 !important;
+    text-decoration: none !important;
+}
+
+.cf-rightCol {
+    display: flex;
+    flex-direction: column;
+    align-self: start;
+}
+
+.cf-back-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 58px;
+    margin-top: 16px;
+    padding: 0 20px;
+    border-radius: 20px;
+    border: 1.5px solid #0f2343;
+    background: #ffffff;
+    color: #0f2343;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    box-shadow: 0 6px 16px rgba(15, 35, 67, 0.06);
+}
+
+.cf-back-link:hover {
+    background: #f4f7fb;
+    color: #0f2343;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.cf-back-link:visited,
+.cf-back-link:focus,
+.cf-back-link:active {
+    color: #0f2343;
+    text-decoration: none;
+}

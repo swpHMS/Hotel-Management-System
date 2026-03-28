@@ -194,53 +194,62 @@
                 </div>
 
                 <!-- RIGHT -->
-                <div class="cf-card">
-                    <div class="cf-miniTop">
-                        <div>
-                            <div class="cf-miniLabel">CHECK-IN</div>
-                            <div class="cf-miniDate">${checkIn}</div>
+                <!-- RIGHT -->
+                <div class="cf-rightCol">
+                    <div class="cf-card">
+                        <div class="cf-miniTop">
+                            <div>
+                                <div class="cf-miniLabel">CHECK-IN</div>
+                                <div class="cf-miniDate">${checkIn}</div>
+                            </div>
+                            <div class="cf-miniRight">
+                                <div class="cf-miniLabel">CHECK-OUT</div>
+                                <div class="cf-miniDate">${checkOut}</div>
+                            </div>
                         </div>
-                        <div class="cf-miniRight">
-                            <div class="cf-miniLabel">CHECK-OUT</div>
-                            <div class="cf-miniDate">${checkOut}</div>
+
+                        <div class="cf-miniItem">
+                            <div class="cf-thumb">
+                                <c:set var="rawImg" value="${empty rt.imageUrl ? '' : rt.imageUrl}" />
+                                <c:choose>
+                                    <c:when test="${empty rawImg}">
+                                        <img src="https://dummyimage.com/200x200/e2e8f0/0f172a&text=ROOM" alt="room"/>
+                                    </c:when>
+                                    <c:when test="${fn:startsWith(rawImg, 'http://') or fn:startsWith(rawImg, 'https://')}">
+                                        <img src="${rawImg}" alt="room"/>
+                                    </c:when>
+                                    <c:when test="${fn:startsWith(rawImg, '/')}">
+                                        <img src="${ctx}${rawImg}" alt="room"/>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <img src="${ctx}/${rawImg}" alt="room"/>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+
+                            <div class="cf-miniInfo">
+                                <div class="cf-miniTitle">${roomQty}x ${rt.name}</div>
+                                <div class="cf-miniSub">${nights} nights • ${adults} adults</div>
+                            </div>
+                        </div>
+
+                        <div class="cf-miniSum">
+                            <div class="cf-line">
+                                <span>TOTAL</span>
+                                <span><fmt:formatNumber value="${total}" maxFractionDigits="0" groupingUsed="true"/> ₫</span>
+                            </div>
+                            <div class="cf-line">
+                                <b>DEPOSIT (50%)</b>
+                                <b><fmt:formatNumber value="${deposit}" maxFractionDigits="0" groupingUsed="true"/> ₫</b>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="cf-miniItem">
-                        <div class="cf-thumb">
-                            <c:set var="rawImg" value="${empty rt.imageUrl ? '' : rt.imageUrl}" />
-                            <c:choose>
-                                <c:when test="${empty rawImg}">
-                                    <img src="https://dummyimage.com/200x200/e2e8f0/0f172a&text=ROOM" alt="room"/>
-                                </c:when>
-                                <c:when test="${fn:startsWith(rawImg, 'http://') or fn:startsWith(rawImg, 'https://')}">
-                                    <img src="${rawImg}" alt="room"/>
-                                </c:when>
-                                <c:when test="${fn:startsWith(rawImg, '/')}">
-                                    <img src="${ctx}${rawImg}" alt="room"/>
-                                </c:when>
-                                <c:otherwise>
-                                    <img src="${ctx}/${rawImg}" alt="room"/>
-                                </c:otherwise>
-                            </c:choose>
-                        </div>
-
-                        <div class="cf-miniInfo">
-                            <div class="cf-miniTitle">${roomQty}x ${rt.name}</div>
-                            <div class="cf-miniSub">${nights} nights • ${adults} adults</div>
-                        </div>
-                    </div>
-
-                    <div class="cf-miniSum">
-                        <div class="cf-line">
-                            <span>TOTAL</span>
-                            <span><fmt:formatNumber value="${total}" maxFractionDigits="0" groupingUsed="true"/> ₫</span>
-                        </div>
-                        <div class="cf-line">
-                            <b>DEPOSIT (50%)</b>
-                            <b><fmt:formatNumber value="${deposit}" maxFractionDigits="0" groupingUsed="true"/> ₫</b>
-                        </div>
-                    </div>
+                    <a href="${ctx}/booking?roomTypeId=${rt.roomTypeId}&checkIn=${checkIn}&checkOut=${checkOut}&roomQty=${roomQty}&adults=${adults}&children=${children}"
+                       class="cf-back-link"
+                       style="display:flex;align-items:center;justify-content:center;width:100%;min-height:58px;margin-top:16px;padding:0 20px;border-radius:20px;border:1.5px solid #0f2343;background:#fff;color:#0f2343;text-decoration:none;font-size:16px;font-weight:800;box-sizing:border-box;">
+                        ← Back to Booking
+                    </a>
                 </div>
             </div>
         </div>

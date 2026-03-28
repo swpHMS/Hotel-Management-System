@@ -11,10 +11,10 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @WebServlet(name = "ServiceRegistryServlet", urlPatterns = {"/manager/services"})
 public class ServiceRegistryServlet extends HttpServlet {
-    
+
     private final ManagerServiceDAO dao = new ManagerServiceDAO();
 
-     @Override
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String keyword = request.getParameter("keyword");
         String serviceType = request.getParameter("serviceType");
@@ -22,29 +22,26 @@ public class ServiceRegistryServlet extends HttpServlet {
         String pageStr = request.getParameter("page");
         String sizeStr = request.getParameter("pageSize");
 
-        // Logic phân trang mặc định (Trang 1, 10 record/trang)
         int pageIndex = (pageStr == null || pageStr.isEmpty()) ? 1 : Integer.parseInt(pageStr);
         int pageSize = (sizeStr == null || sizeStr.isEmpty()) ? 10 : Integer.parseInt(sizeStr);
-        
-        if (keyword == null) keyword = "";
 
-        // Lấy KPI
+        if (keyword == null) {
+            keyword = "";
+        }
+
         request.setAttribute("kpis", dao.getServiceKPIs());
-
-        // Lấy danh sách & tính tổng số trang
         request.setAttribute("services", dao.searchServices(keyword, serviceType, status, pageIndex, pageSize));
+
         int totalServices = dao.getTotalServiceCount(keyword, serviceType, status);
         int totalPages = (int) Math.ceil((double) totalServices / pageSize);
 
-        // Gửi tham số về lại giao diện để giữ trạng thái
         request.setAttribute("keyword", keyword);
         request.setAttribute("serviceType", serviceType);
         request.setAttribute("status", status);
         request.setAttribute("currentPage", pageIndex);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("pageSize", pageSize);
-        
-        // Layout
+
         request.setAttribute("active", "services");
         request.setAttribute("pageTitle", "Service Performance Dashboard");
         request.setAttribute("contentPage", "/view/manager/service-registry.jsp");
@@ -54,24 +51,36 @@ public class ServiceRegistryServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-            
+
         request.setCharacterEncoding("UTF-8");
-        
-        // Lấy các tham số từ Modal Form gửi lên
+
         String action = request.getParameter("action");
-        String name = request.getParameter("name");
+        String name = normalizeSpaces(request.getParameter("name"));
         String unitPriceStr = request.getParameter("unitPrice");
         String serviceTypeStr = request.getParameter("serviceType");
         String statusStr = request.getParameter("status");
-        
-        HotelService s = new HotelService();
-        s.setName(name);
-        
+
+        String error = validateServiceInput(name, unitPriceStr);
+
+        if (error != null) {
+            request.setAttribute("formError", error);
+            request.setAttribute("inputAction", action);
+            request.setAttribute("inputName", name);
+            request.setAttribute("inputUnitPrice", unitPriceStr);
+            request.setAttribute("inputServiceType", serviceTypeStr);
+            request.setAttribute("inputStatus", statusStr);
+            request.setAttribute("inputServiceId", request.getParameter("serviceId"));
+            doGet(request, response);
+            return;
+        }
+
         try {
-            s.setUnitPrice(Double.parseDouble(unitPriceStr));
+            HotelService s = new HotelService();
+            s.setName(name);
+            s.setUnitPrice(Integer.parseInt(unitPriceStr.trim()));
             s.setServiceType(Integer.parseInt(serviceTypeStr));
             s.setStatus(Integer.parseInt(statusStr));
-            
+
             if ("create".equals(action)) {
                 dao.createService(s);
             } else if ("update".equals(action)) {
@@ -81,10 +90,67 @@ public class ServiceRegistryServlet extends HttpServlet {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            // Có thể forward lại trang kèm thông báo lỗi nếu cần thiết
+            request.setAttribute("formError", "Failed to save service.");
+            request.setAttribute("inputAction", action);
+            request.setAttribute("inputName", name);
+            request.setAttribute("inputUnitPrice", unitPriceStr);
+            request.setAttribute("inputServiceType", serviceTypeStr);
+            request.setAttribute("inputStatus", statusStr);
+            request.setAttribute("inputServiceId", request.getParameter("serviceId"));
+            doGet(request, response);
+            return;
         }
-        
-        // Redirect lại trang danh sách để tránh lỗi gửi lại form khi F5 (Post/Redirect/Get pattern)
+
         response.sendRedirect(request.getContextPath() + "/manager/services");
+    }
+
+    private String validateServiceInput(String name, String unitPriceStr) {
+        if (name == null || name.trim().isEmpty()) {
+            return "Service name is required.";
+        }
+
+        name = name.trim();
+
+        if (name.length() < 2 || name.length() > 100) {
+            return "Service name must be from 2 to 100 characters.";
+        }
+
+        if (!isValidServiceName(name)) {
+            return "Service name contains invalid characters.";
+        }
+
+        if (unitPriceStr == null || unitPriceStr.trim().isEmpty()) {
+            return "Unit price is required.";
+        }
+
+        unitPriceStr = unitPriceStr.trim();
+
+        try {
+            int price = Integer.parseInt(unitPriceStr);
+
+            if (price < 1000) {
+                return "Unit price must be at least 1000.";
+            }
+
+            if (price % 1000 != 0) {
+                return "Unit price must be a multiple of 1000.";
+            }
+
+        } catch (NumberFormatException e) {
+            return "Unit price must be a valid whole number.";
+        }
+
+        return null;
+    }
+
+    private boolean isValidServiceName(String name) {
+        return name.matches("^[\\p{L}0-9 &\\-()/.,]+$");
+    }
+
+    private String normalizeSpaces(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.trim().replaceAll("\\s+", " ");
     }
 }
