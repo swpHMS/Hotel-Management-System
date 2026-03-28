@@ -49,7 +49,7 @@ public class ManagerDashboardDAO extends DBContext {
         return kpi;
     }
 
-    public List<TrendPoint> getBookingVelocityDaily(int daysBack) {
+    public List<TrendPoint> getDailyOccupancyTrend(int daysBack) {
         String sql = """
             WITH Days AS (
                 SELECT CAST(DATEADD(DAY, 1 - ?, CAST(GETDATE() AS date)) AS date) AS d
@@ -72,7 +72,7 @@ public class ManagerDashboardDAO extends DBContext {
             CROSS JOIN TotalRooms tr
             LEFT JOIN dbo.stay_room_assignments sra
                 ON sra.actual_check_in < DATEADD(DAY, 1, d.d)
-               AND (sra.actual_check_out IS NULL OR sra.actual_check_out >= d.d)
+               AND (sra.actual_check_out IS NULL OR sra.actual_check_out > d.d)
             GROUP BY d.d, tr.total_rooms
             ORDER BY d.d
             OPTION (MAXRECURSION 400)
@@ -95,7 +95,7 @@ public class ManagerDashboardDAO extends DBContext {
         return list;
     }
 
-    public List<TrendPoint> getBookingVelocityMonthly(int monthsBack) {
+    public List<TrendPoint> getMonthlyOccupancyTrend(int monthsBack) {
         String sql = """
             WITH Days AS (
                 SELECT DATEFROMPARTS(
@@ -123,7 +123,7 @@ public class ManagerDashboardDAO extends DBContext {
                 CROSS JOIN TotalRooms tr
                 LEFT JOIN dbo.stay_room_assignments sra
                     ON sra.actual_check_in < DATEADD(DAY, 1, d.d)
-                   AND (sra.actual_check_out IS NULL OR sra.actual_check_out >= d.d)
+                   AND (sra.actual_check_out IS NULL OR sra.actual_check_out > d.d)
                 GROUP BY d.d, tr.total_rooms
             )
             SELECT
