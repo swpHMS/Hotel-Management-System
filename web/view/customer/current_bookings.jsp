@@ -340,7 +340,7 @@
             wrap.innerHTML = '';
 
             if (!raw || !raw.trim()) {
-                wrap.innerHTML = '<span class=\
+                wrap.innerHTML = '<span class="cbm-chip">&mdash;</span>';
                 return;
             }
 

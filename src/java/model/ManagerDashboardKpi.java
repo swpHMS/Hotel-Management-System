@@ -7,6 +7,8 @@ public class ManagerDashboardKpi {
     private int occupied;
     private int dirty;
     private int maintenance;
+    private double totalRevenue;
+    private double currentMonthRevenue;
 
     public int getTotalInventory() {
         return totalInventory;
@@ -46,6 +48,22 @@ public class ManagerDashboardKpi {
 
     public void setMaintenance(int maintenance) {
         this.maintenance = maintenance;
+    }
+
+    public double getTotalRevenue() {
+        return totalRevenue;
+    }
+
+    public void setTotalRevenue(double totalRevenue) {
+        this.totalRevenue = totalRevenue;
+    }
+
+    public double getCurrentMonthRevenue() {
+        return currentMonthRevenue;
+    }
+
+    public void setCurrentMonthRevenue(double currentMonthRevenue) {
+        this.currentMonthRevenue = currentMonthRevenue;
     }
 
     public double getOccupancyPercent() {

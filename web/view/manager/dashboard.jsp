@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
 <div class="dash-topbar mb-3">
     <div>
@@ -115,6 +116,35 @@
                         <span style="font-weight:800;color:#64748b;font-size:.75rem;letter-spacing:.08em;">MAINTENANCE</span>
                     </span>
                     <span style="font-weight:900;color:#0f172a;">${kpi.maintenance}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-12 d-flex">
+        <div class="stat-card finance-overview-card h-100 w-100" style="flex-direction:column; align-items:stretch; min-height: 280px;">
+            <div class="mb-3">
+                <div style="font-weight:900; color:#0f172a;">FINANCIAL OVERVIEW</div>
+                <div class="dashboard-date">HOTEL REVENUE SNAPSHOT</div>
+            </div>
+
+            <div class="finance-grid">
+                <div class="finance-card finance-card--emerald">
+                    <div class="finance-icon"><i class="bi bi-cash-stack"></i></div>
+                    <div class="finance-label">TOTAL REVENUE</div>
+                    <div class="finance-value">
+                        <fmt:formatNumber value="${kpi.totalRevenue}" type="number" minFractionDigits="0" maxFractionDigits="0"/>
+                    </div>
+                </div>
+
+                <div class="finance-card finance-card--teal">
+                    <div class="finance-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                    <div class="finance-label">REVENUE THIS MONTH</div>
+                    <div class="finance-value">
+                        <fmt:formatNumber value="${kpi.currentMonthRevenue}" type="number" minFractionDigits="0" maxFractionDigits="0"/>
+                    </div>
                 </div>
             </div>
         </div>
